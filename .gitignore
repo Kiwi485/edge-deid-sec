@@ -1,0 +1,13 @@
+# Python virtual environments
+.venv/
+.venv311/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# VS Code / editor
+.vscode/
+
+# OS
+.DS_Store
