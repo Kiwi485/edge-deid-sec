@@ -11,3 +11,6 @@ __pycache__/
 
 # OS
 .DS_Store
+
+logs/*.csv
+!logs/example_latency_laptop.csv
