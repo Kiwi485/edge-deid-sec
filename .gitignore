@@ -14,3 +14,4 @@ __pycache__/
 
 logs/*.csv
 !logs/example_latency_laptop.csv
+!logs/example_latency_vm.csv
