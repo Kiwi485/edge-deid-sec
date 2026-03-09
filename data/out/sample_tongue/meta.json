@@ -1,0 +1,21 @@
+{
+  "image_id": "sample_tongue",
+  "input_file": "sample_tongue.jpg",
+  "roi_method_used": "fallback",
+  "roi_bbox": [
+    0,
+    0,
+    640,
+    480
+  ],
+  "deid_method": "roi_only",
+  "timing_ms": {
+    "roi_ms": 0.0,
+    "seg_ms": 0.0,
+    "feat_ms": 0.0,
+    "deid_ms": 0.0,
+    "total_ms": 16.908645629882812
+  },
+  "status": "ok",
+  "error": ""
+}
