@@ -15,13 +15,3 @@ __pycache__/
 logs/*.csv
 !logs/example_latency_laptop.csv
 !logs/example_latency_vm.csv
-
-# Generated data outputs
-data/out/
-data/raw/
-face_landmarker.task
-
-# Optional: generated results
-results/figures/
-logs/pipeline_latency_vm.csv
-logs/latency.csv
