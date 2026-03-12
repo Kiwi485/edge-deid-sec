@@ -1,0 +1,21 @@
+{
+  "image_id": "10121",
+  "input_file": "10121.jpg",
+  "roi_method_used": "fallback",
+  "roi_bbox": [
+    128,
+    168,
+    512,
+    456
+  ],
+  "deid_method": "roi_only",
+  "timing_ms": {
+    "roi_ms": 6.263256072998047,
+    "seg_ms": 1.0190010070800781,
+    "feat_ms": 1.0020732879638672,
+    "deid_ms": 0.0,
+    "total_ms": 18.439054489135742
+  },
+  "status": "quality_fail",
+  "error": "no face landmarks detected; fallback roi used"
+}
