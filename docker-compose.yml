@@ -1,0 +1,20 @@
+services:
+  api:
+    build: .
+    container_name: edge-deid-api
+    ports:
+      - "8000:8000"  # 先預留 8000，之後 API 可調整
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    # 之後有真正 API 入口時，可改用 command 覆蓋 Dockerfile 的 CMD
+    # command: ["python", "your_api_entry.py"]
+
+  # OpenTelemetry Collector placeholder，之後 observability 需求再補 config
+  otel-collector:
+    image: otel/opentelemetry-collector:latest
+    restart: unless-stopped
+    # volumes:
+    #   - ./otel-config.yml:/etc/otelcol/config.yml
+    # depends_on:
+    #   - api
