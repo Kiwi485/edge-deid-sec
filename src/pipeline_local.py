@@ -6,6 +6,12 @@ import numpy as np
 import cv2
 from pathlib import Path
 
+try:
+    from roi.roi_mediapipe import extract_roi_mediapipe
+except ImportError:
+    # Fallback when running as module from workspace root.
+    from src.roi.roi_mediapipe import extract_roi_mediapipe
+
 
 RAW_DIR = Path("data/raw")
 OUT_DIR = Path("data/out")
@@ -66,13 +72,25 @@ def run_batch_pipeline():
             h, w = image.shape[:2]
 
             # ======================
-            # ROI (placeholder)
+            # ROI (MediaPipe)
             # ======================
             start = time.time()
-            roi_img = image.copy()
-            roi_bbox = [int(0), int(0), int(w), int(h)]
-            roi_method_used = "fallback"
+            roi_img, roi_bbox, roi_status, roi_error = extract_roi_mediapipe(image)
             roi_ms = (time.time() - start) * 1000
+
+            if roi_status == "ok":
+                roi_method_used = "mediapipe"
+            elif roi_status == "quality_fail":
+                status = "quality_fail"
+                error_msg = roi_error
+                roi_method_used = "fallback"
+            else:
+                status = "error"
+                error_msg = f"roi_failed: {roi_error}"
+                roi_method_used = "fallback"
+                roi_img = image.copy()
+                roi_bbox = [int(0), int(0), int(w), int(h)]
+
             cv2.imwrite(str(output_folder / "roi.png"), roi_img)
 
             # ======================
@@ -115,9 +133,9 @@ def run_batch_pipeline():
         meta = {
             "image_id": image_id,
             "input_file": img_path.name,
-            "roi_method_used": roi_method_used if status == "ok" else "",
-            "roi_bbox": roi_bbox if status == "ok" else [],
-            "deid_method": deid_method if status == "ok" else "",
+            "roi_method_used": roi_method_used if status != "error" else "",
+            "roi_bbox": roi_bbox if status != "error" else [],
+            "deid_method": deid_method if status != "error" else "",
             "timing_ms": {
                 "roi_ms": roi_ms,
                 "seg_ms": seg_ms,

@@ -1,0 +1,21 @@
+{
+  "image_id": "10129",
+  "input_file": "10129.jpg",
+  "roi_method_used": "mediapipe",
+  "roi_bbox": [
+    362,
+    268,
+    472,
+    306
+  ],
+  "deid_method": "roi_only",
+  "timing_ms": {
+    "roi_ms": 6.634712219238281,
+    "seg_ms": 0.0,
+    "feat_ms": 0.0,
+    "deid_ms": 1.009225845336914,
+    "total_ms": 17.309188842773438
+  },
+  "status": "ok",
+  "error": ""
+}
