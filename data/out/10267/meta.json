@@ -1,0 +1,34 @@
+{
+  "image_id": "10267",
+  "input_file": "10267.jpg",
+  "roi_method_used": "fallback",
+  "roi_bbox": [
+    128,
+    168,
+    512,
+    456
+  ],
+  "quality_gate": {
+    "pass": false,
+    "reason": "blur",
+    "metrics": {
+      "width": 640,
+      "height": 480,
+      "laplacian_variance": 12.729835475667317,
+      "brightness_mean": 120.26517903645833,
+      "blur_var_threshold": 80.0,
+      "brightness_low": 45.0,
+      "brightness_high": 210.0
+    }
+  },
+  "deid_method": "roi_only",
+  "timing_ms": {
+    "roi_ms": 7.439136505126953,
+    "seg_ms": 0.0,
+    "feat_ms": 0.0,
+    "deid_ms": 1.004934310913086,
+    "total_ms": 24.94502067565918
+  },
+  "status": "quality_fail",
+  "error": "blur; no_face_landmarks"
+}

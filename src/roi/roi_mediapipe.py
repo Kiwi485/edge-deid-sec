@@ -22,23 +22,6 @@ MODEL_URL = (
 )
 
 
-def _fallback_center_roi(image):
-    """Fallback ROI for close-up tongue images when face landmarks are unavailable."""
-    h, w = image.shape[:2]
-    x1 = int(w * 0.2)
-    x2 = int(w * 0.8)
-    y1 = int(h * 0.35)
-    y2 = int(h * 0.95)
-
-    x1 = max(0, min(x1, w - 1))
-    y1 = max(0, min(y1, h - 1))
-    x2 = max(x1 + 1, min(x2, w))
-    y2 = max(y1 + 1, min(y2, h))
-
-    roi_img = image[y1:y2, x1:x2].copy()
-    return roi_img, [x1, y1, x2, y2]
-
-
 def _resolve_model_path():
     # Prefer ASCII-safe temp path first to avoid Unicode path issues on Windows.
     temp_model = Path(tempfile.gettempdir()) / "edge_deid_face_landmarker.task"
@@ -92,8 +75,8 @@ def extract_roi_mediapipe(image):
 
     Returns:
         tuple: (roi_img, roi_bbox, status, error)
-            roi_img: np.ndarray ROI image (BGR) or None on error
-            roi_bbox: [x1, y1, x2, y2] or [] on error
+            roi_img: np.ndarray ROI image (BGR) or None on failure
+            roi_bbox: [x1, y1, x2, y2] or [] on failure
             status: "ok" or "error"
             error: empty string on success, reason string on failure
     """
@@ -112,8 +95,7 @@ def extract_roi_mediapipe(image):
         result = _get_face_landmarker().detect(mp_image)
 
         if not result.face_landmarks:
-            roi_img, roi_bbox = _fallback_center_roi(image)
-            return roi_img, roi_bbox, "quality_fail", "no face landmarks detected; fallback roi used"
+            return None, [], "error", "no_face_landmarks"
 
         landmarks = result.face_landmarks[0]
 
@@ -148,8 +130,4 @@ def extract_roi_mediapipe(image):
         return roi_img, [x1, y1, x2, y2], "ok", ""
 
     except Exception as exc:
-        try:
-            roi_img, roi_bbox = _fallback_center_roi(image)
-            return roi_img, roi_bbox, "quality_fail", f"mediapipe_exception; fallback roi used: {exc}"
-        except Exception:
-            return None, [], "error", str(exc)
+        return None, [], "error", f"mediapipe_exception: {exc}"

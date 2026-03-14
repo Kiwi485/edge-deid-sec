@@ -8,14 +8,27 @@
     272,
     293
   ],
+  "quality_gate": {
+    "pass": false,
+    "reason": "blur",
+    "metrics": {
+      "width": 640,
+      "height": 480,
+      "laplacian_variance": 14.92968083817164,
+      "brightness_mean": 98.07790364583333,
+      "blur_var_threshold": 80.0,
+      "brightness_low": 45.0,
+      "brightness_high": 210.0
+    }
+  },
   "deid_method": "roi_only",
   "timing_ms": {
-    "roi_ms": 7.549524307250977,
+    "roi_ms": 7.507801055908203,
     "seg_ms": 0.0,
-    "feat_ms": 1.4188289642333984,
+    "feat_ms": 0.0,
     "deid_ms": 0.0,
-    "total_ms": 20.90907096862793
+    "total_ms": 23.019790649414062
   },
-  "status": "ok",
-  "error": ""
+  "status": "quality_fail",
+  "error": "blur"
 }
