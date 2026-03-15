@@ -1,0 +1,34 @@
+{
+  "image_id": "10151",
+  "input_file": "10151.jpg",
+  "roi_method_used": "fallback",
+  "roi_bbox": [
+    128,
+    168,
+    512,
+    456
+  ],
+  "quality_gate": {
+    "pass": true,
+    "reason": "ok",
+    "metrics": {
+      "width": 640,
+      "height": 480,
+      "laplacian_variance": 97.54637305666606,
+      "brightness_mean": 144.00876953125,
+      "blur_var_threshold": 80.0,
+      "brightness_low": 45.0,
+      "brightness_high": 210.0
+    }
+  },
+  "deid_method": "roi_only",
+  "timing_ms": {
+    "roi_ms": 1.9993782043457031,
+    "seg_ms": 0.0,
+    "feat_ms": 0.9989738464355469,
+    "deid_ms": 0.0,
+    "total_ms": 20.79319953918457
+  },
+  "status": "ok",
+  "error": "no_face_landmarks"
+}

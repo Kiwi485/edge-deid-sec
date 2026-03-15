@@ -8,14 +8,27 @@
     512,
     456
   ],
+  "quality_gate": {
+    "pass": false,
+    "reason": "blur",
+    "metrics": {
+      "width": 640,
+      "height": 480,
+      "laplacian_variance": 70.36970212465923,
+      "brightness_mean": 125.447021484375,
+      "blur_var_threshold": 80.0,
+      "brightness_low": 45.0,
+      "brightness_high": 210.0
+    }
+  },
   "deid_method": "roi_only",
   "timing_ms": {
-    "roi_ms": 2.055644989013672,
+    "roi_ms": 2.998828887939453,
     "seg_ms": 0.0,
     "feat_ms": 0.0,
     "deid_ms": 0.0,
-    "total_ms": 16.50071144104004
+    "total_ms": 21.538734436035156
   },
   "status": "quality_fail",
-  "error": "no face landmarks detected; fallback roi used"
+  "error": "blur; no_face_landmarks"
 }

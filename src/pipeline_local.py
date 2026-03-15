@@ -8,9 +8,13 @@ from pathlib import Path
 
 try:
     from roi.roi_mediapipe import extract_roi_mediapipe
+    from roi.roi_fixed_crop import extract_roi_fixed
+    from roi.quality_check import check_quality
 except ImportError:
     # Fallback when running as module from workspace root.
     from src.roi.roi_mediapipe import extract_roi_mediapipe
+    from src.roi.roi_fixed_crop import extract_roi_fixed
+    from src.roi.quality_check import check_quality
 
 
 RAW_DIR = Path("data/raw")
@@ -58,6 +62,10 @@ def run_batch_pipeline():
         roi_ms = seg_ms = feat_ms = deid_ms = total_ms = 0.0
         status = "ok"
         error_msg = ""
+        roi_method_used = ""
+        roi_bbox = []
+        deid_method = ""
+        quality_result = {"pass": False, "reason": "not_run", "metrics": {}}
 
         start_total = time.time()
 
@@ -72,24 +80,33 @@ def run_batch_pipeline():
             h, w = image.shape[:2]
 
             # ======================
+            # Quality gate
+            # ======================
+            quality_result = check_quality(image)
+            if not quality_result["pass"]:
+                status = "quality_fail"
+                error_msg = quality_result["reason"]
+
+            # ======================
             # ROI (MediaPipe)
             # ======================
             start = time.time()
             roi_img, roi_bbox, roi_status, roi_error = extract_roi_mediapipe(image)
-            roi_ms = (time.time() - start) * 1000
 
-            if roi_status == "ok":
-                roi_method_used = "mediapipe"
-            elif roi_status == "quality_fail":
-                status = "quality_fail"
-                error_msg = roi_error
+            # MediaPipe failed: continue with deterministic fixed-crop fallback.
+            if roi_status != "ok":
+                roi_img, roi_bbox = extract_roi_fixed(image)
                 roi_method_used = "fallback"
+                if roi_img is None:
+                    raise ValueError(f"roi_fallback_failed: {roi_error}")
+                if error_msg:
+                    error_msg = f"{error_msg}; {roi_error}"
+                else:
+                    error_msg = roi_error
             else:
-                status = "error"
-                error_msg = f"roi_failed: {roi_error}"
-                roi_method_used = "fallback"
-                roi_img = image.copy()
-                roi_bbox = [int(0), int(0), int(w), int(h)]
+                roi_method_used = "mediapipe"
+
+            roi_ms = (time.time() - start) * 1000
 
             cv2.imwrite(str(output_folder / "roi.png"), roi_img)
 
@@ -135,6 +152,7 @@ def run_batch_pipeline():
             "input_file": img_path.name,
             "roi_method_used": roi_method_used if status != "error" else "",
             "roi_bbox": roi_bbox if status != "error" else [],
+            "quality_gate": quality_result,
             "deid_method": deid_method if status != "error" else "",
             "timing_ms": {
                 "roi_ms": roi_ms,
