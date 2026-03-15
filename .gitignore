@@ -15,3 +15,11 @@ __pycache__/
 logs/*.csv
 !logs/example_latency_laptop.csv
 !logs/example_latency_vm.csv
+
+# generated image/data
+data/raw/
+data/out/
+
+# keep optional placeholders
+!data/raw/.gitkeep
+!data/out/.gitkeep
