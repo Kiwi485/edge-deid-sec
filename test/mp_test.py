@@ -16,13 +16,25 @@ options = vision.HandLandmarkerOptions(
 )
 detector = vision.HandLandmarker.create_from_options(options)
 
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(0, cv2.CAP_AVFOUNDATION)  # macOS 建議明確指定
+if not cap.isOpened():
+    raise RuntimeError("Camera open failed: index=0 (try 1/2), check macOS camera permission.")
+
+# Camera warm-up can fail for the first few reads on macOS.
+max_consecutive_read_failures = 30
+consecutive_read_failures = 0
+
 print("✅ Camera opened, press ESC to quit")
 
 while True:
     ret, frame = cap.read()
-    if not ret:
-        break
+    if not ret or frame is None:
+        consecutive_read_failures += 1
+        if consecutive_read_failures >= max_consecutive_read_failures:
+            print("❌ cap.read() failed repeatedly, exiting")
+            break
+        continue
+    consecutive_read_failures = 0
 
     frame = cv2.flip(frame, 1)
     rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
