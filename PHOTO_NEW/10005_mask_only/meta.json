@@ -1,0 +1,6 @@
+{
+  "deid_method": "mask_only",
+  "deid_ms": 2,
+  "status": "ok",
+  "error": null
+}

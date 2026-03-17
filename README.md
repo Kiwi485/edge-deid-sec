@@ -131,7 +131,11 @@ python src/roi/test_roi_batch.py --input data/raw --limit 50
 執行完整批次管線（推薦，一次完成推論與報告更新）：
 
 bash
-d:/edge-deid-sec/.venv311/Scripts/python.exe src/pipeline_local.py; d:/edge-deid-sec/.venv311/Scripts/python.exe src/update_roi_eval.py
+# macOS / Linux
+./.venv311/bin/python src/pipeline_local.py && ./.venv311/bin/python src/update_roi_eval.py
+
+# Windows (PowerShell)
+.\.venv311\Scripts\python.exe src\pipeline_local.py; .\.venv311\Scripts\python.exe src\update_roi_eval.py
 
 說明：
 
