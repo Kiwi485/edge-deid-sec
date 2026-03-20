@@ -197,7 +197,7 @@ docker compose ps
 # 關閉服務
 docker compose down
 
-## W4-3 Output Contract Validator 與 Evidence Pack
+## Output Contract Validator 與 Evidence Pack (輸出契約驗證器與證據包)
 
 這一節說明如何驗證 pipeline 輸出格式（contract），以及如何產生可交付、可抽查的 evidence pack。
 
@@ -268,4 +268,5 @@ docker compose down
 - evidence/ 資料夾通常不建議 commit 進 Git。  
   在 PR 描述中請註明：
   - 使用的 batch-tag（例如 w4-issue3）。
+  --batch-tag 後面那個字串只是「這次驗證／證據包的名字」，不是程式裡固定寫死的東西。
   - reviewer 如需重建 evidence pack，可在 VM 上依照本節步驟重跑一次。
