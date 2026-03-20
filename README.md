@@ -196,3 +196,76 @@ docker compose ps
 
 # 關閉服務
 docker compose down
+
+## W4-3 Output Contract Validator 與 Evidence Pack
+
+這一節說明如何驗證 pipeline 輸出格式（contract），以及如何產生可交付、可抽查的 evidence pack。
+
+### 功能概述
+
+- 檢查每個 data/out/<image_id>/ 是否包含：
+  - roi.png
+  - mask.png
+  - deid.png
+  - feature_256.npy
+  - meta.json
+- 驗證 meta.json 的必填欄位與值域：
+  - image_id / input_file 與檔名一致
+  - roi_method_used 非空（除非整張 status=error）
+  - roi_bbox 非空矩形
+  - timing_ms 內含 roi_ms / seg_ms / feat_ms / deid_ms / total_ms，且皆為非負數
+  - status ∈ {ok, quality_fail, error}
+  - status=error 時，error 必須有具體說明
+- 驗證 logs/pipeline_latency_vm.csv：
+  - 表頭欄位順序固定：image_id, input_file, roi_ms, seg_ms, feat_ms, deid_ms, total_ms, status
+  - 每個本批 data/raw 的 image_id 在 CSV 中恰好出現一次，且 image_id / input_file / status 與 meta.json 一致
+- 產生 evidence pack（evidence/<batch-tag>）：
+  - validation_summary.csv：每張影像的 pass/fail 清單與原因
+  - csv_snapshot/pipeline_latency_vm.csv：本批次 CSV 副本
+  - roi_eval.md：對齊 docs/roi_eval.md 結構的 ROI/quality 評估報告快照
+  - samples_for_review/：最多 10 張抽樣樣本，每張包含 roi/mask/deid/feature_256/meta.json，可供 PM / 老師人工檢查
+
+### 一次完整驗證與產生 evidence pack 的步驟
+
+1. 啟動虛擬環境（專案根目錄）  
+   `.\.venv311\Scripts\Activate.ps1`
+
+2. 清除舊的 latency CSV（避免混入舊批次資料）  
+   `Remove-Item .\logs\pipeline_latency_vm.csv`
+
+3. 針對目前 data/raw 這一批影像跑 batch pipeline：  
+   `python src/pipeline_local.py`
+
+4. 更新 ROI 評估報告（可選，但建議一起做）：  
+   `python src/update_roi_eval.py`
+
+5. 執行輸出驗證器並產生 evidence pack（以 batch tag = w4-issue3 為例）：  
+   `python src/validate_outputs.py --batch-tag w4-issue3`
+
+執行後預期終端輸出摘要類似：
+
+- Total images: N  
+- Pass: N  
+- Fail: 0
+
+### 自我檢查與注意事項
+
+- 在 evidence/w4-issue3 中檢查：
+  - validation_summary.csv：所有列的 final_result 應為 pass，若有 fail，files_missing / meta_issues / csv_issues 應能清楚說明原因。
+  - csv_snapshot/pipeline_latency_vm.csv：行數約等於本批影像數，無重複 image_id。
+  - roi_eval.md：統計數字與目前這一批 data/raw / data/out 對起來。
+  - samples_for_review/：任選幾個 image_id，確認：
+    - roi.png 是合理的人臉/上半身區域。
+    - mask.png 目前為 placeholder，全黑圖為預期結果。
+    - deid.png 尺寸與輸入一致，沒有明顯壞檔。
+    - meta.json 的 status / error 能解釋這張是 ok 或 quality_fail（例如 status=quality_fail, error="blur; no_face_landmarks"）。
+
+- 每次要產生新的 evidence pack 建議流程：
+  - 先刪除舊的 logs/pipeline_latency_vm.csv。
+  - 視需求清空 data/out 或確保 data/raw 只放本次要驗證的影像。
+  - 再重跑 `python src/pipeline_local.py` 和 `python src/validate_outputs.py --batch-tag <新的名稱>`。
+
+- evidence/ 資料夾通常不建議 commit 進 Git。  
+  在 PR 描述中請註明：
+  - 使用的 batch-tag（例如 w4-issue3）。
+  - reviewer 如需重建 evidence pack，可在 VM 上依照本節步驟重跑一次。
