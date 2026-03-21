@@ -48,6 +48,38 @@ def write_csv_header_if_needed():
             ])
 
 
+def _normalize_mask(mask: np.ndarray) -> np.ndarray:
+    if mask is None or mask.size == 0:
+        raise ValueError("mask is empty")
+
+    if mask.ndim == 3:
+        if mask.shape[2] == 1:
+            mask = mask[:, :, 0]
+        elif mask.shape[2] == 3:
+            mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
+        else:
+            raise ValueError("invalid mask format: unsupported channel count")
+    elif mask.ndim != 2:
+        raise ValueError("invalid mask format: expected 2D or 3D array")
+
+    return (mask > 0)
+
+
+def apply_mask_only(image: np.ndarray, mask: np.ndarray) -> np.ndarray:
+    if image is None or image.size == 0:
+        raise ValueError("input image is empty")
+    if image.ndim != 3 or image.shape[2] != 3:
+        raise ValueError("input image must be a color image (3 channels)")
+
+    mask_bin = _normalize_mask(mask)
+    if image.shape[:2] != mask_bin.shape[:2]:
+        raise ValueError("mask size does not match input image")
+
+    out = np.zeros_like(image)
+    out[mask_bin] = image[mask_bin]
+    return out
+
+
 def run_batch_pipeline():
     ensure_dirs()
     write_csv_header_if_needed()
@@ -129,11 +161,11 @@ def run_batch_pipeline():
             feat_ms = (time.time() - start) * 1000
 
             # ======================
-            # DeID (placeholder: copy image)
+            # DeID: keep only tongue mask pixels; everything else is black.
             # ======================
             start = time.time()
-            deid_img = image.copy()
-            deid_method = "roi_only"
+            deid_img = apply_mask_only(image, mask)
+            deid_method = "mask_only"
             deid_ms = (time.time() - start) * 1000
 
             cv2.imwrite(str(output_folder / "deid.png"), deid_img)
