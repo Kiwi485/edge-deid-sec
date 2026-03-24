@@ -10,11 +10,15 @@ try:
     from roi.roi_mediapipe import extract_roi_mediapipe
     from roi.roi_fixed_crop import extract_roi_fixed
     from roi.quality_check import check_quality
+    from deid.build_tongue_mask import build_mask
+    from deid.deid_mask_only import deid_mask_only
 except ImportError:
     # Fallback when running as module from workspace root.
     from src.roi.roi_mediapipe import extract_roi_mediapipe
     from src.roi.roi_fixed_crop import extract_roi_fixed
     from src.roi.quality_check import check_quality
+    from src.deid.build_tongue_mask import build_mask
+    from src.deid.deid_mask_only import deid_mask_only
 
 
 RAW_DIR = Path("data/raw")
@@ -143,12 +147,14 @@ def run_batch_pipeline():
             cv2.imwrite(str(output_folder / "roi.png"), roi_img)
 
             # ======================
-            # Segmentation (placeholder)
+            # Segmentation
             # ======================
             start = time.time()
-            mask = np.zeros((h, w), dtype=np.uint8)  # placeholder: all zeros
-            # ensure mask uses 0/255 values as required by spec
-            mask = (mask * 255).astype(np.uint8)
+            m = build_mask(image, roi_bbox)
+            if m is not None:
+                mask = (m * 255).astype(np.uint8) if m.dtype == np.bool_ else np.where(m > 0, 255, 0).astype(np.uint8)
+            else:
+                mask = np.zeros((h, w), dtype=np.uint8)
             seg_ms = (time.time() - start) * 1000
             cv2.imwrite(str(output_folder / "mask.png"), mask)
 
@@ -164,7 +170,9 @@ def run_batch_pipeline():
             # DeID: keep only tongue mask pixels; everything else is black.
             # ======================
             start = time.time()
-            deid_img = apply_mask_only(image, mask)
+            deid_img, _ = deid_mask_only(image, mask)
+            if deid_img is None:
+                deid_img = apply_mask_only(image, mask)
             deid_method = "mask_only"
             deid_ms = (time.time() - start) * 1000
 
