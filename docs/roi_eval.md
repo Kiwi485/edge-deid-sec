@@ -7,7 +7,7 @@
 - 流程：quality gate -> MediaPipe ROI -> fixed-crop fallback
 - 批次執行指令：`d:/edge-deid-sec/.venv311/Scripts/python.exe src/pipeline_local.py`
 - 報告更新指令：`d:/edge-deid-sec/.venv311/Scripts/python.exe src/update_roi_eval.py`
-- 產生時間：2026-03-23 15:59:58
+- 產生時間：2026-03-24 13:32:46
 
 ## 驗收檢查
 - 批次穩定性（目標 100 張）：目前 120 張統計中無 pipeline hard error。
