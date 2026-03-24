@@ -21,5 +21,8 @@ logs/*.csv
 data/out/
 
 # keep optional placeholders
+!data/out/.
 
-!data/out/.gitkeep
+# evidence 
+evidence
+
