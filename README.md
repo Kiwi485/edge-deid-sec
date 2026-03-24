@@ -200,7 +200,7 @@ docker compose ps
 
 # 關閉服務
 docker compose down
-
+```
 ## Output Contract Validator 與 Evidence Pack (輸出契約驗證器與證據包)
 
 這一節說明如何驗證 pipeline 輸出格式（contract），以及如何產生可交付、可抽查的 evidence pack。
