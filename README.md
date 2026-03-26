@@ -332,7 +332,7 @@ python -m pytest test/test_roi_yolo.py -q
 執行指令（Windows PowerShell）：
 
 ```bash
-.\.venv311\Scripts\python.exe test\verify_yolo_bbox.py --input data/raw --output data/out --limit 10
+.venv311/Scripts/python.exe test/verify_yolo_bbox.py --output data/verify_out --limit 20
 ```
 
 參數說明：
