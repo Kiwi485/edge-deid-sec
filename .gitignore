@@ -20,9 +20,17 @@ logs/*.csv
 
 data/out/
 
+# auto-generated reports (changes every test run)
+docs/roi_eval.md
+
 # keep optional placeholders
 !data/out/.
 
 # evidence 
 evidence
+
+#raw/txt
+data/raw/*.txt
+data/verify_out
+
 

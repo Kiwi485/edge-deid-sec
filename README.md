@@ -258,6 +258,97 @@ docker compose down
   - validation_summary.csv：所有列的 final_result 應為 pass，若有 fail，files_missing / meta_issues / csv_issues 應能清楚說明原因。
   - csv_snapshot/pipeline_latency_vm.csv：行數約等於本批影像數，無重複 image_id。
   - roi_eval.md：統計數字與目前這一批 data/raw / data/out 對起來。
+
+## W4-1 / W4-2 ROI Fallback 更新（給隊友快速交接）
+
+### 本次解的兩個 issue（decomposition）
+
+1) W4-1: YOLO Label Parser 與 BBox 轉換
+- 目標：讀取 YOLO `.txt`（normalized）並轉成 pipeline 使用的 pixel bbox `[x1,y1,x2,y2]`。
+- 主要檔案：
+  - `src/roi/roi_yolo.py`
+  - `test/test_roi_yolo.py`
+  - `test/verify_yolo_bbox.py`
+- 完成內容：
+  - 建立 `load_yolo_bbox(label_path, image_shape)`。
+  - 完整錯誤處理（檔案不存在、格式錯誤、非數字、超範圍、退化 bbox）。
+  - 單元測試 15 個 case（正常與異常路徑）。
+
+2) W4-2: 將 YOLO 整合為 ROI fallback
+- 目標：MediaPipe 失敗時，先嘗試 YOLO label，再退 fixed crop。
+- 主要檔案：
+  - `src/pipeline_local.py`
+  - `src/roi/test_roi_batch.py`
+  - `src/update_roi_eval.py`
+- 完成內容：
+  - ROI 流程改為：`mediapipe -> yolo_fallback -> fixed_fallback`。
+  - `meta.json` 的 `roi_method_used` 新增 `yolo_fallback`、`fixed_fallback`。
+  - 報告統計支援 YOLO fallback 與 fixed fallback 分開計數。
+
+### 額外補強（避免 bootstrap 死循環）
+
+- 在 `src/pipeline_local.py` 加入「自動寫入 YOLO `.txt`」：
+  - 每張圖完成 ROI 後，若 bbox 合法，會在 `data/raw/<image_id>.txt` 寫入一行 YOLO label。
+  - 下一次跑 pipeline 可直接使用該 label 進行 `yolo_fallback`。
+
+
+### 如何測試（隊友可直接執行）
+
+1) 單元測試 YOLO parser
+
+```bash
+python -m pytest test/test_roi_yolo.py -q
+```
+
+預期：全部通過（15 passed）。
+
+2) 跑 batch pipeline（會自動產生/更新 data/raw/*.txt）
+
+```bash
+# Windows PowerShell
+.\.venv311\Scripts\python.exe src\pipeline_local.py
+```
+
+檢查：
+- `data/out/<image_id>/meta.json` 有 `roi_method_used` 與 `roi_bbox`。
+- `roi_method_used` 可能是 `mediapipe` / `yolo_fallback` / `fixed_fallback`。
+- `data/raw/` 會出現或更新同名 `.txt` label。
+
+3) 更新 ROI 評估報告
+
+```bash
+.\.venv311\Scripts\python.exe src\update_roi_eval.py
+```
+
+檢查：
+- 報告中有 `ROI 使用 YOLO fallback` 與 `ROI 使用 fixed fallback` 指標。
+
+4) 可視化抽查 YOLO bbox（verify_yolo）
+
+先決條件：
+- `data/raw` 內要有圖片與同名 `.txt`（例如 `10001.jpg` 與 `10001.txt`）。
+- 若 `.txt` 不齊全，先跑一次 `src/pipeline_local.py` 讓系統自動補寫。
+
+執行指令（Windows PowerShell）：
+
+```bash
+.\.venv311\Scripts\python.exe test\verify_yolo_bbox.py --input data/raw --output data/out --limit 10
+```
+
+參數說明：
+- `--input`：原始圖片與 label 所在目錄。
+- `--output`：可視化結果輸出目錄。
+- `--limit`：最多處理幾張，先用 10 張快速抽查。
+
+預期終端輸出：
+- `[OK]`：成功讀取 label 並畫框。
+- `[SKIP] no label`：找不到同名 `.txt`，此張被跳過。
+- `[ERR]`：label 內容格式錯誤或圖片讀取失敗。
+
+檢查重點：
+- `data/out/yolo_bbox_*.jpg` 的綠框是否包住目標 ROI。
+- 框不應超出影像邊界，也不應是退化矩形（寬或高接近 0）。
+- 若大量 `[SKIP]`，代表 labels 尚未產生或命名不一致。
   - samples_for_review/：任選幾個 image_id，確認：
     - roi.png 是合理的人臉/上半身區域。
     - mask.png 目前為 placeholder，全黑圖為預期結果。

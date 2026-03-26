@@ -79,7 +79,7 @@ def build_report_text():
 
     fallback_reason_counter = Counter()
     for m in metas:
-        if m.get("roi_method_used") == "fallback":
+        if m.get("roi_method_used") in ("fallback", "yolo_fallback", "fixed_fallback"):
             err = (m.get("error") or "")
             if "no_face_landmarks" in err:
                 fallback_reason_counter["no_face_landmarks"] += 1
@@ -89,7 +89,9 @@ def build_report_text():
                 fallback_reason_counter["other"] += 1
 
     mp_ok = roi_counter.get("mediapipe", 0)
-    fb_used = roi_counter.get("fallback", 0)
+    yolo_fb = roi_counter.get("yolo_fallback", 0)
+    fixed_fb = roi_counter.get("fixed_fallback", 0) + roi_counter.get("fallback", 0)
+    fb_used = yolo_fb + fixed_fb
     q_ok = quality_counter.get("ok", 0)
     q_fail = matched - q_ok
     hard_error = status_counter.get("error", 0)
@@ -102,7 +104,7 @@ def build_report_text():
         "- 資料集：`data/raw`",
         f"- 影像數量：{total}",
         f"- 已匹配 meta 數量：{matched}",
-        "- 流程：quality gate -> MediaPipe ROI -> fixed-crop fallback",
+        "- 流程：quality gate -> MediaPipe ROI -> YOLO fallback -> fixed-crop fallback",
         "- 批次執行指令：`d:/edge-deid-sec/.venv311/Scripts/python.exe src/pipeline_local.py`",
         "- 報告更新指令：`d:/edge-deid-sec/.venv311/Scripts/python.exe src/update_roi_eval.py`",
         f"- 產生時間：{now}",
@@ -110,11 +112,13 @@ def build_report_text():
         "## 驗收檢查",
         f"- 批次穩定性（目標 100 張）：目前 {matched} 張統計中無 pipeline hard error。",
         "- quality_fail 行為：失敗樣本會標記 status=quality_fail，並在 meta.json 留下 reason。",
-        "- fallback 行為：MediaPipe ROI 失敗時改用 fixed crop，並記錄 roi_method_used=fallback。",
+        "- fallback 行為：MediaPipe ROI 失敗時依序嘗試 YOLO fallback，最後才用 fixed crop。",
         "",
         f"## 核心指標（{matched} 張）",
         f"- ROI 成功（mediapipe）：{mp_ok}/{matched} = {_pct(mp_ok, matched)}",
-        f"- ROI 使用 fallback：{fb_used}/{matched} = {_pct(fb_used, matched)}",
+        f"- ROI 使用 YOLO fallback：{yolo_fb}/{matched} = {_pct(yolo_fb, matched)}",
+        f"- ROI 使用 fixed fallback：{fixed_fb}/{matched} = {_pct(fixed_fb, matched)}",
+        f"- ROI fallback 總計：{fb_used}/{matched} = {_pct(fb_used, matched)}",
         f"- 品質通過（quality_gate.reason=ok）：{q_ok}/{matched} = {_pct(q_ok, matched)}",
         f"- 品質失敗（status=quality_fail）：{q_fail}/{matched} = {_pct(q_fail, matched)}",
         f"- Pipeline hard error（status=error）：{hard_error}/{matched} = {_pct(hard_error, matched)}",
