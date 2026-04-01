@@ -365,3 +365,70 @@ python -m pytest test/test_roi_yolo.py -q
   - 使用的 batch-tag（例如 w4-issue3）。
   --batch-tag 後面那個字串只是「這次驗證／證據包的名字」，不是程式裡固定寫死的東西。
   - reviewer 如需重建 evidence pack，可在 VM 上依照本節步驟重跑一次。
+
+## W4-issue2: YOLO ROI 人工標註摘要（舌頭 ROI）
+
+### 這次實際做了什麼
+
+- 新增簡易 YOLO 標註工具：`test/manual_yolo_annotator.py`
+  - 使用 OpenCV 顯示 `data/raw` 影像。
+  - 滑鼠左鍵拖曳畫出單一 bbox，按 `s` 直接寫入對應的 YOLO `.txt`（class 固定為 0）。
+- 以該工具對 `data/raw` 內 **120 張影像全部重標** 舌頭 ROI：
+  - 框選原則：以舌頭本體為主，保留少量邊界，避免整張臉/頭都包進去。
+  - 每張圖只標註 1 個 bbox（pipeline 目前只讀取第一行 YOLO label）。
+  - 完成後，專案中已完全找不到原本的固定 bootstrap 值 `0 0.500000 0.650000 0.600000 0.600000`。
+- 使用 `test/verify_yolo_bbox.py` 抽查 YOLO bbox：
+  - 在 `data/verify_out/` 產生 `yolo_bbox_<image_id>.jpg`，綠框位置與舌頭 ROI 對齊且彼此不同。
+- 以新的 YOLO labels 重跑 W4 pipeline 與 ROI 報告：
+  - `src/pipeline_local.py` + `src/update_roi_eval.py`。
+  - `docs/roi_eval.md` 更新後顯示：
+    - ROI 成功（mediapipe）：8/120 = 6.7%
+    - ROI 使用 YOLO fallback：112/120 = 93.3%
+    - ROI 使用 fixed fallback：0/120 = 0.0%
+  - 代表所有 fallback case 都使用人工標註的 YOLO bbox，fixed fallback 不再被觸發。
+- 以 batch tag = `w4-issue2` 產生 evidence pack：
+  - `evidence/w4-issue2/validation_summary.csv`
+  - `evidence/w4-issue2/csv_snapshot/pipeline_latency_vm.csv`
+  - `evidence/w4-issue2/roi_eval.md`（報表快照）
+  - `evidence/w4-issue2/samples_for_review/<image_id>/roi.png` 等，用於人工抽查。
+
+### 簡單重跑步驟（需要重新驗證時）
+
+> 前提：`data/raw/*.txt` 已有人工作為舌頭 ROI 標註（可透過 `test/manual_yolo_annotator.py` 產生）。
+
+1. 啟動虛擬環境（專案根目錄）
+
+```bash
+cd d:/edge-deid-sec
+.\.venv311\Scripts\Activate.ps1
+```
+
+2. 以現有 YOLO labels 重跑 W4 ROI pipeline
+
+```bash
+Remove-Item .\logs\pipeline_latency_vm.csv -ErrorAction Ignore
+.\.venv311\Scripts\python.exe src\pipeline_local.py
+.\.venv311\Scripts\python.exe src\update_roi_eval.py
+```
+
+3. 抽查 YOLO bbox（選擇性，但建議執行）
+
+```bash
+.\.venv311\Scripts\python.exe test\verify_yolo_bbox.py --input data/raw --output data/verify_out --limit 20
+```
+
+檢查：`data/verify_out/yolo_bbox_<image_id>.jpg` 的綠框應包住舌頭 ROI，且不同影像 bbox 不應全部相同。
+
+4. 產生或重建 evidence pack（以 w4-issue2 為例）
+
+```bash
+.\.venv311\Scripts\python.exe src\validate_outputs.py --batch-tag w4-issue2
+```
+
+檢查重點：
+
+- `docs/roi_eval.md` 中：
+  - `ROI 使用 YOLO fallback` 為主要 fallback 來源。
+  - `ROI 使用 fixed fallback` 理想上為 0%。
+- `evidence/w4-issue2/samples_for_review/<image_id>/roi.png`：
+  - ROI 裁切集中在舌頭附近，相較早期 fixed 中心裁切有明顯改善。
