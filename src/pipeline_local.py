@@ -242,10 +242,11 @@ def run_batch_pipeline():
                     bw = (x2 - x1) / w_img
                     bh = (y2 - y1) / h_img
                     label_path = RAW_DIR / img_path.with_suffix(".txt").name
-                    label_path.write_text(
-                        f"0 {xc:.6f} {yc:.6f} {bw:.6f} {bh:.6f}\n",
-                        encoding="utf-8",
-                    )
+                    if not label_path.exists():
+                        label_path.write_text(
+                            f"0 {xc:.6f} {yc:.6f} {bw:.6f} {bh:.6f}\n",
+                            encoding="utf-8",
+                        )
             except Exception:
                 pass
 
