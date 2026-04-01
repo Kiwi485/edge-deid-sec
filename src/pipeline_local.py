@@ -21,9 +21,10 @@ except ImportError:
     from src.deid.deid_mask_only import deid_mask_only
 
 
-RAW_DIR = Path("data/raw")
-OUT_DIR = Path("data/out")
-LOG_DIR = Path("logs")
+BASE_DIR = Path(__file__).resolve().parents[1]
+RAW_DIR = BASE_DIR / "data/raw"
+OUT_DIR = BASE_DIR / "data/out"
+LOG_DIR = BASE_DIR / "logs"
 CSV_PATH = LOG_DIR / "pipeline_latency_vm.csv"
 VALID_EXT = {".jpg", ".jpeg", ".png"}
 # Set to (width, height) to force resize, or None to keep original
@@ -36,20 +37,19 @@ def ensure_dirs():
     LOG_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def write_csv_header_if_needed():
-    if not CSV_PATH.exists():
-        with open(CSV_PATH, mode="w", newline="") as f:
-            writer = csv.writer(f)
-            writer.writerow([
-                "image_id",
-                "input_file",
-                "roi_ms",
-                "seg_ms",
-                "feat_ms",
-                "deid_ms",
-                "total_ms",
-                "status"
-            ])
+def write_csv_header():
+    with open(CSV_PATH, mode="w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow([
+            "image_id",
+            "input_file",
+            "roi_ms",
+            "seg_ms",
+            "feat_ms",
+            "deid_ms",
+            "total_ms",
+            "status"
+        ])
 
 
 def _normalize_mask(mask: np.ndarray) -> np.ndarray:
@@ -86,7 +86,7 @@ def apply_mask_only(image: np.ndarray, mask: np.ndarray) -> np.ndarray:
 
 def run_batch_pipeline():
     ensure_dirs()
-    write_csv_header_if_needed()
+    write_csv_header()
 
     images = [p for p in RAW_DIR.iterdir() if p.is_file() and p.suffix.lower() in VALID_EXT]
 
