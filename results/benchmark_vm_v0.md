@@ -1,38 +1,38 @@
 # VM Benchmark v0
 
 - Source CSV: logs/pipeline_latency_vm.csv
-- Total rows: 480
-- Status counts: ok=32, quality_fail=448, error=0
+- Total rows: 120
+- Status counts: ok=8, quality_fail=112, error=0
 
 ## Percentiles (all)
 
 | metric | p50 | p95 | p99 |
 |---|---:|---:|---:|
-| roi_ms | 3.35 | 8.81 | 11.98 |
-| seg_ms | 4.00 | 8.66 | 11.99 |
-| feat_ms | 0.00 | 1.04 | 2.09 |
-| deid_ms | 1.52 | 2.93 | 9.75 |
-| total_ms | 22.33 | 31.56 | 38.30 |
+| roi_ms | 6.00 | 31.04 | 52.28 |
+| seg_ms | 9.00 | 27.99 | 44.04 |
+| feat_ms | 0.00 | 6.00 | 9.62 |
+| deid_ms | 0.00 | 10.00 | 14.43 |
+| total_ms | 37.49 | 97.08 | 114.26 |
 
 ## Percentiles (ok)
 
 | metric | p50 | p95 | p99 |
 |---|---:|---:|---:|
-| roi_ms | 3.26 | 5496.79 | 6250.11 |
-| seg_ms | 3.71 | 6.18 | 8.41 |
-| feat_ms | 0.00 | 1.01 | 1.03 |
-| deid_ms | 1.50 | 5.88 | 10.94 |
-| total_ms | 24.79 | 5510.07 | 6270.76 |
+| roi_ms | 5.50 | 153.56 | 210.66 |
+| seg_ms | 8.00 | 27.99 | 27.99 |
+| feat_ms | 0.00 | 8.25 | 9.65 |
+| deid_ms | 0.00 | 11.30 | 11.86 |
+| total_ms | 70.98 | 267.23 | 340.57 |
 
 ## Percentiles (quality_fail)
 
 | metric | p50 | p95 | p99 |
 |---|---:|---:|---:|
-| roi_ms | 3.35 | 8.51 | 10.28 |
-| seg_ms | 4.00 | 8.72 | 12.10 |
-| feat_ms | 0.00 | 1.19 | 2.19 |
-| deid_ms | 1.79 | 2.93 | 8.93 |
-| total_ms | 22.26 | 31.11 | 34.33 |
+| roi_ms | 6.00 | 29.34 | 44.44 |
+| seg_ms | 9.00 | 19.99 | 44.44 |
+| feat_ms | 0.00 | 6.00 | 7.89 |
+| deid_ms | 0.00 | 10.00 | 14.67 |
+| total_ms | 35.99 | 94.43 | 106.86 |
 
 ## Percentiles (error)
 
@@ -47,5 +47,5 @@
 ## Bottleneck
 
 Bottleneck observation (status=ok):
-- p95 main stage: roi_ms (5496.79 ms, 99.8% of total p95)
-- p99 main stage: roi_ms (6250.11 ms, 99.7% of total p99)
+- p95 main stage: roi_ms (153.56 ms, 57.5% of total p95)
+- p99 main stage: roi_ms (210.66 ms, 61.9% of total p99)
