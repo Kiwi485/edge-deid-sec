@@ -14,6 +14,8 @@ PERCENTILES = [("p50", 0.50), ("p95", 0.95), ("p99", 0.99)]
 
 @dataclass
 class Row:
+    image_id: str
+    input_file: str
     status: str
     values: Dict[str, float]
 
@@ -30,14 +32,27 @@ def load_rows(csv_path: Path) -> List[Row]:
         raise FileNotFoundError(f"CSV not found: {csv_path}")
 
     rows: List[Row] = []
+    seen_image_ids = set()
     with open(csv_path, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
-        required = ["status", *METRICS]
+        required = ["image_id", "input_file", "status", *METRICS]
         missing = [k for k in required if k not in (reader.fieldnames or [])]
         if missing:
             raise ValueError(f"CSV missing required columns: {','.join(missing)}")
 
         for idx, r in enumerate(reader, start=2):
+            image_id = (r.get("image_id") or "").strip()
+            input_file = (r.get("input_file") or "").strip()
+            if not image_id:
+                raise ValueError(f"invalid image_id at line {idx}")
+            if not input_file:
+                raise ValueError(f"invalid input_file at line {idx}")
+            if image_id in seen_image_ids:
+                raise ValueError(
+                    f"duplicate image_id '{image_id}' at line {idx}; CSV must contain one row per image"
+                )
+            seen_image_ids.add(image_id)
+
             status = (r.get("status") or "").strip()
             if status not in VALID_STATUS:
                 continue
@@ -45,7 +60,14 @@ def load_rows(csv_path: Path) -> List[Row]:
                 values = {m: _to_float(str(r.get(m, ""))) for m in METRICS}
             except Exception as exc:
                 raise ValueError(f"invalid timing data at line {idx}: {exc}") from exc
-            rows.append(Row(status=status, values=values))
+            rows.append(
+                Row(
+                    image_id=image_id,
+                    input_file=input_file,
+                    status=status,
+                    values=values,
+                )
+            )
 
     return rows
 

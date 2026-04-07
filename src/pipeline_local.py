@@ -97,11 +97,16 @@ def run_batch_pipeline(
     seed: int = 42,
     reset_csv: bool = False,
     clear_out: bool = False,
+    append_csv: bool = False,
 ):
     if clear_out and out_dir.exists():
         shutil.rmtree(out_dir)
 
     if reset_csv and csv_path.exists():
+        csv_path.unlink()
+
+    # Default to clean benchmark data: start a new CSV unless explicitly appending.
+    if (not reset_csv) and (not append_csv) and csv_path.exists():
         csv_path.unlink()
 
     ensure_dirs(raw_dir, out_dir, csv_path)
@@ -352,6 +357,11 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Delete output folder before run.",
     )
+    parser.add_argument(
+        "--append-csv",
+        action="store_true",
+        help="Append rows to existing CSV instead of starting a clean file.",
+    )
     return parser.parse_args()
 
 
@@ -366,4 +376,5 @@ if __name__ == "__main__":
         seed=args.seed,
         reset_csv=args.reset_csv,
         clear_out=args.clear_out,
+        append_csv=args.append_csv,
     )
