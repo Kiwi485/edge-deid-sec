@@ -1,10 +1,12 @@
-import os
+import argparse
+import shutil
 import time
 import json
 import csv
 import numpy as np
 import cv2
 from pathlib import Path
+from random import Random
 
 try:
     from roi.roi_mediapipe import extract_roi_mediapipe
@@ -32,15 +34,15 @@ VALID_EXT = {".jpg", ".jpeg", ".png"}
 RESIZE_TO = (640, 480)
 
 
-def ensure_dirs():
-    RAW_DIR.mkdir(parents=True, exist_ok=True)
-    OUT_DIR.mkdir(parents=True, exist_ok=True)
-    LOG_DIR.mkdir(parents=True, exist_ok=True)
+def ensure_dirs(raw_dir: Path, out_dir: Path, csv_path: Path):
+    raw_dir.mkdir(parents=True, exist_ok=True)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    csv_path.parent.mkdir(parents=True, exist_ok=True)
 
 
-def write_csv_header_if_needed():
-    if not CSV_PATH.exists():
-        with open(CSV_PATH, mode="w", newline="") as f:
+def write_csv_header_if_needed(csv_path: Path):
+    if not csv_path.exists():
+        with open(csv_path, mode="w", newline="") as f:
             writer = csv.writer(f)
             writer.writerow([
                 "image_id",
@@ -86,15 +88,37 @@ def apply_mask_only(image: np.ndarray, mask: np.ndarray) -> np.ndarray:
     return out
 
 
-def run_batch_pipeline():
-    ensure_dirs()
-    write_csv_header_if_needed()
+def run_batch_pipeline(
+    raw_dir: Path,
+    out_dir: Path,
+    csv_path: Path,
+    limit: int = 0,
+    shuffle: bool = False,
+    seed: int = 42,
+    reset_csv: bool = False,
+    clear_out: bool = False,
+):
+    if clear_out and out_dir.exists():
+        shutil.rmtree(out_dir)
 
-    images = [p for p in RAW_DIR.iterdir() if p.is_file() and p.suffix.lower() in VALID_EXT]
+    if reset_csv and csv_path.exists():
+        csv_path.unlink()
+
+    ensure_dirs(raw_dir, out_dir, csv_path)
+    write_csv_header_if_needed(csv_path)
+
+    images = sorted([p for p in raw_dir.iterdir() if p.is_file() and p.suffix.lower() in VALID_EXT])
+    if shuffle:
+        rng = Random(seed)
+        rng.shuffle(images)
+    if limit > 0:
+        images = images[:limit]
+
+    status_counts = {"ok": 0, "quality_fail": 0, "error": 0}
 
     for img_path in images:
         image_id = img_path.stem
-        output_folder = OUT_DIR / image_id
+        output_folder = out_dir / image_id
         output_folder.mkdir(parents=True, exist_ok=True)
 
         roi_ms = seg_ms = feat_ms = deid_ms = total_ms = 0.0
@@ -136,7 +160,7 @@ def run_batch_pipeline():
             else:
                 # MediaPipe failed — try YOLO label if available.
                 mp_error = roi_error
-                label_path = RAW_DIR / img_path.with_suffix(".txt").name
+                label_path = raw_dir / img_path.with_suffix(".txt").name
                 yolo_bbox, yolo_status, yolo_error = load_yolo_bbox(label_path, image.shape)
 
                 if yolo_status == "ok":
@@ -241,7 +265,7 @@ def run_batch_pipeline():
                     yc = (y1 + y2) / 2 / h_img
                     bw = (x2 - x1) / w_img
                     bh = (y2 - y1) / h_img
-                    label_path = RAW_DIR / img_path.with_suffix(".txt").name
+                    label_path = raw_dir / img_path.with_suffix(".txt").name
                     if not label_path.exists():
                         label_path.write_text(
                             f"0 {xc:.6f} {yc:.6f} {bw:.6f} {bh:.6f}\n",
@@ -253,7 +277,7 @@ def run_batch_pipeline():
         # ======================
         # Append CSV
         # ======================
-        with open(CSV_PATH, mode="a", newline="") as f:
+        with open(csv_path, mode="a", newline="") as f:
             writer = csv.writer(f)
             writer.writerow([
                 image_id,
@@ -266,8 +290,80 @@ def run_batch_pipeline():
                 status
             ])
 
+        status_counts[status] = status_counts.get(status, 0) + 1
+
     print("Batch processing completed.")
+    print(f"CSV: {csv_path}")
+    print(f"Processed: {len(images)}")
+    print(
+        "Status counts: "
+        f"ok={status_counts.get('ok', 0)}, "
+        f"quality_fail={status_counts.get('quality_fail', 0)}, "
+        f"error={status_counts.get('error', 0)}"
+    )
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Run local batch pipeline for ROI/seg/deid outputs and latency CSV.",
+    )
+    parser.add_argument(
+        "--raw-dir",
+        type=Path,
+        default=RAW_DIR,
+        help="Input raw image folder.",
+    )
+    parser.add_argument(
+        "--out-dir",
+        type=Path,
+        default=OUT_DIR,
+        help="Output folder for per-image artifacts.",
+    )
+    parser.add_argument(
+        "--csv",
+        type=Path,
+        default=CSV_PATH,
+        help="Latency CSV output path.",
+    )
+    parser.add_argument(
+        "--limit",
+        type=int,
+        default=0,
+        help="Process at most N images (0 means all).",
+    )
+    parser.add_argument(
+        "--shuffle",
+        action="store_true",
+        help="Shuffle image order before applying limit.",
+    )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=42,
+        help="Random seed used when --shuffle is enabled.",
+    )
+    parser.add_argument(
+        "--reset-csv",
+        action="store_true",
+        help="Delete target CSV before run to avoid mixing old rows.",
+    )
+    parser.add_argument(
+        "--clear-out",
+        action="store_true",
+        help="Delete output folder before run.",
+    )
+    return parser.parse_args()
 
 
 if __name__ == "__main__":
-    run_batch_pipeline()
+    args = parse_args()
+    run_batch_pipeline(
+        raw_dir=args.raw_dir,
+        out_dir=args.out_dir,
+        csv_path=args.csv,
+        limit=args.limit,
+        shuffle=args.shuffle,
+        seed=args.seed,
+        reset_csv=args.reset_csv,
+        clear_out=args.clear_out,
+    )

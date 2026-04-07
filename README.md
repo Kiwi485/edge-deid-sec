@@ -148,6 +148,41 @@ bash
 - data/out/<image_id>/meta.json 是否含 `roi_bbox`、`timing_ms.roi_ms`、`status`、`error`
 - 單張失敗時，其它圖片仍持續處理（CSV 筆數不應提前中斷）
 
+## Week 4: VM Smoke Test 與 Benchmark v0
+
+目標是先做小批次 smoke test，確認 VM 環境可跑，再做正式 benchmark 取得可比較 baseline。
+
+### 1) VM smoke test（5 到 10 張）
+
+PowerShell（專案根目錄）：
+
+```powershell
+.\.venv311\Scripts\python.exe src\pipeline_local.py --limit 10 --shuffle --seed 42 --clear-out --reset-csv --out-dir data\out_vm_smoke --csv logs\pipeline_latency_vm_smoke.csv
+python src\validate_outputs.py --out-dir data\out_vm_smoke --csv logs\pipeline_latency_vm_smoke.csv --batch-tag w4-vm-smoke
+```
+
+用途：
+
+- 快速確認 model 檔與依賴可正常載入（含 roi_mediapipe 初始化）
+- 提前暴露 VM 路徑、套件、模型資源等環境問題
+
+### 2) 正式 benchmark v0（至少 100 張）
+
+PowerShell（專案根目錄）：
+
+```powershell
+.\.venv311\Scripts\python.exe src\pipeline_local.py --limit 100 --shuffle --seed 42 --clear-out --reset-csv --out-dir data\out_vm_benchmark_v0 --csv logs\pipeline_latency_vm_benchmark_v0.csv
+python src\validate_outputs.py --out-dir data\out_vm_benchmark_v0 --csv logs\pipeline_latency_vm_benchmark_v0.csv --batch-tag w4-vm-benchmark-v0
+python src\benchmark_vm.py --csv logs\pipeline_latency_vm_benchmark_v0.csv --report results\benchmark_vm_v0.md --min-rows 100
+```
+
+### 3) 交付物
+
+- 乾淨 latency CSV（不混入本機或舊測試資料）
+- benchmark 報告：`results/benchmark_vm_v0.md`
+- 指標涵蓋：roi_ms / seg_ms / feat_ms / deid_ms / total_ms
+- 統計涵蓋：p50 / p95 / p99，並依 status 分群（ok / quality_fail / error）
+
 ## Docker / Compose 部署骨架
 
 為了讓之後 ROI / DeID API 完成後，可以直接接上部署流程，本專案先建立一組 Docker / Docker Compose 骨架（placeholder）：
