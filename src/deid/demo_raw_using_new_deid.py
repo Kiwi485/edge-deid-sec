@@ -14,7 +14,7 @@ from build_tongue_mask import build_mask
 from deid_mask_only import deid_mask_only, save_deid_result
 
 if __name__ == '__main__':
-    raw_images = sorted(glob.glob('data/raw/*.jpg'))[:10]
+    raw_images = sorted(glob.glob('data/raw/*.jpg'))
     out_base = 'PHOTO_NEW'
     os.makedirs(out_base, exist_ok=True)
     

@@ -200,6 +200,88 @@ docker compose ps
 
 # 關閉服務
 docker compose down
+<<<<<<< HEAD
+
+
+
+
+
+
+好的！您可以親自在終端機執行以下流程，來確認所有問題都已經被解決並且資料完美：
+
+### 第一步：進入專案環境
+請打開一個新的 Mac 終端機，並確保進入正確的專案資料夾與啟動虛擬環境：
+```bash
+cd /Users/chenguanjie/Desktop/脫敏輸出/edge-deid-sec
+source .venv311/bin/activate
+```
+
+---
+
+### 第二步：故意製造破壞（驗證覆寫機制）
+既然我們要驗證「修復是否有效」，我們要故意執行兩次 pipeline，確認它真的**不會**把資料疊加上去（變成兩倍）：
+```bash
+python src/pipeline_local.py
+python src/pipeline_local.py
+```
+> *(執行過程中，如果您有 120 張圖片，它應該只會花幾十秒跑完。)*
+
+---
+
+### 第三步：檢查 CSV 檔案行數
+跑完兩次後，我們來檢查最新產生的 pipeline_latency_vm.csv 的行數。因為您有 120 張相片加上 1 行標題列，行數必須精準卡在 121行。
+輸入這行：
+```bash
+wc -l logs/pipeline_latency_vm.csv
+```
+✅ **預期結果：** 會印出 `121 logs/pipeline_latency_vm.csv`。
+
+---
+
+### 第四步：確保沒有任何重複的 `image_id`
+使用 `awk` 指令將 CSV 的第一欄抓出來，並檢查有沒有重複的項目：
+```bash
+awk -F',' 'NR>1 {print $1}' logs/pipeline_latency_vm.csv | sort | uniq -d
+```
+✅ **預期結果：** 終端機什麼字都不應該印出來。如果有殘留的舊資料，這裡會跑出一堆重複的檔名；如果一個字都沒跳出來，代表所有的檔名都只出現了一次！
+
+---
+
+### 第五步：產出您要的 Final Validation 報表
+如果上面的資料都很完美，這個步驟就能順利通過，把假性的 fail 完全消除：
+```bash
+
+python src/pipeline_local.py
+python src/update_roi_eval.py
+python src/validate_outputs.py
+```
+✅ **預期結果：** 會看到：
+```
+Validation summary
+==================
+Total images: 120
+Pass: 120
+Fail: 0
+```
+然後您可以打開 `validation_summary.csv` 看一下，確認 `csv_row_duplicate` 欄位全都變成了 `0`。`
+
+---
+
+經過這樣親自操作與驗收一次，您就可以 100% 放心把這個專案打包作為 W4 evidence 提交了！如果在途中還有遇到什麼問題可以隨時提出！重複驗證前需先刪除暫存：
+find data/out -type f -name "deid.png" -delete
+find data/out -type f -name "mask.png" -delete
+find data/out -type f -name "roi.png" -delete
+find data/out -type f -name "feature_256.npy" -delete
+find data/out -type f -name "meta.json" -delete
+rm -f logs/pipeline_latency_vm.csv
+rm -f evidence/batch/validation_summary.csv
+rm -f evidence/batch/csv_snapshot/pipeline_latency_vm.csv
+
+再輸入：
+python src/pipeline_local.py
+python src/update_roi_eval.py
+python src/validate_outputs.py
+=======
 ```
 ## Output Contract Validator 與 Evidence Pack (輸出契約驗證器與證據包)
 
@@ -432,3 +514,4 @@ Remove-Item .\logs\pipeline_latency_vm.csv -ErrorAction Ignore
   - `ROI 使用 fixed fallback` 理想上為 0%。
 - `evidence/w4-issue2/samples_for_review/<image_id>/roi.png`：
   - ROI 裁切集中在舌頭附近，相較早期 fixed 中心裁切有明顯改善。
+>>>>>>> 48dd312d04eed0a4935c1353b7d9b5480555d37c
