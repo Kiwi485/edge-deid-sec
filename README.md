@@ -200,6 +200,7 @@ docker compose ps
 
 # 關閉服務
 docker compose down
+<<<<<<< HEAD
 
 
 
@@ -280,3 +281,237 @@ rm -f evidence/batch/csv_snapshot/pipeline_latency_vm.csv
 python src/pipeline_local.py
 python src/update_roi_eval.py
 python src/validate_outputs.py
+=======
+```
+## Output Contract Validator 與 Evidence Pack (輸出契約驗證器與證據包)
+
+這一節說明如何驗證 pipeline 輸出格式（contract），以及如何產生可交付、可抽查的 evidence pack。
+
+### 功能概述
+
+- 檢查每個 data/out/<image_id>/ 是否包含：
+  - roi.png
+  - mask.png
+  - deid.png
+  - feature_256.npy
+  - meta.json
+- 驗證 meta.json 的必填欄位與值域：
+  - image_id / input_file 與檔名一致
+  - roi_method_used 非空（除非整張 status=error）
+  - roi_bbox 非空矩形
+  - timing_ms 內含 roi_ms / seg_ms / feat_ms / deid_ms / total_ms，且皆為非負數
+  - status ∈ {ok, quality_fail, error}
+  - status=error 時，error 必須有具體說明
+- 驗證 logs/pipeline_latency_vm.csv：
+  - 表頭欄位順序固定：image_id, input_file, roi_ms, seg_ms, feat_ms, deid_ms, total_ms, status
+  - 每個本批 data/raw 的 image_id 在 CSV 中恰好出現一次，且 image_id / input_file / status 與 meta.json 一致
+- 產生 evidence pack（evidence/<batch-tag>）：
+  - validation_summary.csv：每張影像的 pass/fail 清單與原因
+  - csv_snapshot/pipeline_latency_vm.csv：本批次 CSV 副本
+  - roi_eval.md：對齊 docs/roi_eval.md 結構的 ROI/quality 評估報告快照
+  - samples_for_review/：最多 10 張抽樣樣本，每張包含 roi/mask/deid/feature_256/meta.json，可供 PM / 老師人工檢查
+
+### 一次完整驗證與產生 evidence pack 的步驟
+
+1. 啟動虛擬環境（專案根目錄）  
+   `.\.venv311\Scripts\Activate.ps1`
+
+2. 清除舊的 latency CSV（避免混入舊批次資料）  
+   `Remove-Item .\logs\pipeline_latency_vm.csv`
+
+3. 針對目前 data/raw 這一批影像跑 batch pipeline：  
+   `python src/pipeline_local.py`
+
+4. 更新 ROI 評估報告（可選，但建議一起做）：  
+   `python src/update_roi_eval.py`
+
+5. 執行輸出驗證器並產生 evidence pack（以 batch tag = w4-issue3 為例）：  
+   `python src/validate_outputs.py --batch-tag w4-issue3`
+
+執行後預期終端輸出摘要類似：
+
+- Total images: N  
+- Pass: N  
+- Fail: 0
+
+### 自我檢查與注意事項
+
+- 在 evidence/w4-issue3 中檢查：
+  - validation_summary.csv：所有列的 final_result 應為 pass，若有 fail，files_missing / meta_issues / csv_issues 應能清楚說明原因。
+  - csv_snapshot/pipeline_latency_vm.csv：行數約等於本批影像數，無重複 image_id。
+  - roi_eval.md：統計數字與目前這一批 data/raw / data/out 對起來。
+
+## W4-1 / W4-2 ROI Fallback 更新（給隊友快速交接）
+
+### 本次解的兩個 issue（decomposition）
+
+1) W4-1: YOLO Label Parser 與 BBox 轉換
+- 目標：讀取 YOLO `.txt`（normalized）並轉成 pipeline 使用的 pixel bbox `[x1,y1,x2,y2]`。
+- 主要檔案：
+  - `src/roi/roi_yolo.py`
+  - `test/test_roi_yolo.py`
+  - `test/verify_yolo_bbox.py`
+- 完成內容：
+  - 建立 `load_yolo_bbox(label_path, image_shape)`。
+  - 完整錯誤處理（檔案不存在、格式錯誤、非數字、超範圍、退化 bbox）。
+  - 單元測試 15 個 case（正常與異常路徑）。
+
+2) W4-2: 將 YOLO 整合為 ROI fallback
+- 目標：MediaPipe 失敗時，先嘗試 YOLO label，再退 fixed crop。
+- 主要檔案：
+  - `src/pipeline_local.py`
+  - `src/roi/test_roi_batch.py`
+  - `src/update_roi_eval.py`
+- 完成內容：
+  - ROI 流程改為：`mediapipe -> yolo_fallback -> fixed_fallback`。
+  - `meta.json` 的 `roi_method_used` 新增 `yolo_fallback`、`fixed_fallback`。
+  - 報告統計支援 YOLO fallback 與 fixed fallback 分開計數。
+
+### 額外補強（避免 bootstrap 死循環）
+
+- 在 `src/pipeline_local.py` 加入「自動寫入 YOLO `.txt`」：
+  - 每張圖完成 ROI 後，若 bbox 合法，會在 `data/raw/<image_id>.txt` 寫入一行 YOLO label。
+  - 下一次跑 pipeline 可直接使用該 label 進行 `yolo_fallback`。
+
+
+### 如何測試（隊友可直接執行）
+
+1) 單元測試 YOLO parser
+
+```bash
+python -m pytest test/test_roi_yolo.py -q
+```
+
+預期：全部通過（15 passed）。
+
+2) 跑 batch pipeline（會自動產生/更新 data/raw/*.txt）
+
+```bash
+# Windows PowerShell
+.\.venv311\Scripts\python.exe src\pipeline_local.py
+```
+
+檢查：
+- `data/out/<image_id>/meta.json` 有 `roi_method_used` 與 `roi_bbox`。
+- `roi_method_used` 可能是 `mediapipe` / `yolo_fallback` / `fixed_fallback`。
+- `data/raw/` 會出現或更新同名 `.txt` label。
+
+3) 更新 ROI 評估報告
+
+```bash
+.\.venv311\Scripts\python.exe src\update_roi_eval.py
+```
+
+檢查：
+- 報告中有 `ROI 使用 YOLO fallback` 與 `ROI 使用 fixed fallback` 指標。
+
+4) 可視化抽查 YOLO bbox（verify_yolo）
+
+先決條件：
+- `data/raw` 內要有圖片與同名 `.txt`（例如 `10001.jpg` 與 `10001.txt`）。
+- 若 `.txt` 不齊全，先跑一次 `src/pipeline_local.py` 讓系統自動補寫。
+
+執行指令（Windows PowerShell）：
+
+```bash
+.venv311/Scripts/python.exe test/verify_yolo_bbox.py --output data/verify_out --limit 20
+```
+
+參數說明：
+- `--input`：原始圖片與 label 所在目錄。
+- `--output`：可視化結果輸出目錄。
+- `--limit`：最多處理幾張，先用 10 張快速抽查。
+
+預期終端輸出：
+- `[OK]`：成功讀取 label 並畫框。
+- `[SKIP] no label`：找不到同名 `.txt`，此張被跳過。
+- `[ERR]`：label 內容格式錯誤或圖片讀取失敗。
+
+檢查重點：
+- `data/out/yolo_bbox_*.jpg` 的綠框是否包住目標 ROI。
+- 框不應超出影像邊界，也不應是退化矩形（寬或高接近 0）。
+- 若大量 `[SKIP]`，代表 labels 尚未產生或命名不一致。
+  - samples_for_review/：任選幾個 image_id，確認：
+    - roi.png 是合理的人臉/上半身區域。
+    - mask.png 目前為 placeholder，全黑圖為預期結果。
+    - deid.png 尺寸與輸入一致，沒有明顯壞檔。
+    - meta.json 的 status / error 能解釋這張是 ok 或 quality_fail（例如 status=quality_fail, error="blur; no_face_landmarks"）。
+
+- 每次要產生新的 evidence pack 建議流程：
+  - 先刪除舊的 logs/pipeline_latency_vm.csv。
+  - 視需求清空 data/out 或確保 data/raw 只放本次要驗證的影像。
+  - 再重跑 `python src/pipeline_local.py` 和 `python src/validate_outputs.py --batch-tag <新的名稱>`。
+
+- evidence/ 資料夾通常不建議 commit 進 Git。  
+  在 PR 描述中請註明：
+  - 使用的 batch-tag（例如 w4-issue3）。
+  --batch-tag 後面那個字串只是「這次驗證／證據包的名字」，不是程式裡固定寫死的東西。
+  - reviewer 如需重建 evidence pack，可在 VM 上依照本節步驟重跑一次。
+
+## W4-issue2: YOLO ROI 人工標註摘要（舌頭 ROI）
+
+### 這次實際做了什麼
+
+- 新增簡易 YOLO 標註工具：`test/manual_yolo_annotator.py`
+  - 使用 OpenCV 顯示 `data/raw` 影像。
+  - 滑鼠左鍵拖曳畫出單一 bbox，按 `s` 直接寫入對應的 YOLO `.txt`（class 固定為 0）。
+- 以該工具對 `data/raw` 內 **120 張影像全部重標** 舌頭 ROI：
+  - 框選原則：以舌頭本體為主，保留少量邊界，避免整張臉/頭都包進去。
+  - 每張圖只標註 1 個 bbox（pipeline 目前只讀取第一行 YOLO label）。
+  - 完成後，專案中已完全找不到原本的固定 bootstrap 值 `0 0.500000 0.650000 0.600000 0.600000`。
+- 使用 `test/verify_yolo_bbox.py` 抽查 YOLO bbox：
+  - 在 `data/verify_out/` 產生 `yolo_bbox_<image_id>.jpg`，綠框位置與舌頭 ROI 對齊且彼此不同。
+- 以新的 YOLO labels 重跑 W4 pipeline 與 ROI 報告：
+  - `src/pipeline_local.py` + `src/update_roi_eval.py`。
+  - `docs/roi_eval.md` 更新後顯示：
+    - ROI 成功（mediapipe）：8/120 = 6.7%
+    - ROI 使用 YOLO fallback：112/120 = 93.3%
+    - ROI 使用 fixed fallback：0/120 = 0.0%
+  - 代表所有 fallback case 都使用人工標註的 YOLO bbox，fixed fallback 不再被觸發。
+- 以 batch tag = `w4-issue2` 產生 evidence pack：
+  - `evidence/w4-issue2/validation_summary.csv`
+  - `evidence/w4-issue2/csv_snapshot/pipeline_latency_vm.csv`
+  - `evidence/w4-issue2/roi_eval.md`（報表快照）
+  - `evidence/w4-issue2/samples_for_review/<image_id>/roi.png` 等，用於人工抽查。
+
+### 簡單重跑步驟（需要重新驗證時）
+
+> 前提：`data/raw/*.txt` 已有人工作為舌頭 ROI 標註（可透過 `test/manual_yolo_annotator.py` 產生）。
+
+1. 啟動虛擬環境（專案根目錄）
+
+```bash
+cd d:/edge-deid-sec
+.\.venv311\Scripts\Activate.ps1
+```
+
+2. 以現有 YOLO labels 重跑 W4 ROI pipeline
+
+```bash
+Remove-Item .\logs\pipeline_latency_vm.csv -ErrorAction Ignore
+.\.venv311\Scripts\python.exe src\pipeline_local.py
+.\.venv311\Scripts\python.exe src\update_roi_eval.py
+```
+
+3. 抽查 YOLO bbox（選擇性，但建議執行）
+
+```bash
+.\.venv311\Scripts\python.exe test\verify_yolo_bbox.py --input data/raw --output data/verify_out --limit 20
+```
+
+檢查：`data/verify_out/yolo_bbox_<image_id>.jpg` 的綠框應包住舌頭 ROI，且不同影像 bbox 不應全部相同。
+
+4. 產生或重建 evidence pack（以 w4-issue2 為例）
+
+```bash
+.\.venv311\Scripts\python.exe src\validate_outputs.py --batch-tag w4-issue2
+```
+
+檢查重點：
+
+- `docs/roi_eval.md` 中：
+  - `ROI 使用 YOLO fallback` 為主要 fallback 來源。
+  - `ROI 使用 fixed fallback` 理想上為 0%。
+- `evidence/w4-issue2/samples_for_review/<image_id>/roi.png`：
+  - ROI 裁切集中在舌頭附近，相較早期 fixed 中心裁切有明顯改善。
+>>>>>>> 48dd312d04eed0a4935c1353b7d9b5480555d37c

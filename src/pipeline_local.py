@@ -9,6 +9,7 @@ from pathlib import Path
 try:
     from roi.roi_mediapipe import extract_roi_mediapipe
     from roi.roi_fixed_crop import extract_roi_fixed
+    from roi.roi_yolo import load_yolo_bbox
     from roi.quality_check import check_quality
     from deid.build_tongue_mask import build_mask
     from deid.deid_mask_only import deid_mask_only
@@ -16,6 +17,7 @@ except ImportError:
     # Fallback when running as module from workspace root.
     from src.roi.roi_mediapipe import extract_roi_mediapipe
     from src.roi.roi_fixed_crop import extract_roi_fixed
+    from src.roi.roi_yolo import load_yolo_bbox
     from src.roi.quality_check import check_quality
     from src.deid.build_tongue_mask import build_mask
     from src.deid.deid_mask_only import deid_mask_only
@@ -124,23 +126,40 @@ def run_batch_pipeline():
                 error_msg = quality_result["reason"]
 
             # ======================
-            # ROI (MediaPipe)
+            # ROI: MediaPipe → YOLO fallback → fixed fallback
             # ======================
             start = time.time()
             roi_img, roi_bbox, roi_status, roi_error = extract_roi_mediapipe(image)
 
-            # MediaPipe failed: continue with deterministic fixed-crop fallback.
-            if roi_status != "ok":
-                roi_img, roi_bbox = extract_roi_fixed(image)
-                roi_method_used = "fallback"
-                if roi_img is None:
-                    raise ValueError(f"roi_fallback_failed: {roi_error}")
-                if error_msg:
-                    error_msg = f"{error_msg}; {roi_error}"
-                else:
-                    error_msg = roi_error
-            else:
+            if roi_status == "ok":
                 roi_method_used = "mediapipe"
+            else:
+                # MediaPipe failed — try YOLO label if available.
+                mp_error = roi_error
+                label_path = RAW_DIR / img_path.with_suffix(".txt").name
+                yolo_bbox, yolo_status, yolo_error = load_yolo_bbox(label_path, image.shape)
+
+                if yolo_status == "ok":
+                    x1, y1, x2, y2 = yolo_bbox
+                    roi_img = image[y1:y2, x1:x2].copy()
+                    roi_bbox = yolo_bbox
+                    roi_method_used = "yolo_fallback"
+                    combined_error = mp_error
+                else:
+                    # YOLO also unavailable — use fixed crop as last resort.
+                    roi_img, roi_bbox = extract_roi_fixed(image)
+                    roi_method_used = "fixed_fallback"
+                    combined_error = mp_error
+                    if yolo_status != "ok" and "not found" not in yolo_error:
+                        combined_error = f"{mp_error}; yolo: {yolo_error}"
+
+                if roi_img is None:
+                    raise ValueError(f"roi_all_fallbacks_failed: {combined_error}")
+
+                if error_msg:
+                    error_msg = f"{error_msg}; {combined_error}"
+                else:
+                    error_msg = combined_error
 
             roi_ms = (time.time() - start) * 1000
 
@@ -207,6 +226,29 @@ def run_batch_pipeline():
 
         with open(output_folder / "meta.json", "w") as f:
             json.dump(meta, f, indent=2)
+
+        # ======================
+        # Auto-write YOLO .txt label alongside image.
+        # So the next pipeline run can use yolo_fallback instead of fixed fallback.
+        # Only written when roi_bbox is valid; failure must not affect pipeline result.
+        # ======================
+        if roi_bbox and len(roi_bbox) == 4 and status != "error":
+            try:
+                x1, y1, x2, y2 = roi_bbox
+                h_img, w_img = image.shape[:2]
+                if w_img > 0 and h_img > 0 and x2 > x1 and y2 > y1:
+                    xc = (x1 + x2) / 2 / w_img
+                    yc = (y1 + y2) / 2 / h_img
+                    bw = (x2 - x1) / w_img
+                    bh = (y2 - y1) / h_img
+                    label_path = RAW_DIR / img_path.with_suffix(".txt").name
+                    if not label_path.exists():
+                        label_path.write_text(
+                            f"0 {xc:.6f} {yc:.6f} {bw:.6f} {bh:.6f}\n",
+                            encoding="utf-8",
+                        )
+            except Exception:
+                pass
 
         # ======================
         # Append CSV

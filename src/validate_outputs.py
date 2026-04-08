@@ -87,7 +87,6 @@ def _check_csv(image_id, input_file, rows_by_id):
     if len(rows) > 1:
         issues.append("csv_row_duplicate")
 
-    # For duplicated rows, still validate content of the first row for extra signal.
     row = rows[0]
     if row.get("input_file") != input_file:
         issues.append("csv_input_file_mismatch")

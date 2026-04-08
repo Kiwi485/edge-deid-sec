@@ -20,6 +20,22 @@ logs/*.csv
 
 data/out/
 
-# keep optional placeholders
+# auto-generated reports (changes every test run)
+docs/roi_eval.md
 
-!data/out/.gitkeep
+# keep optional placeholders
+!data/out/.
+
+# evidence 
+evidence
+
+#raw/txt（原本為避免資料太大而忽略，若需將標註結果版本控，可將下列註解）
+# data/raw/*.txt
+# data/verify_out
+
+# 目前專案需要追蹤的標註與可視化結果
+!data/raw/*.txt
+!data/verify_out/**
+!evidence/w4-issue2/**
+
+
