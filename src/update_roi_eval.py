@@ -5,9 +5,13 @@ from pathlib import Path
 
 
 VALID_EXT = {".jpg", ".jpeg", ".png"}
-RAW_DIR = Path("data/raw")
-OUT_DIR = Path("data/out")
-REPORT_PATH = Path("docs/roi_eval.md")
+BASE_DIR = Path(__file__).resolve().parents[1]
+RAW_DIR = BASE_DIR / "data/raw"
+OUT_DIR = BASE_DIR / "data/out"
+REPORT_PATHS = [
+    BASE_DIR / "docs/roi_eval.md",
+    BASE_DIR / "evidence/batch/roi_eval.md",
+]
 
 QUALITY_REASON_LABELS = {
     "ok": "通過",
@@ -105,8 +109,8 @@ def build_report_text():
         f"- 影像數量：{total}",
         f"- 已匹配 meta 數量：{matched}",
         "- 流程：quality gate -> MediaPipe ROI -> YOLO fallback -> fixed-crop fallback",
-        "- 批次執行指令：`d:/edge-deid-sec/.venv311/Scripts/python.exe src/pipeline_local.py`",
-        "- 報告更新指令：`d:/edge-deid-sec/.venv311/Scripts/python.exe src/update_roi_eval.py`",
+        "- 批次執行指令：`python src/pipeline_local.py`",
+        "- 報告更新指令：`python src/update_roi_eval.py`",
         f"- 產生時間：{now}",
         "",
         "## 驗收檢查",
@@ -148,11 +152,12 @@ def build_report_text():
 
 
 def main():
-    REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
     report = build_report_text()
-    with open(REPORT_PATH, "w", encoding="utf-8") as f:
-        f.write(report)
-    print(f"Updated report: {REPORT_PATH}")
+    for report_path in REPORT_PATHS:
+        report_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(report_path, "w", encoding="utf-8") as f:
+            f.write(report)
+        print(f"Updated report: {report_path}")
 
 
 if __name__ == "__main__":
