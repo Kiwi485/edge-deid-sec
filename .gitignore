@@ -36,6 +36,5 @@ evidence
 # 目前專案需要追蹤的標註與可視化結果
 !data/raw/*.txt
 !data/verify_out/**
-!evidence/w4-issue2/**
 
 
