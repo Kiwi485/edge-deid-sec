@@ -51,7 +51,7 @@ git checkout -b feature-roi-detection
 
 * 本專案 **不會將虛擬環境加入 Git**
 
-  * .venv / .venv311 不會被 push
+  * .venv / .venv311  / venv311 不會被 push
 * 每位成員需在 **自己的電腦** 建立虛擬環境
 * 套件版本以 requirements.txt 為準（若有提供）
 
@@ -552,3 +552,4 @@ Remove-Item .\logs\pipeline_latency_vm.csv -ErrorAction Ignore
 - benchmark 報告：`results/benchmark_vm_v0.md`
 - 指標涵蓋：roi_ms / seg_ms / feat_ms / deid_ms / total_ms
 - 統計涵蓋：p50 / p95 / p99，並依 status 分群（ok / quality_fail / error）
+
