@@ -553,3 +553,4 @@ Remove-Item .\logs\pipeline_latency_vm.csv -ErrorAction Ignore
 - 指標涵蓋：roi_ms / seg_ms / feat_ms / deid_ms / total_ms
 - 統計涵蓋：p50 / p95 / p99，並依 status 分群（ok / quality_fail / error）
 
+123321434
