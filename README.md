@@ -200,65 +200,6 @@ docker compose ps
 
 # 關閉服務
 docker compose down
-<<<<<<< HEAD
-
-
-
-
-
-
-好的！您可以親自在終端機執行以下流程，來確認所有問題都已經被解決並且資料完美：
-
-### 第一步：進入專案環境
-請打開一個新的 Mac 終端機，並確保進入正確的專案資料夾與啟動虛擬環境：
-```bash
-cd /Users/chenguanjie/Desktop/脫敏輸出/edge-deid-sec
-source .venv311/bin/activate
-```
-
----
-
-### 第二步：故意製造破壞（驗證覆寫機制）
-既然我們要驗證「修復是否有效」，我們要故意執行兩次 pipeline，確認它真的**不會**把資料疊加上去（變成兩倍）：
-```bash
-python src/pipeline_local.py
-python src/pipeline_local.py
-```
-> *(執行過程中，如果您有 120 張圖片，它應該只會花幾十秒跑完。)*
-
----
-
-### 第三步：檢查 CSV 檔案行數
-跑完兩次後，我們來檢查最新產生的 pipeline_latency_vm.csv 的行數。因為您有 120 張相片加上 1 行標題列，行數必須精準卡在 121行。
-輸入這行：
-```bash
-wc -l logs/pipeline_latency_vm.csv
-```
-✅ **預期結果：** 會印出 `121 logs/pipeline_latency_vm.csv`。
-
----
-
-### 第四步：確保沒有任何重複的 `image_id`
-使用 `awk` 指令將 CSV 的第一欄抓出來，並檢查有沒有重複的項目：
-```bash
-awk -F',' 'NR>1 {print $1}' logs/pipeline_latency_vm.csv | sort | uniq -d
-```
-✅ **預期結果：** 終端機什麼字都不應該印出來。如果有殘留的舊資料，這裡會跑出一堆重複的檔名；如果一個字都沒跳出來，代表所有的檔名都只出現了一次！
-
----
-
-### 第五步：產出您要的 Final Validation 報表
-如果上面的資料都很完美，這個步驟就能順利通過，把假性的 fail 完全消除：
-```bash
-
-python src/pipeline_local.py
-python src/update_roi_eval.py
-python src/validate_outputs.py
-```
-✅ **預期結果：** 會看到：
-```
-Validation summary
-==================
 Total images: 120
 Pass: 120
 Fail: 0
@@ -281,7 +222,6 @@ rm -f evidence/batch/csv_snapshot/pipeline_latency_vm.csv
 python src/pipeline_local.py
 python src/update_roi_eval.py
 python src/validate_outputs.py
-=======
 ```
 ## Output Contract Validator 與 Evidence Pack (輸出契約驗證器與證據包)
 
@@ -514,43 +454,3 @@ Remove-Item .\logs\pipeline_latency_vm.csv -ErrorAction Ignore
   - `ROI 使用 fixed fallback` 理想上為 0%。
 - `evidence/w4-issue2/samples_for_review/<image_id>/roi.png`：
   - ROI 裁切集中在舌頭附近，相較早期 fixed 中心裁切有明顯改善。
-
-## Week 4: VM Smoke Test 與 Benchmark v0
-
-目標是先做小批次 smoke test，確認 VM 環境可跑，再做正式 benchmark 取得可比較 baseline。
-
-### 1) VM smoke test（5 到 10 張）
-
-以 VS Code「執行按鈕」為主流程：
-
-1. 開啟 `src/pipeline_local.py`，按右上角執行按鈕（Run Python File）。
-2. 開啟 `src/validate_outputs.py`，按執行按鈕。
-
-> 若只用執行按鈕（不帶參數），`pipeline_local.py` 會使用預設設定；若你要嚴格限制為 5 到 10 張，需改用參數模式（或暫時調整 `--limit` 預設值）。
-
-用途：
-
-- 快速確認 model 檔與依賴可正常載入（含 roi_mediapipe 初始化）
-- 提前暴露 VM 路徑、套件、模型資源等環境問題
-
-### 2) 正式 benchmark v0（至少 100 張）
-
-以 VS Code「執行按鈕」依序執行：
-
-1. `src/pipeline_local.py`
-2. `src/validate_outputs.py`
-3. `src/benchmark_vm.py`
-
-正式 benchmark 前的資料清理原則：
-
-- `logs/pipeline_latency_vm.csv` 預設會在執行 `src/pipeline_local.py` 時自動重建（除非你刻意使用 append 模式），通常不需要手動刪除。
-- `data/out` 依需求決定是否清空；若要做完全可追溯的乾淨批次，建議清空或改用新的輸出資料夾。
-
-### 3) 交付物
-
-- 乾淨 latency CSV（不混入本機或舊測試資料）
-- benchmark 報告：`results/benchmark_vm_v0.md`
-- 指標涵蓋：roi_ms / seg_ms / feat_ms / deid_ms / total_ms
-- 統計涵蓋：p50 / p95 / p99，並依 status 分群（ok / quality_fail / error）
-
-123321434
