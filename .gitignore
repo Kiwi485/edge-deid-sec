@@ -38,4 +38,24 @@ evidence
 !data/verify_out/**
 !evidence/w4-issue2/**
 
+# 其他不需要追蹤的資料夾或檔案
+results/benchmark_vm_v0_check.md
+results/benchmark_vm_v0.md
 
+# ── Tongue Segmentation (src/seg/) ──────────────────────────────────
+
+# CVAT / Roboflow 匯入的原始影像（體積大，不放 git）
+data/cvat/
+# 但保留 CVAT 匯出的標註 JSON（讓 git 追蹤標註版本）
+!data/cvat/**/annotations/
+!data/cvat/**/annotations/*.json
+
+
+# 訓練產出的 model checkpoint（體積大）
+models/
+
+# 推論輸出圖片
+outputs/
+
+# 訓練時產生的 Python cache（seg 模組）
+src/seg/__pycache__/
