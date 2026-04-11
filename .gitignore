@@ -38,4 +38,6 @@ evidence
 !data/verify_out/**
 !evidence/w4-issue2/**
 
-
+# 其他不需要追蹤的資料夾或檔案
+results/benchmark_vm_v0_check.md
+results/benchmark_vm_v0.md
