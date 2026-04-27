@@ -850,6 +850,38 @@ docker exec -it cvat_server bash -ic 'python3 manage.py createsuperuser'
 
 然後依序輸入：username、email、password。
 
+備註（常見流程與替代作法）：
+
+- 如果你想在 container 內建立多個使用者或要用程式建立，可以進 `python3 manage.py shell`，再貼入 `create_user` 程式碼。貼入多行程式碼後，務必在結尾按一次 Enter 再按一次 Enter（也就是留一個空白行），否則像在 `for` 迴圈未結束的情況下直接輸入 `exit()` 會收到 `SyntaxError: invalid syntax`。
+
+- 範例（可直接整段貼入 shell）：
+
+```python
+from django.contrib.auth import get_user_model
+User = get_user_model()
+
+users = [
+  {"username":"teammate2","email":"teammate2@example.com","password":"Teammate2Pass123"},
+  {"username":"teammate3","email":"teammate3@example.com","password":"Teammate3Pass123"}
+]
+
+for u in users:
+  if not User.objects.filter(username=u["username"]).exists():
+    User.objects.create_user(username=u["username"], email=u["email"], password=u["password"])
+    print(f'Created user: {u["username"]}')
+  else:
+    print(f'User already exists: {u["username"]}')
+
+```
+
+- 更簡單／保險的做法是每次在 shell 裡只建立一個 user：
+
+```python
+User.objects.create_user(username="teammate2", email="teammate2@example.com", password="Teammate2Pass123")
+```
+
+按完並看到結果後再輸入 `exit()` 退出 container。
+
 ---
 
 ### 9. 解決 localhost / IP 存取問題
