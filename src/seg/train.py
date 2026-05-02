@@ -37,10 +37,10 @@ except ImportError:
 
 try:
     from seg.dataset import TongueSegDataset, get_transforms
-    from seg.model import build_model, get_device, count_parameters
+    from seg.model import build_model_by_arch, get_device, count_parameters, ARCH_CHOICES
 except ImportError:
     from src.seg.dataset import TongueSegDataset, get_transforms
-    from src.seg.model import build_model, get_device, count_parameters
+    from src.seg.model import build_model_by_arch, get_device, count_parameters, ARCH_CHOICES
 
 
 # ---------------------------------------------------------------------------
@@ -185,10 +185,13 @@ def build_datasets(args):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Train U-Net + MobileNetV2 tongue segmentation"
+        description="Train tongue segmentation（支援 unet_mobilenet / unet_resnet / deeplabv3）"
     )
     parser.add_argument("--data-dir", type=str, required=True,
                         help="資料集根目錄（Roboflow 或 flat 格式）")
+    parser.add_argument("--arch", type=str, default="unet_mobilenet",
+                        choices=ARCH_CHOICES,
+                        help="模型架構：unet_mobilenet | unet_resnet | deeplabv3")
     parser.add_argument("--epochs", type=int, default=50)
     parser.add_argument("--batch-size", type=int, default=8)
     parser.add_argument("--img-size", type=int, default=256,
@@ -199,7 +202,7 @@ def main():
     parser.add_argument("--device", type=str, default=None,
                         help="cpu 或 cuda（不指定則自動選擇）")
     parser.add_argument("--out-dir", type=str, default="models/seg",
-                        help="checkpoint 儲存目錄")
+                        help="checkpoint 儲存目錄（會在此目錄下建立 arch 子目錄）")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--num-workers", type=int, default=0,
                         help="DataLoader workers（Windows 建議設 0）")
@@ -240,8 +243,16 @@ def main():
 
     # ── Model ────────────────────────────────────────────────────────
     encoder_weights = None if args.no_pretrain else "imagenet"
-    model = build_model(encoder_weights=encoder_weights).to(device)
-    print(f"Model: U-Net + MobileNetV2 | encoder_weights={encoder_weights}")
+    model = build_model_by_arch(
+        arch=args.arch,
+        encoder_weights=encoder_weights,
+    ).to(device)
+    arch_label = {
+        "unet_mobilenet": "U-Net + MobileNetV2",
+        "unet_resnet":    "U-Net + ResNet34",
+        "deeplabv3":      "DeepLabV3+ + ResNet50",
+    }.get(args.arch, args.arch)
+    print(f"Model: {arch_label} | encoder_weights={encoder_weights}")
     print(f"Trainable params: {count_parameters(model):,}")
 
     # ── Loss ─────────────────────────────────────────────────────────
@@ -255,7 +266,8 @@ def main():
     )
 
     # ── Output ───────────────────────────────────────────────────────
-    out_dir = Path(args.out_dir)
+    # 每個 arch 儲存到獨立子目錄，方便比較
+    out_dir = Path(args.out_dir) / args.arch
     out_dir.mkdir(parents=True, exist_ok=True)
     best_ckpt = out_dir / "best.pth"
     last_ckpt = out_dir / "last.pth"

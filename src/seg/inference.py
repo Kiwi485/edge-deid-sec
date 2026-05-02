@@ -20,9 +20,9 @@ import torch
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 try:
-    from seg.model import build_model, get_device
+    from seg.model import build_model_by_arch, get_device
 except ImportError:
-    from src.seg.model import build_model, get_device
+    from src.seg.model import build_model_by_arch, get_device
 
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
@@ -51,6 +51,7 @@ def run_inference(
     img_size: int = 256,
     threshold: float = 0.5,
     device: torch.device = None,
+    arch: str = "unet_mobilenet",
 ):
     """
     對單張影像執行 tongue segmentation 推論。
@@ -80,7 +81,9 @@ def run_inference(
 
     # Load model
     ckpt = torch.load(model_path, map_location=device, weights_only=False)
-    model = build_model()
+    # 自動從 checkpoint 的 args 讀取 arch；若無則使用傳入值（向下相容舊 checkpoint）
+    saved_arch = ckpt.get("args", {}).get("arch", arch)
+    model = build_model_by_arch(arch=saved_arch, encoder_weights=None)
     model.load_state_dict(ckpt["model_state_dict"])
     model.to(device).eval()
 
@@ -111,9 +114,11 @@ def main():
     parser.add_argument("--image", type=str, required=True, help="輸入影像路徑")
     parser.add_argument("--model", type=str, default="models/seg/best.pth",
                         help="checkpoint 路徑")
+    parser.add_argument("--arch", type=str, default="unet_mobilenet",
+                        help="模型架構（checkpoint 內已記錄時自動讀取，一般不需手動指定）")
     parser.add_argument("--img-size", type=int, default=256,
                         help="模型輸入邊長（需與訓練時相同）")
-    parser.add_argument("--threshold", type=float, default=0.5, help="mask 閾值")
+    parser.add_argument("--threshold", type=float, default=0.5, help="mask 閾値")
     parser.add_argument("--out-dir", type=str, default="outputs",
                         help="輸出目錄（mask + tongue-only 圖片）")
     args = parser.parse_args()
@@ -127,7 +132,7 @@ def main():
 
     print(f"Processing: {args.image}")
     mask_np, tongue_only = run_inference(
-        args.image, args.model, args.img_size, args.threshold
+        args.image, args.model, args.img_size, args.threshold, arch=args.arch
     )
 
     cv2.imwrite(str(mask_path), mask_np)
