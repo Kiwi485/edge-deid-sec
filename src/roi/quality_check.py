@@ -6,7 +6,7 @@ def check_quality(
     image,
     min_width=320,
     min_height=240,
-    blur_var_threshold=80.0,
+    blur_var_threshold=10.0,
     brightness_low=45.0,
     brightness_high=210.0,
 ):

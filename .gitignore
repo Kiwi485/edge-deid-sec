@@ -59,3 +59,5 @@ outputs/
 
 # 訓練時產生的 Python cache（seg 模組）
 src/seg/__pycache__/
+
+viz_unet_mobilenet/

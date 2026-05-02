@@ -15,6 +15,8 @@ try:
     from roi.quality_check import check_quality
     from deid.build_tongue_mask import build_mask
     from deid.deid_mask_only import deid_mask_only
+    from seg.inference import run_inference
+    from seg.feature_extractor import extract_features
 except ImportError:
     # Fallback when running as module from workspace root.
     from src.roi.roi_mediapipe import extract_roi_mediapipe
@@ -23,6 +25,8 @@ except ImportError:
     from src.roi.quality_check import check_quality
     from src.deid.build_tongue_mask import build_mask
     from src.deid.deid_mask_only import deid_mask_only
+    from src.seg.inference import run_inference
+    from src.seg.feature_extractor import extract_features
 
 
 RAW_DIR = Path("data/raw")
@@ -32,6 +36,11 @@ CSV_PATH = LOG_DIR / "pipeline_latency_vm.csv"
 VALID_EXT = {".jpg", ".jpeg", ".png"}
 # Set to (width, height) to force resize, or None to keep original
 RESIZE_TO = (640, 480)
+
+# U-Net segmentation model settings
+SEG_MODEL_PATH = Path("models/seg/best.pth")
+SEG_IMG_SIZE = 256
+SEG_THRESHOLD = 0.5
 
 
 def ensure_dirs(raw_dir: Path, out_dir: Path, csv_path: Path):
@@ -195,22 +204,35 @@ def run_batch_pipeline(
             cv2.imwrite(str(output_folder / "roi.png"), roi_img)
 
             # ======================
-            # Segmentation
+            # Segmentation（U-Net model）
             # ======================
             start = time.time()
-            m = build_mask(image, roi_bbox)
-            if m is not None:
-                mask = (m * 255).astype(np.uint8) if m.dtype == np.bool_ else np.where(m > 0, 255, 0).astype(np.uint8)
+            if SEG_MODEL_PATH.exists():
+                mask, _ = run_inference(
+                    str(img_path),
+                    str(SEG_MODEL_PATH),
+                    img_size=SEG_IMG_SIZE,
+                    threshold=SEG_THRESHOLD,
+                )
+                # run_inference returns mask at original image size (0 or 255)
+                # If RESIZE_TO is set, resize mask to match the resized image
+                if RESIZE_TO is not None:
+                    mask = cv2.resize(mask, RESIZE_TO, interpolation=cv2.INTER_NEAREST)
             else:
-                mask = np.zeros((h, w), dtype=np.uint8)
+                # Fallback to HSV method if model checkpoint not found
+                m = build_mask(image, roi_bbox)
+                if m is not None:
+                    mask = (m * 255).astype(np.uint8) if m.dtype == np.bool_ else np.where(m > 0, 255, 0).astype(np.uint8)
+                else:
+                    mask = np.zeros((h, w), dtype=np.uint8)
             seg_ms = (time.time() - start) * 1000
             cv2.imwrite(str(output_folder / "mask.png"), mask)
 
             # ======================
-            # Feature 256 (placeholder)
+            # Feature 256
             # ======================
             start = time.time()
-            feature_256 = np.zeros(256, dtype=np.float32)
+            feature_256 = extract_features(image, mask)
             np.save(output_folder / "feature_256.npy", feature_256)
             feat_ms = (time.time() - start) * 1000
 
