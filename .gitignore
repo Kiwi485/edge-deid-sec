@@ -61,3 +61,20 @@ outputs/
 src/seg/__pycache__/
 
 viz_unet_mobilenet/
+
+roi_face_test_out/
+roi_seg_test_out/ 
+
+test_roi_face.py
+# ── YOLO ROI detector ─────────────────────────────────
+runs/
+data/yolo/
+yolov8n.pt
+*.cache
+
+# pytest
+.pytest_cache/
+
+# 保留訓練好的 YOLO 權重（讓隊友直接用，不必重訓）
+!models/yolo/
+!models/yolo/best.pt
