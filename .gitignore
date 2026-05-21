@@ -78,3 +78,7 @@ yolov8n.pt
 # 保留訓練好的 YOLO 權重（讓隊友直接用，不必重訓）
 !models/yolo/
 !models/yolo/best.pt
+
+# iPhone HEIC 原檔（pipeline 不支援，請先轉成 .jpg）
+data/raw/*.HEIC
+data/raw/*.heic
