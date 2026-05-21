@@ -112,13 +112,18 @@ def extract_roi_mediapipe(image):
         y_max = min(h, int(max(ys)))
 
         # Add margin to make ROI less sensitive to landmark jitter.
+        # Top: small padding above lips.
+        # Bottom: extend 3× the lip-landmark height below y_max so a
+        # protruding tongue is captured without including chin / neck / clothing.
+        lip_h = y_max - y_min
         pad_x = int((x_max - x_min) * 0.15)
-        pad_y = int((y_max - y_min) * 0.25)
+        pad_y_top = int(lip_h * 0.20)
+        pad_y_bot = int(lip_h * 3.0)
 
         x1 = max(0, x_min - pad_x)
-        y1 = max(0, y_min - pad_y)
+        y1 = max(0, y_min - pad_y_top)
         x2 = min(w, x_max + pad_x)
-        y2 = min(h, y_max + pad_y)
+        y2 = min(h, y_max + pad_y_bot)
 
         if x2 <= x1 or y2 <= y1:
             return None, [], "error", "invalid roi bbox"

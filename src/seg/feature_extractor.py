@@ -24,26 +24,31 @@ from typing import Optional
 # Internal helpers
 # ---------------------------------------------------------------------------
 
-def _safe_tongue_pixels(image_bgr: np.ndarray, mask: np.ndarray):
-    """Return (tongue_bgr, tongue_rgb, mask_bool) clipped to tongue region."""
-    mask_bool = mask > 0
-    if mask_bool.sum() == 0:
-        return None, None, mask_bool
-    tongue_bgr = image_bgr.copy()
-    tongue_bgr[~mask_bool] = 0
-    tongue_rgb = cv2.cvtColor(tongue_bgr, cv2.COLOR_BGR2RGB)
-    return tongue_bgr, tongue_rgb, mask_bool
+def _crop_to_bbox(image_bgr: np.ndarray, mask: np.ndarray):
+    """Crop image+mask to the tight bbox of mask>0 to avoid wasting work on background.
+
+    Returns (cropped_bgr, cropped_mask_u8, mask_bool) or (None, None, None) on empty mask.
+    """
+    mask_u8 = (mask > 0).astype(np.uint8)
+    if mask_u8.sum() == 0:
+        return None, None, None
+
+    ys, xs = np.where(mask_u8 > 0)
+    y0, y1 = ys.min(), ys.max() + 1
+    x0, x1 = xs.min(), xs.max() + 1
+    crop_img = image_bgr[y0:y1, x0:x1]
+    crop_mask = mask_u8[y0:y1, x0:x1]
+    return crop_img.copy(), crop_mask, crop_mask.astype(bool)
 
 
-def _hsv_histogram(tongue_bgr: np.ndarray, mask_bool: np.ndarray, bins: int = 16) -> np.ndarray:
-    """HSV histogram on tongue pixels only — 3 × bins dims."""
-    hsv = cv2.cvtColor(tongue_bgr, cv2.COLOR_BGR2HSV).astype(np.float32)
-    feats = []
+def _hsv_histogram(crop_bgr: np.ndarray, crop_mask: np.ndarray, bins: int = 16) -> np.ndarray:
+    """HSV histogram via cv2.calcHist (C++) — 3 × bins dims."""
+    hsv = cv2.cvtColor(crop_bgr, cv2.COLOR_BGR2HSV)
     ranges = [(0, 180), (0, 256), (0, 256)]
+    feats = []
     for ch, (lo, hi) in enumerate(ranges):
-        vals = hsv[:, :, ch][mask_bool]
-        hist, _ = np.histogram(vals, bins=bins, range=(lo, hi))
-        hist = hist.astype(np.float32)
+        hist = cv2.calcHist([hsv], [ch], crop_mask, [bins], [lo, hi])
+        hist = hist.flatten().astype(np.float32)
         s = hist.sum()
         if s > 0:
             hist /= s
@@ -51,22 +56,26 @@ def _hsv_histogram(tongue_bgr: np.ndarray, mask_bool: np.ndarray, bins: int = 16
     return np.concatenate(feats)  # 48 dims
 
 
-def _rgb_stats(tongue_bgr: np.ndarray, mask_bool: np.ndarray) -> np.ndarray:
+def _rgb_stats(crop_bgr: np.ndarray, mask_bool: np.ndarray) -> np.ndarray:
     """Per-channel RGB stats: mean, std, p25, p50, p75, skew → 6×3=18, padded to 48."""
-    rgb = cv2.cvtColor(tongue_bgr, cv2.COLOR_BGR2RGB).astype(np.float32)
-    feats = []
+    rgb = cv2.cvtColor(crop_bgr, cv2.COLOR_BGR2RGB)
+    feats = np.zeros(18, dtype=np.float32)
     for ch in range(3):
         vals = rgb[:, :, ch][mask_bool]
         if vals.size == 0:
-            feats.extend([0.0] * 6)
             continue
-        mean = float(vals.mean())
-        std = float(vals.std())
-        p25, p50, p75 = float(np.percentile(vals, 25)), float(np.percentile(vals, 50)), float(np.percentile(vals, 75))
-        skew = float(((vals - mean) ** 3).mean() / (std ** 3 + 1e-6))
-        feats.extend([mean / 255.0, std / 255.0, p25 / 255.0, p50 / 255.0, p75 / 255.0, skew])
-    arr = np.array(feats, dtype=np.float32)  # 18 dims
-    return np.pad(arr, (0, 48 - len(arr)))   # pad to 48
+        vals = vals.astype(np.float32)
+        mean = vals.mean()
+        std = vals.std()
+        q = np.quantile(vals, [0.25, 0.50, 0.75])
+        skew = ((vals - mean) ** 3).mean() / (std ** 3 + 1e-6)
+        base = ch * 6
+        feats[base:base + 6] = [
+            mean / 255.0, std / 255.0,
+            q[0] / 255.0, q[1] / 255.0, q[2] / 255.0,
+            float(skew),
+        ]
+    return np.pad(feats, (0, 48 - len(feats)))   # pad to 48
 
 
 def _shape_features(mask: np.ndarray) -> np.ndarray:
@@ -111,14 +120,10 @@ def _shape_features(mask: np.ndarray) -> np.ndarray:
     return np.pad(feats, (0, 48 - len(feats)))  # pad to 48
 
 
-def _lbp_histogram(tongue_bgr: np.ndarray, mask_bool: np.ndarray, bins: int = 112) -> np.ndarray:
-    """
-    Simplified LBP-like texture histogram using pixel difference patterns.
-    Uses 8-neighbourhood uniform comparisons → histogram over tongue pixels.
-    """
-    gray = cv2.cvtColor(tongue_bgr, cv2.COLOR_BGR2GRAY).astype(np.float32)
+def _lbp_histogram(crop_bgr: np.ndarray, mask_bool: np.ndarray, bins: int = 112) -> np.ndarray:
+    """8-neighbour LBP-like texture histogram over the cropped tongue region."""
+    gray = cv2.cvtColor(crop_bgr, cv2.COLOR_BGR2GRAY)
 
-    # 8-direction kernels for neighbour difference
     offsets = [(-1, -1), (-1, 0), (-1, 1),
                (0,  -1),          (0,  1),
                (1,  -1), (1,  0), (1,  1)]
@@ -127,7 +132,7 @@ def _lbp_histogram(tongue_bgr: np.ndarray, mask_bool: np.ndarray, bins: int = 11
     lbp = np.zeros((h, w), dtype=np.uint8)
     for bit, (dy, dx) in enumerate(offsets):
         shifted = np.roll(np.roll(gray, dy, axis=0), dx, axis=1)
-        lbp += ((gray >= shifted).astype(np.uint8) << bit)
+        lbp |= ((gray >= shifted).astype(np.uint8) << bit)
 
     vals = lbp[mask_bool]
     hist, _ = np.histogram(vals, bins=bins, range=(0, 256))
@@ -163,14 +168,19 @@ def extract_features(image_bgr: np.ndarray, mask: np.ndarray) -> np.ndarray:
         mask = cv2.resize(mask, (image_bgr.shape[1], image_bgr.shape[0]),
                           interpolation=cv2.INTER_NEAREST)
 
-    tongue_bgr, tongue_rgb, mask_bool = _safe_tongue_pixels(image_bgr, mask)
-    if tongue_bgr is None:
-        return np.zeros(256, dtype=np.float32)
-
-    hsv_feat   = _hsv_histogram(tongue_bgr, mask_bool, bins=16)   # 48
-    rgb_feat   = _rgb_stats(tongue_bgr, mask_bool)                 # 48
+    # Shape features need the full-image mask (area_ratio is wrt full image).
     shape_feat = _shape_features(mask)                             # 48
-    lbp_feat   = _lbp_histogram(tongue_bgr, mask_bool, bins=112)  # 112
+
+    # Color/texture features only need the tight tongue crop.
+    crop_bgr, crop_mask, mask_bool = _crop_to_bbox(image_bgr, mask)
+    if crop_bgr is None:
+        return np.concatenate([np.zeros(48 + 48, dtype=np.float32),
+                               shape_feat,
+                               np.zeros(112, dtype=np.float32)])
+
+    hsv_feat = _hsv_histogram(crop_bgr, crop_mask, bins=16)        # 48
+    rgb_feat = _rgb_stats(crop_bgr, mask_bool)                     # 48
+    lbp_feat = _lbp_histogram(crop_bgr, mask_bool, bins=112)       # 112
 
     feat = np.concatenate([hsv_feat, rgb_feat, shape_feat, lbp_feat])  # 256
     assert feat.shape == (256,), f"Feature dim mismatch: {feat.shape}"

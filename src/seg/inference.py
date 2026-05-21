@@ -35,6 +35,28 @@ _NORMALIZE = A.Compose(
     ]
 )
 
+# Model singleton cache so we don't reload weights for every image.
+_CACHED_MODEL = None
+_CACHED_MODEL_PATH = None
+_CACHED_DEVICE = None
+
+
+def _get_model(model_path: str, device: torch.device, arch: str = "unet_mobilenet"):
+    global _CACHED_MODEL, _CACHED_MODEL_PATH, _CACHED_DEVICE
+    if _CACHED_MODEL is not None and _CACHED_MODEL_PATH == model_path:
+        return _CACHED_MODEL, _CACHED_DEVICE
+
+    ckpt = torch.load(model_path, map_location=device, weights_only=False)
+    saved_arch = ckpt.get("args", {}).get("arch", arch)
+    model = build_model_by_arch(arch=saved_arch, encoder_weights=None)
+    model.load_state_dict(ckpt["model_state_dict"])
+    model.to(device).eval()
+
+    _CACHED_MODEL = model
+    _CACHED_MODEL_PATH = model_path
+    _CACHED_DEVICE = device
+    return model, device
+
 
 def _preprocess(img_rgb: np.ndarray, img_size: int) -> torch.Tensor:
     """Resize, normalize, add batch dim → (1, C, H, W) float tensor."""
@@ -52,17 +74,20 @@ def run_inference(
     threshold: float = 0.5,
     device: torch.device = None,
     arch: str = "unet_mobilenet",
+    image_array: np.ndarray = None,
 ):
     """
     對單張影像執行 tongue segmentation 推論。
 
     Parameters
     ----------
-    image_path : str  — 輸入影像路徑
-    model_path : str  — checkpoint 路徑（models/seg/best.pth）
-    img_size   : int  — 模型輸入邊長（需與訓練時一致）
-    threshold  : float — sigmoid 閾值（預設 0.5）
-    device     : torch.device | None — None 時自動選擇
+    image_path  : str  — 輸入影像路徑（當 image_array 為 None 時使用）
+    model_path  : str  — checkpoint 路徑（models/seg/best.pth）
+    img_size    : int  — 模型輸入邊長（需與訓練時一致）
+    threshold   : float — sigmoid 閾值（預設 0.5）
+    device      : torch.device | None — None 時自動選擇
+    arch        : str  — 模型架構（checkpoint 內未記錄時才使用）
+    image_array : np.ndarray | None — 如提供，直接使用此 BGR ndarray，跳過磁碟讀取
 
     Returns
     -------
@@ -72,20 +97,18 @@ def run_inference(
     if device is None:
         device = get_device()
 
-    # Load image
-    img_bgr = cv2.imread(str(image_path))
-    if img_bgr is None:
-        raise FileNotFoundError(f"Cannot load image: {image_path}")
+    # Load image (prefer in-memory array to avoid disk I/O)
+    if image_array is not None:
+        img_bgr = image_array
+    else:
+        img_bgr = cv2.imread(str(image_path))
+        if img_bgr is None:
+            raise FileNotFoundError(f"Cannot load image: {image_path}")
     orig_h, orig_w = img_bgr.shape[:2]
     img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
 
-    # Load model
-    ckpt = torch.load(model_path, map_location=device, weights_only=False)
-    # 自動從 checkpoint 的 args 讀取 arch；若無則使用傳入值（向下相容舊 checkpoint）
-    saved_arch = ckpt.get("args", {}).get("arch", arch)
-    model = build_model_by_arch(arch=saved_arch, encoder_weights=None)
-    model.load_state_dict(ckpt["model_state_dict"])
-    model.to(device).eval()
+    # Load model (cached singleton)
+    model, device = _get_model(model_path, device, arch)
 
     # Preprocess
     inp = _preprocess(img_rgb, img_size).to(device)

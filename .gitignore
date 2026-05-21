@@ -61,3 +61,34 @@ outputs/
 src/seg/__pycache__/
 
 viz_unet_mobilenet/
+
+roi_face_test_out/
+roi_seg_test_out/ 
+
+test_roi_face.py
+# ── YOLO ROI detector ─────────────────────────────────
+runs/
+data/yolo/
+yolov8n.pt
+*.cache
+
+# pytest
+.pytest_cache/
+
+# 保留訓練好的 YOLO 權重（讓隊友直接用，不必重訓）
+!models/yolo/
+!models/yolo/best.pt
+
+# iPhone HEIC 原檔（pipeline 不支援，請先轉成 .jpg）
+data/raw/*.HEIC
+data/raw/*.heic
+
+# ── data/raw 新增圖片不追蹤（只保留 .txt 標註） ──
+# 已經 commit 過的舊圖會繼續被追蹤，只有「未被追蹤的新圖」會被擋下
+data/raw/*.jpg
+data/raw/*.JPG
+data/raw/*.jpeg
+data/raw/*.JPEG
+data/raw/*.png
+data/raw/*.PNG
+# .txt 標註保留（前面已經有 !data/raw/*.txt 例外）

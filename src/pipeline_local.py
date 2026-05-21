@@ -12,6 +12,7 @@ try:
     from roi.roi_mediapipe import extract_roi_mediapipe
     from roi.roi_fixed_crop import extract_roi_fixed
     from roi.roi_yolo import load_yolo_bbox
+    from roi.roi_yolo_detect import predict_yolo_bbox
     from roi.quality_check import check_quality
     from deid.build_tongue_mask import build_mask
     from deid.deid_mask_only import deid_mask_only
@@ -22,6 +23,7 @@ except ImportError:
     from src.roi.roi_mediapipe import extract_roi_mediapipe
     from src.roi.roi_fixed_crop import extract_roi_fixed
     from src.roi.roi_yolo import load_yolo_bbox
+    from src.roi.roi_yolo_detect import predict_yolo_bbox
     from src.roi.quality_check import check_quality
     from src.deid.build_tongue_mask import build_mask
     from src.deid.deid_mask_only import deid_mask_only
@@ -164,60 +166,78 @@ def run_batch_pipeline(
                 error_msg = quality_result["reason"]
 
             # ======================
-            # ROI: MediaPipe → YOLO fallback → fixed fallback
+            # ROI: MediaPipe → YOLO detect → YOLO .txt label → fixed fallback
             # ======================
             start = time.time()
-            roi_img, roi_bbox, roi_status, roi_error = extract_roi_mediapipe(image)
+            roi_img, roi_bbox, mp_status, mp_error = extract_roi_mediapipe(image)
+            combined_error = ""
 
-            if roi_status == "ok":
+            if mp_status == "ok":
                 roi_method_used = "mediapipe"
             else:
-                # MediaPipe failed — try YOLO label if available.
-                mp_error = roi_error
-                label_path = raw_dir / img_path.with_suffix(".txt").name
-                yolo_bbox, yolo_status, yolo_error = load_yolo_bbox(label_path, image.shape)
-
-                if yolo_status == "ok":
-                    x1, y1, x2, y2 = yolo_bbox
-                    roi_img = image[y1:y2, x1:x2].copy()
-                    roi_bbox = yolo_bbox
-                    roi_method_used = "yolo_fallback"
-                    combined_error = mp_error
+                det_img, det_bbox, det_status, det_error = predict_yolo_bbox(image)
+                if det_status == "ok":
+                    roi_img, roi_bbox = det_img, det_bbox
+                    roi_method_used = "yolo_detect"
+                    combined_error = f"mp: {mp_error}"
                 else:
-                    # YOLO also unavailable — use fixed crop as last resort.
-                    roi_img, roi_bbox = extract_roi_fixed(image)
-                    roi_method_used = "fixed_fallback"
-                    combined_error = mp_error
-                    if yolo_status != "ok" and "not found" not in yolo_error:
-                        combined_error = f"{mp_error}; yolo: {yolo_error}"
+                    label_path = raw_dir / img_path.with_suffix(".txt").name
+                    yolo_bbox, yolo_status, yolo_error = load_yolo_bbox(
+                        label_path, image.shape
+                    )
+                    if yolo_status == "ok":
+                        x1, y1, x2, y2 = yolo_bbox
+                        roi_img = image[y1:y2, x1:x2].copy()
+                        roi_bbox = yolo_bbox
+                        roi_method_used = "yolo_label"
+                        combined_error = (
+                            f"mp: {mp_error}; yolo_detect: {det_error}"
+                        )
+                    else:
+                        roi_img, roi_bbox = extract_roi_fixed(image)
+                        roi_method_used = "fixed_fallback"
+                        combined_error = (
+                            f"mp: {mp_error}; yolo_detect: {det_error}; "
+                            f"label: {yolo_error}"
+                        )
 
-                if roi_img is None:
-                    raise ValueError(f"roi_all_fallbacks_failed: {combined_error}")
+            if roi_img is None:
+                raise ValueError(f"roi_all_fallbacks_failed: {combined_error}")
 
-                if error_msg:
-                    error_msg = f"{error_msg}; {combined_error}"
-                else:
-                    error_msg = combined_error
+            if combined_error and error_msg:
+                error_msg = f"{error_msg}; {combined_error}"
 
             roi_ms = (time.time() - start) * 1000
 
             cv2.imwrite(str(output_folder / "roi.png"), roi_img)
 
             # ======================
-            # Segmentation（U-Net model）
+            # Segmentation（U-Net model on ROI crop）
             # ======================
             start = time.time()
             if SEG_MODEL_PATH.exists():
-                mask, _ = run_inference(
-                    str(img_path),
+                # Pass ROI array directly to avoid temp file disk I/O
+                roi_mask, _ = run_inference(
+                    "",
                     str(SEG_MODEL_PATH),
                     img_size=SEG_IMG_SIZE,
                     threshold=SEG_THRESHOLD,
+                    image_array=roi_img,
                 )
-                # run_inference returns mask at original image size (0 or 255)
-                # If RESIZE_TO is set, resize mask to match the resized image
-                if RESIZE_TO is not None:
-                    mask = cv2.resize(mask, RESIZE_TO, interpolation=cv2.INTER_NEAREST)
+
+                # Keep only the largest connected component (removes chin/neck noise)
+                if roi_mask.max() > 0:
+                    _bin = (roi_mask > 0).astype(np.uint8)
+                    _n, _lbl, _stats, _ = cv2.connectedComponentsWithStats(_bin, connectivity=8)
+                    if _n > 2:
+                        _largest = 1 + int(np.argmax(_stats[1:, cv2.CC_STAT_AREA]))
+                        roi_mask = np.where(_lbl == _largest, roi_mask.max(), 0).astype(np.uint8)
+
+                # Paste ROI mask back into full-image coordinates
+                x1, y1, x2, y2 = roi_bbox
+                roi_mask_resized = cv2.resize(roi_mask, (x2 - x1, y2 - y1), interpolation=cv2.INTER_NEAREST)
+                mask = np.zeros((h, w), dtype=np.uint8)
+                mask[y1:y2, x1:x2] = roi_mask_resized
             else:
                 # Fallback to HSV method if model checkpoint not found
                 m = build_mask(image, roi_bbox)
