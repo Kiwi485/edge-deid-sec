@@ -115,3 +115,8 @@ experiments/unet_backbone_compare/runs/
 
 # Block stray YOLO base-model downloads in the project root
 yolov8n-seg.pt
+
+# Allow RQ1 outputs
+!outputs/acm_paper/rq1/split_manifest.json
+!outputs/acm_paper/rq1/*.json
+!outputs/acm_paper/rq1/figures/
