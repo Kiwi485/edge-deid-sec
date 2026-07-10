@@ -17,6 +17,7 @@ train.py — U-Net + MobileNetV2 舌頭 segmentation 訓練腳本
 """
 
 import argparse
+import json
 import random
 import sys
 from pathlib import Path
@@ -109,6 +110,43 @@ def val_epoch(model, loader, bce_fn, dice_fn, device):
 
 
 # ---------------------------------------------------------------------------
+# Manifest-based index resolution
+# ---------------------------------------------------------------------------
+
+def _indices_from_manifest(manifest_path: str, data_dir: Path, split_name: str, all_samples: list) -> list:
+    """
+    Given a split manifest JSON, return the indices into all_samples that
+    belong to split_name ('train' or 'val').
+    """
+    with open(manifest_path, "r", encoding="utf-8") as f:
+        manifest = json.load(f)
+
+    # Build filename → index lookup from the dataset's sample list
+    fname_to_idx: dict = {}
+    for i, raw in enumerate(all_samples):
+        img_path = Path(raw["image_path"])
+        fname_to_idx[img_path.name] = i
+        try:
+            rel = str(img_path.relative_to(data_dir)).replace("\\", "/")
+            fname_to_idx[rel] = i
+        except ValueError:
+            pass
+
+    indices = []
+    for s in manifest.get("samples", []):
+        if s.get("assigned_split") == split_name:
+            rel = s["image_path"]
+            if rel in fname_to_idx:
+                indices.append(fname_to_idx[rel])
+            else:
+                # fallback: match by filename only
+                fname = Path(rel).name
+                if fname in fname_to_idx:
+                    indices.append(fname_to_idx[fname])
+    return sorted(indices)
+
+
+# ---------------------------------------------------------------------------
 # Dataset builder (handles both Roboflow split structure & flat)
 # ---------------------------------------------------------------------------
 
@@ -116,6 +154,31 @@ def build_datasets(args):
     data_dir = Path(args.data_dir)
     img_size = args.img_size
     val_frac = args.val_split
+    manifest = getattr(args, "split_manifest", None)
+
+    # ── Manifest-based split (no data leakage) ──────────────────────
+    if manifest and Path(manifest).exists():
+        split_arg = "train" if (data_dir / "train").exists() else ""
+        full_ds = TongueSegDataset(
+            args.data_dir, split=split_arg, img_size=img_size, is_train=True
+        )
+        train_idx = _indices_from_manifest(manifest, data_dir, "train", full_ds._samples)
+        val_idx   = _indices_from_manifest(manifest, data_dir, "val",   full_ds._samples)
+
+        if not train_idx:
+            print("[WARNING] Manifest train indices empty — falling back to auto-split.")
+        else:
+            train_ds = TongueSegDataset(
+                args.data_dir, split=split_arg, img_size=img_size, is_train=True,  indices=train_idx
+            )
+            val_ds = TongueSegDataset(
+                args.data_dir, split=split_arg, img_size=img_size, is_train=False, indices=val_idx
+            )
+            print(
+                f"Manifest split: {len(train_ds)} train / {len(val_ds)} val"
+                f" (manifest: {manifest})"
+            )
+            return train_ds, val_ds
 
     train_dir = data_dir / "train"
     valid_dir_exists = (data_dir / "valid").exists() or (data_dir / "val").exists()
@@ -208,6 +271,10 @@ def main():
                         help="DataLoader workers（Windows 建議設 0）")
     parser.add_argument("--no-pretrain", action="store_true",
                         help="不使用 ImageNet pretrained weights")
+    parser.add_argument("--split-manifest", type=str, default=None,
+                        help="Path to split manifest JSON (outputs/acm_paper/rq1/split_manifest.json). "
+                             "When provided, train/val indices are taken from the manifest "
+                             "instead of auto-splitting — prevents test-set leakage.")
     args = parser.parse_args()
 
     # ── Reproducibility ──────────────────────────────────────────────

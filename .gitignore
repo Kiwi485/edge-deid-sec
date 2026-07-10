@@ -92,3 +92,31 @@ data/raw/*.JPEG
 data/raw/*.png
 data/raw/*.PNG
 # .txt 標註保留（前面已經有 !data/raw/*.txt 例外）
+
+docs/.edge-pdf-profile
+docs/.edge-pdf-profile-figs
+docs/.edge-preview-profile
+docs/paper_draft_ieee_with_figures.pdf
+
+# ── experiments directory ─────────────────────────────────────────────
+# Source code under experiments/ IS tracked (e.g. experiments/acm_paper/).
+# Only ignore generated experiment artifacts — those already go to outputs/
+# and models/ which are gitignored above.
+#
+# The old blanket rule "experiments" has been removed so that new source
+# files committed under experiments/acm_paper/ are properly tracked.
+experiments/unet_backbone_compare/saved_models/
+experiments/unet_backbone_compare/runs/
+
+# ── ACM paper experiments ─────────────────────────────────────────────
+# outputs/acm_paper/ and models/acm_paper/ are already covered by the
+# blanket outputs/ and models/ ignore rules above.
+# The source code under experiments/acm_paper/ IS tracked.
+
+# Block stray YOLO base-model downloads in the project root
+yolov8n-seg.pt
+
+# Allow RQ1 outputs
+!outputs/acm_paper/rq1/split_manifest.json
+!outputs/acm_paper/rq1/*.json
+!outputs/acm_paper/rq1/figures/
