@@ -45,6 +45,16 @@ SEG_IMG_SIZE = 256
 SEG_THRESHOLD = 0.5
 
 
+def should_cache_yolo_label(roi_method_used: str, status: str) -> bool:
+    """Return whether an ROI may safely be saved as a pseudo YOLO label.
+
+    A fixed crop is only a geometric last resort, not an observed tongue
+    location.  Persisting it as a label makes a later run treat the guess as
+    an annotation and prevents it from trying the proper ROI methods again.
+    """
+    return status == "ok" and roi_method_used == "yolo_detect"
+
+
 def ensure_dirs(raw_dir: Path, out_dir: Path, csv_path: Path):
     raw_dir.mkdir(parents=True, exist_ok=True)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -299,11 +309,13 @@ def run_batch_pipeline(
             json.dump(meta, f, indent=2)
 
         # ======================
-        # Auto-write YOLO .txt label alongside image.
-        # So the next pipeline run can use yolo_fallback instead of fixed fallback.
-        # Only written when roi_bbox is valid; failure must not affect pipeline result.
+        # Cache only an actual YOLO detector result as a pseudo-label.
+        # Never write the fixed-crop fallback: it is a guess, not an annotation.
+        # A write failure must not affect the pipeline result.
         # ======================
-        if roi_bbox and len(roi_bbox) == 4 and status != "error":
+        if roi_bbox and len(roi_bbox) == 4 and should_cache_yolo_label(
+            roi_method_used, status
+        ):
             try:
                 x1, y1, x2, y2 = roi_bbox
                 h_img, w_img = image.shape[:2]
