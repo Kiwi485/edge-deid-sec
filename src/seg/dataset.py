@@ -123,6 +123,7 @@ class TongueSegDataset(Dataset):
                 coco_candidates = [
                     split_dir / "_annotations.coco.json",                          # Roboflow
                     split_dir / "annotations" / "instances_default.json",           # CVAT default
+                    split_dir / "annotations" / "instances_default_merged.json",    # CVAT merged export
                     split_dir / "annotations" / f"instances_{candidate_split}.json",# CVAT per-split
                     split_dir / "annotations" / "result.json",                      # CVAT result export
                 ]
