@@ -1,4 +1,4 @@
-"""Prepare YOLO dataset from data/raw/*.jpg + *.txt.
+"""Prepare YOLO dataset from a raw image folder containing *.jpg + *.txt.
 
 Splits images into train/val (default 80/20) and produces:
 
@@ -12,6 +12,7 @@ Splits images into train/val (default 80/20) and produces:
 Usage:
     python tools/prepare_yolo_dataset.py
     python tools/prepare_yolo_dataset.py --val-ratio 0.2 --seed 42
+    python tools/prepare_yolo_dataset.py --raw-dir raw_yolo
 """
 import argparse
 import random
@@ -22,18 +23,42 @@ import yaml
 
 
 RAW_DIR = Path("data/raw")
+RAW_YOLO_DIR = Path("data/raw_yolo")
+ALT_RAW_DIR = Path("raw_yolo")
 OUT_DIR = Path("data/yolo")
 CLASS_NAMES = ["tongue_roi"]
 
 
+def resolve_raw_dir(raw_dir: Path | None) -> Path:
+    if raw_dir is not None:
+        return raw_dir
+
+    for candidate in (RAW_YOLO_DIR, ALT_RAW_DIR, RAW_DIR):
+        if candidate.exists():
+            return candidate
+
+    return RAW_DIR
+
+
 def collect_pairs(raw_dir: Path):
     pairs = []
-    for img in sorted(raw_dir.iterdir()):
-        if img.suffix.lower() not in {".jpg", ".jpeg", ".png"}:
+    image_exts = {".jpg", ".jpeg", ".png"}
+    for img in sorted(raw_dir.rglob("*")):
+        if not img.is_file() or img.suffix.lower() not in image_exts:
             continue
-        lbl = img.with_suffix(".txt")
-        if lbl.exists() and lbl.stat().st_size > 0:
-            pairs.append((img, lbl))
+
+        candidates = [img.with_suffix(".txt")]
+        try:
+            rel = img.relative_to(raw_dir)
+        except ValueError:
+            rel = None
+        if rel is not None and len(rel.parts) >= 2 and rel.parts[0] == "images":
+            candidates.append(raw_dir / "labels" / Path(*rel.parts[1:]).with_suffix(".txt"))
+
+        for lbl in candidates:
+            if lbl.exists() and lbl.stat().st_size > 0:
+                pairs.append((img, lbl))
+                break
     return pairs
 
 
@@ -52,7 +77,7 @@ def copy_split(pairs, split: str, out_dir: Path):
 
 def write_yaml(out_dir: Path):
     cfg = {
-        "path": str(out_dir.resolve()).replace("\\", "/"),
+        "path": out_dir.as_posix(),
         "train": "images/train",
         "val": "images/val",
         "names": {i: n for i, n in enumerate(CLASS_NAMES)},
@@ -64,15 +89,20 @@ def write_yaml(out_dir: Path):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--raw-dir", type=Path, default=RAW_DIR)
+    ap.add_argument("--raw-dir", type=Path, default=None)
     ap.add_argument("--out-dir", type=Path, default=OUT_DIR)
     ap.add_argument("--val-ratio", type=float, default=0.2)
     ap.add_argument("--seed", type=int, default=42)
     args = ap.parse_args()
 
-    pairs = collect_pairs(args.raw_dir)
+    raw_dir = resolve_raw_dir(args.raw_dir)
+    pairs = collect_pairs(raw_dir)
     if not pairs:
-        raise SystemExit(f"No (image, label) pairs found in {args.raw_dir}")
+        raise SystemExit(
+            f"No (image, label) pairs found in {raw_dir}. "
+            f"Expected image files under {raw_dir} and matching .txt labels "
+            f"either next to each image or under {raw_dir / 'labels'}."
+        )
 
     random.Random(args.seed).shuffle(pairs)
     n_val = max(1, int(len(pairs) * args.val_ratio))
@@ -84,6 +114,7 @@ def main():
     copy_split(val_pairs, "val", args.out_dir)
     write_yaml(args.out_dir)
 
+    print(f"[ok] raw_dir={raw_dir}")
     print(f"[ok] total={len(pairs)} train={len(train_pairs)} val={len(val_pairs)}")
     print(f"[ok] dataset.yaml: {args.out_dir / 'dataset.yaml'}")
 

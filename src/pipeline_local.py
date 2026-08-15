@@ -5,6 +5,12 @@ import json
 import csv
 import numpy as np
 import cv2
+try:
+    import pillow_heif
+    from PIL import Image as PILImage
+    pillow_heif.register_heif_opener()
+except ImportError:
+    PILImage = None
 from pathlib import Path
 from random import Random
 
@@ -35,7 +41,7 @@ RAW_DIR = Path("data/raw")
 OUT_DIR = Path("data/out")
 LOG_DIR = Path("logs")
 CSV_PATH = LOG_DIR / "pipeline_latency_vm.csv"
-VALID_EXT = {".jpg", ".jpeg", ".png"}
+VALID_EXT = {".jpg", ".jpeg", ".png", ".heic"}
 # Set to (width, height) to force resize, or None to keep original
 RESIZE_TO = (640, 480)
 
@@ -49,6 +55,22 @@ def ensure_dirs(raw_dir: Path, out_dir: Path, csv_path: Path):
     raw_dir.mkdir(parents=True, exist_ok=True)
     out_dir.mkdir(parents=True, exist_ok=True)
     csv_path.parent.mkdir(parents=True, exist_ok=True)
+
+
+def _load_image(img_path: Path):
+    if img_path.suffix.lower() == ".heic":
+        if PILImage is None:
+            raise ImportError(
+                "HEIC support missing: install pillow_heif to load .heic images"
+            )
+        pil_img = PILImage.open(str(img_path)).convert("RGB")
+        return cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
+
+    buf = np.fromfile(str(img_path), dtype=np.uint8)
+    image = cv2.imdecode(buf, cv2.IMREAD_COLOR)
+    if image is None:
+        raise ValueError(f"Failed to read image {img_path}")
+    return image
 
 
 def write_csv_header_if_needed(csv_path: Path):
@@ -148,9 +170,7 @@ def run_batch_pipeline(
         start_total = time.time()
 
         try:
-            image = cv2.imread(str(img_path))
-            if image is None:
-                raise ValueError("Failed to read image")
+            image = _load_image(img_path)
 
             # optional resize
             if RESIZE_TO is not None:

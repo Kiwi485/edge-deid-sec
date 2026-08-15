@@ -52,7 +52,7 @@ data/cvat/
 
 
 # 訓練產出的 model checkpoint（體積大）
-models/
+
 
 # 推論輸出圖片
 outputs/
@@ -92,3 +92,4 @@ data/raw/*.JPEG
 data/raw/*.png
 data/raw/*.PNG
 # .txt 標註保留（前面已經有 !data/raw/*.txt 例外）
+experiments

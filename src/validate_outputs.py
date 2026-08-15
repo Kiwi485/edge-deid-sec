@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 
 
-VALID_EXT = {".jpg", ".jpeg", ".png"}
+VALID_EXT = {".jpg", ".jpeg", ".png", ".heic"}
 REQUIRED_OUTPUT_FILES = ["roi.png", "mask.png", "deid.png", "feature_256.npy", "meta.json"]
 
 BASE_DIR = Path(__file__).resolve().parents[1]
@@ -68,6 +68,10 @@ def _check_meta(image_id, input_file):
         issues.append("meta_image_id_mismatch")
     if meta.get("input_file") != input_file:
         issues.append("meta_input_file_mismatch")
+
+    if meta.get("status") == "error":
+        error = str(meta.get("error") or "unknown_error")
+        issues.append(f"pipeline_error:{error}")
 
     timing = meta.get("timing_ms")
     if not isinstance(timing, dict):
