@@ -19,6 +19,8 @@ SUMMARY_FIELDS = [
     "files_missing",
     "meta_ok",
     "meta_issues",
+    "privacy_ok",
+    "privacy_issues",
     "csv_ok",
     "csv_issues",
     "final_result",
@@ -98,6 +100,39 @@ def _check_csv(image_id, input_file, rows_by_id):
     return len(issues) == 0, issues
 
 
+def _check_privacy(meta):
+    issues = []
+    pm = meta.get("privacy_metrics")
+    if not isinstance(pm, dict):
+        return False, ["privacy_metrics_missing"]
+
+    if "privacy_pass" not in pm:
+        issues.append("privacy_pass_missing")
+    elif not isinstance(pm.get("privacy_pass"), bool):
+        issues.append("privacy_pass_not_bool")
+
+    metric_keys = [
+        "background_leak_ratio",
+        "retention_completeness",
+        "privacy_risk_score",
+    ]
+    for k in metric_keys:
+        v = pm.get(k)
+        if not isinstance(v, (int, float)):
+            issues.append(f"{k}_missing_or_not_number")
+
+    p_issues = pm.get("privacy_issues")
+    if not isinstance(p_issues, list):
+        issues.append("privacy_issues_not_list")
+
+    privacy_ok = (len(issues) == 0) and bool(pm.get("privacy_pass"))
+
+    if isinstance(p_issues, list) and p_issues:
+        issues.extend([f"privacy:{str(x)}" for x in p_issues])
+
+    return privacy_ok, issues
+
+
 def build_validation_rows():
     raw_images = _list_raw_images()
     rows_by_id = _load_latency_rows_by_id()
@@ -109,9 +144,18 @@ def build_validation_rows():
 
         has_all_files, missing_files = _check_output_files(image_id)
         meta_ok, meta_issues = _check_meta(image_id, input_file)
+        meta = {}
+        meta_path = OUT_DIR / image_id / "meta.json"
+        if meta_path.exists():
+            try:
+                with open(meta_path, "r", encoding="utf-8") as f:
+                    meta = json.load(f)
+            except Exception:
+                meta = {}
+        privacy_ok, privacy_issues = _check_privacy(meta)
         csv_ok, csv_issues = _check_csv(image_id, input_file, rows_by_id)
 
-        final_result = "pass" if has_all_files and meta_ok and csv_ok else "fail"
+        final_result = "pass" if has_all_files and meta_ok and privacy_ok and csv_ok else "fail"
 
         validation_rows.append(
             {
@@ -121,6 +165,8 @@ def build_validation_rows():
                 "files_missing": ";".join(missing_files),
                 "meta_ok": str(meta_ok),
                 "meta_issues": ";".join(meta_issues),
+                "privacy_ok": str(privacy_ok),
+                "privacy_issues": ";".join(privacy_issues),
                 "csv_ok": str(csv_ok),
                 "csv_issues": ";".join(csv_issues),
                 "final_result": final_result,
