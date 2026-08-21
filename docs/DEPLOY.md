@@ -1,38 +1,54 @@
-# Docker / Compose 部署指引
+# Docker / Compose 部署指引（W3 三服務）
 
 ## 先決條件
 
-- 已安裝 Docker Desktop（或相容的 Docker 環境）
+- 已安裝 Docker Desktop（或相容 Docker 環境）
 - 已在專案根目錄 `edge-deid-sec/`
+- `models/seg/best.pth` 必須存在（pipeline 已移除 HSV fallback）
 
-> 注意：目前容器內沒有直接掛實體攝影機，`mp_test.py` 僅作為 placeholder 測試腳本。
+## 服務角色
+
+- `acquisition`：掃描 `data/raw`，產生批次清單 `evidence/batch/acquisition_manifest.json`
+- `extraction`：執行主 pipeline，產生 `data/out` 與 `logs/pipeline_latency_vm.csv`
+- `observability`：更新 `docs/roi_eval.md`、`privacy_summary`、`validation_summary`
 
 ## 建立映像檔（build）
 
 ```bash
-docker build -t edge-deid-sec-api .
+docker build -t edge-deid-sec .
 ```
 
-- 成功後可以用 `docker images` 看到 `edge-deid-sec-api`。
-
-## 使用 docker compose 啟動
+## 啟動完整流程
 
 ```bash
-docker compose up
+docker compose up --build
 ```
 
-- `api` service 會根據 Dockerfile build 映像並啟動。
-- 預設對外 port：`8000`（對應容器內 `8000`）。
-- `data/`、`logs/` 會以 volume 方式掛載到容器內 `/app/data`、`/app/logs`。
+流程順序：
 
-要停止服務時：
+1. acquisition
+2. extraction（依賴 acquisition 成功）
+3. observability（依賴 extraction 成功）
+
+## 檢查輸出
+
+- 批次清單：`evidence/batch/acquisition_manifest.json`
+- pipeline latency：`logs/pipeline_latency_vm.csv`
+- 隱私摘要：`evidence/batch/privacy_summary.md`
+- 驗證摘要：`evidence/batch/validation_summary.csv`
+
+## 停止與清除
 
 ```bash
 docker compose down
 ```
 
-## 之後要調整的項目
+## 自訂批次數量
 
-- 將 Dockerfile / docker-compose.yml 的啟動指令（CMD / command）改成真正的 API 入口點。
-- 視需求補上 `otel-collector` 的設定檔與與 `api` 的相依關係。
-- 如需在容器內使用攝影機，需額外設定裝置映射（例如在 Linux 上使用 `--device=/dev/video0`），目前版本僅確認容器可啟動並執行 placeholder 程式。
+預設 acquisition 會跑 50 張。可在 `docker-compose.yml` 調整：
+
+- `acquisition` command 的 `--limit 50`
+
+例如改成 100：
+
+- `--limit "100"`

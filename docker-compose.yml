@@ -1,20 +1,47 @@
 services:
-  api:
+  acquisition:
     build: .
-    container_name: edge-deid-api
-    ports:
-      - "8000:8000"  # 先預留 8000，之後 API 可調整
+    container_name: edge-deid-acquisition
+    command:
+      - python
+      - src/services/acquisition_service.py
+      - --limit
+      - "-1"
+    volumes:
+      - ./data:/app/data
+      - ./evidence:/app/evidence
+    restart: "no"
+
+  extraction:
+    build: .
+    container_name: edge-deid-extraction
+    command:
+      - python
+      - src/services/extraction_service.py
+      - --clear-out
+      - --reset-csv
+    depends_on:
+      acquisition:
+        condition: service_completed_successfully
     volumes:
       - ./data:/app/data
       - ./logs:/app/logs
-    # 之後有真正 API 入口時，可改用 command 覆蓋 Dockerfile 的 CMD
-    # command: ["python", "your_api_entry.py"]
+      - ./models:/app/models
+      - ./evidence:/app/evidence
+    restart: "no"
 
-  # OpenTelemetry Collector placeholder，之後 observability 需求再補 config
-  otel-collector:
-    image: otel/opentelemetry-collector:latest
-    restart: unless-stopped
-    # volumes:
-    #   - ./otel-config.yml:/etc/otelcol/config.yml
-    # depends_on:
-    #   - api
+  observability:
+    build: .
+    container_name: edge-deid-observability
+    command:
+      - python
+      - src/services/observability_service.py
+    depends_on:
+      extraction:
+        condition: service_completed_successfully
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./docs:/app/docs
+      - ./evidence:/app/evidence
+    restart: "no"
