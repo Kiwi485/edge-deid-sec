@@ -83,6 +83,16 @@ def write_csv_header_if_needed(csv_path: Path):
                 "seg_ms",
                 "feat_ms",
                 "deid_ms",
+                "image_load_ms",
+                "resize_ms",
+                "quality_ms",
+                "model_load_ms",
+                "seg_preprocess_ms",
+                "seg_forward_ms",
+                "seg_postprocess_ms",
+                "artifact_write_ms",
+                "privacy_ms",
+                "unaccounted_ms",
                 "total_ms",
                 "status"
             ])
@@ -165,6 +175,9 @@ def run_batch_pipeline(
         output_folder.mkdir(parents=True, exist_ok=True)
 
         roi_ms = seg_ms = feat_ms = deid_ms = total_ms = 0.0
+        image_load_ms = resize_ms = quality_ms = model_load_ms = 0.0
+        seg_preprocess_ms = seg_forward_ms = seg_postprocess_ms = 0.0
+        artifact_write_ms = privacy_ms = unaccounted_ms = 0.0
         status = "ok"
         error_msg = ""
         roi_method_used = ""
@@ -182,17 +195,23 @@ def run_batch_pipeline(
         start_total = time.time()
 
         try:
+            start = time.perf_counter()
             image = _load_image(img_path)
+            image_load_ms = (time.perf_counter() - start) * 1000.0
 
             # optional resize
+            start = time.perf_counter()
             if RESIZE_TO is not None:
                 image = cv2.resize(image, RESIZE_TO)
+            resize_ms = (time.perf_counter() - start) * 1000.0
             h, w = image.shape[:2]
 
             # ======================
             # Quality gate
             # ======================
+            start = time.perf_counter()
             quality_result = check_quality(image)
+            quality_ms = (time.perf_counter() - start) * 1000.0
             if not quality_result["pass"]:
                 status = "quality_fail"
                 error_msg = quality_result["reason"]
@@ -227,7 +246,9 @@ def run_batch_pipeline(
 
             roi_ms = (time.time() - start) * 1000
 
+            start = time.perf_counter()
             cv2.imwrite(str(output_folder / "roi.png"), roi_img)
+            artifact_write_ms += (time.perf_counter() - start) * 1000.0
 
             # ======================
             # Segmentation（U-Net model on ROI crop）
@@ -239,15 +260,20 @@ def run_batch_pipeline(
                 )
 
             # Pass ROI array directly to avoid temp file disk I/O
-            roi_mask, _ = run_inference(
+            roi_mask, _, inference_timings = run_inference(
                 "",
                 str(SEG_MODEL_PATH),
                 img_size=SEG_IMG_SIZE,
                 threshold=SEG_THRESHOLD,
                 image_array=roi_img,
+                return_timings=True,
             )
+            model_load_ms = inference_timings["model_load_ms"]
+            seg_preprocess_ms = inference_timings["seg_preprocess_ms"]
+            seg_forward_ms = inference_timings["seg_forward_ms"]
 
             # Keep only the largest connected component (removes chin/neck noise)
+            postprocess_start = time.perf_counter()
             if roi_mask.max() > 0:
                 _bin = (roi_mask > 0).astype(np.uint8)
                 _n, _lbl, _stats, _ = cv2.connectedComponentsWithStats(_bin, connectivity=8)
@@ -260,16 +286,21 @@ def run_batch_pipeline(
             roi_mask_resized = cv2.resize(roi_mask, (x2 - x1, y2 - y1), interpolation=cv2.INTER_NEAREST)
             mask = np.zeros((h, w), dtype=np.uint8)
             mask[y1:y2, x1:x2] = roi_mask_resized
+            seg_postprocess_ms = (time.perf_counter() - postprocess_start) * 1000.0
             seg_ms = (time.time() - start) * 1000
+            write_start = time.perf_counter()
             cv2.imwrite(str(output_folder / "mask.png"), mask)
+            artifact_write_ms += (time.perf_counter() - write_start) * 1000.0
 
             # ======================
             # Feature 256
             # ======================
             start = time.time()
             feature_256 = extract_features(image, mask)
-            np.save(output_folder / "feature_256.npy", feature_256)
             feat_ms = (time.time() - start) * 1000
+            write_start = time.perf_counter()
+            np.save(output_folder / "feature_256.npy", feature_256)
+            artifact_write_ms += (time.perf_counter() - write_start) * 1000.0
 
             # ======================
             # DeID: keep only tongue mask pixels; everything else is black.
@@ -281,8 +312,11 @@ def run_batch_pipeline(
             deid_method = "mask_only"
             deid_ms = (time.time() - start) * 1000
 
+            write_start = time.perf_counter()
             cv2.imwrite(str(output_folder / "deid.png"), deid_img)
+            artifact_write_ms += (time.perf_counter() - write_start) * 1000.0
 
+            privacy_start = time.perf_counter()
             try:
                 privacy_metrics = evaluate_privacy(
                     image,
@@ -298,12 +332,25 @@ def run_batch_pipeline(
                     "privacy_risk_score": float("nan"),
                     "privacy_issues": [f"privacy_eval_error:{pe}"],
                 }
+            privacy_ms = (time.perf_counter() - privacy_start) * 1000.0
 
         except Exception as e:
             status = "error"
             error_msg = str(e)
 
         total_ms = (time.time() - start_total) * 1000
+        accounted_ms = (
+            image_load_ms
+            + resize_ms
+            + quality_ms
+            + roi_ms
+            + seg_ms
+            + feat_ms
+            + deid_ms
+            + artifact_write_ms
+            + privacy_ms
+        )
+        unaccounted_ms = max(0.0, total_ms - accounted_ms)
 
         # ======================
         # meta.json
@@ -320,6 +367,16 @@ def run_batch_pipeline(
                 "seg_ms": seg_ms,
                 "feat_ms": feat_ms,
                 "deid_ms": deid_ms,
+                "image_load_ms": image_load_ms,
+                "resize_ms": resize_ms,
+                "quality_ms": quality_ms,
+                "model_load_ms": model_load_ms,
+                "seg_preprocess_ms": seg_preprocess_ms,
+                "seg_forward_ms": seg_forward_ms,
+                "seg_postprocess_ms": seg_postprocess_ms,
+                "artifact_write_ms": artifact_write_ms,
+                "privacy_ms": privacy_ms,
+                "unaccounted_ms": unaccounted_ms,
                 "total_ms": total_ms
             },
             "privacy_metrics": privacy_metrics,
@@ -342,6 +399,16 @@ def run_batch_pipeline(
                 seg_ms,
                 feat_ms,
                 deid_ms,
+                image_load_ms,
+                resize_ms,
+                quality_ms,
+                model_load_ms,
+                seg_preprocess_ms,
+                seg_forward_ms,
+                seg_postprocess_ms,
+                artifact_write_ms,
+                privacy_ms,
+                unaccounted_ms,
                 total_ms,
                 status
             ])
