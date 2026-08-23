@@ -15,8 +15,28 @@ try:
 except ImportError:
     from deid_metrics import PrivacyConfig, evaluate_privacy
 
+# cv2.imread cannot decode HEIC; fall back to pillow_heif like pipeline_local.
+try:
+    import pillow_heif
 
-VALID_EXT = (".jpg", ".jpeg", ".png", ".bmp", ".webp")
+    pillow_heif.register_heif_opener()
+    _HEIF_OK = True
+except ImportError:
+    _HEIF_OK = False
+
+
+VALID_EXT = (".jpg", ".jpeg", ".png", ".bmp", ".webp", ".heic")
+
+
+def _load_raw(path: Path) -> np.ndarray | None:
+    if path.suffix.lower() == ".heic":
+        if not _HEIF_OK:
+            return None
+        from PIL import Image
+
+        img = Image.open(path).convert("RGB")
+        return cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
+    return cv2.imread(str(path), cv2.IMREAD_COLOR)
 
 
 def _read_json(path: Path) -> Dict[str, object]:
@@ -110,7 +130,7 @@ def evaluate_one_bundle(
         base["privacy_issues"] = "mask_missing"
         return base, "error"
 
-    raw = cv2.imread(str(raw_path), cv2.IMREAD_COLOR)
+    raw = _load_raw(raw_path)
     deid = cv2.imread(str(deid_path), cv2.IMREAD_COLOR)
     mask = cv2.imread(str(mask_path), cv2.IMREAD_UNCHANGED)
 

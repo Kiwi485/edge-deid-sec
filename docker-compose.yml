@@ -6,10 +6,17 @@ services:
       - python
       - src/services/acquisition_service.py
       - --limit
-      - "-1"
+      - "100"
+      - --socket-mode
+      - --socket-path
+      - /tmp/edge_deid.sock
+    depends_on:
+      extraction:
+        condition: service_started
     volumes:
       - ./data:/app/data
       - ./evidence:/app/evidence
+      - ./tmp:/tmp
     restart: "no"
 
   extraction:
@@ -18,16 +25,19 @@ services:
     command:
       - python
       - src/services/extraction_service.py
-      - --clear-out
+      - --socket-server
+      - --socket-path
+      - /tmp/edge_deid.sock
+      - --max-requests
+      - "100"
       - --reset-csv
-    depends_on:
-      acquisition:
-        condition: service_completed_successfully
+      - --clear-out
     volumes:
       - ./data:/app/data
       - ./logs:/app/logs
       - ./models:/app/models
       - ./evidence:/app/evidence
+      - ./tmp:/tmp
     restart: "no"
 
   observability:
@@ -36,6 +46,8 @@ services:
     command:
       - python
       - src/services/observability_service.py
+      - --manifest
+      - evidence/batch/acquisition_manifest.json
     depends_on:
       extraction:
         condition: service_completed_successfully
