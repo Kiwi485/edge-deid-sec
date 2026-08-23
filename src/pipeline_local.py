@@ -130,6 +130,7 @@ def run_batch_pipeline(
     reset_csv: bool = False,
     clear_out: bool = False,
     append_csv: bool = False,
+    image_names: set[str] | None = None,
 ):
     if clear_out and out_dir.exists():
         shutil.rmtree(out_dir)
@@ -145,6 +146,11 @@ def run_batch_pipeline(
     write_csv_header_if_needed(csv_path)
 
     images = sorted([p for p in raw_dir.iterdir() if p.is_file() and p.suffix.lower() in VALID_EXT])
+    if image_names is not None:
+        images = [p for p in images if p.name in image_names]
+        missing = image_names.difference(p.name for p in images)
+        if missing:
+            raise FileNotFoundError(f"requested images not found: {', '.join(sorted(missing))}")
     if shuffle:
         rng = Random(seed)
         rng.shuffle(images)

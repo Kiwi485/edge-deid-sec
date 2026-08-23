@@ -1,3 +1,4 @@
+import argparse
 import csv
 import json
 from pathlib import Path
@@ -27,10 +28,19 @@ SUMMARY_FIELDS = [
 ]
 
 
-def _list_raw_images():
+def _list_raw_images(manifest_path=None):
     if not RAW_DIR.exists():
         return []
     images = [p for p in RAW_DIR.iterdir() if p.is_file() and p.suffix.lower() in VALID_EXT]
+    if manifest_path is not None:
+        with open(manifest_path, "r", encoding="utf-8") as f:
+            manifest = json.load(f)
+        selected_names = {
+            str(item.get("input_file", ""))
+            for item in manifest.get("items", [])
+            if item.get("input_file")
+        }
+        images = [p for p in images if p.name in selected_names]
     return sorted(images, key=lambda p: p.name)
 
 
@@ -133,8 +143,8 @@ def _check_privacy(meta):
     return privacy_ok, issues
 
 
-def build_validation_rows():
-    raw_images = _list_raw_images()
+def build_validation_rows(manifest_path=None):
+    raw_images = _list_raw_images(manifest_path)
     rows_by_id = _load_latency_rows_by_id()
 
     validation_rows = []
@@ -197,8 +207,15 @@ def print_summary(rows):
     print(f"Output CSV: {SUMMARY_PATH}")
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(description="Validate pipeline output bundles.")
+    parser.add_argument("--manifest", type=Path, default=None)
+    return parser.parse_args()
+
+
 def main():
-    rows = build_validation_rows()
+    args = parse_args()
+    rows = build_validation_rows(args.manifest)
     write_summary(rows)
     print_summary(rows)
 
