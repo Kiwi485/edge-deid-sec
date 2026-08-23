@@ -12,6 +12,15 @@ __pycache__/
 # OS
 .DS_Store
 
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+
+# Runtime temporary files
+tmp/
+*.sock
+
 logs/*.csv
 !logs/example_latency_laptop.csv
 !logs/example_latency_vm.csv
@@ -26,8 +35,15 @@ docs/roi_eval.md
 # keep optional placeholders
 !data/out/.
 
-# evidence 
-evidence
+# Generated evidence; keep milestone acceptance reports
+evidence/*
+!evidence/batch/
+evidence/batch/*
+!evidence/batch/privacy_report.csv
+!evidence/batch/privacy_summary.md
+!evidence/batch/validation_summary.csv
+!evidence/batch/ipc_report.csv
+!evidence/batch/ipc_summary.md
 
 #raw/txt（原本為避免資料太大而忽略，若需將標註結果版本控，可將下列註解）
 # data/raw/*.txt
