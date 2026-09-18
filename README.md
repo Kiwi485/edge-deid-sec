@@ -139,3 +139,4 @@ test/                手動或自動測試工具（主 pipeline 不依賴）
 ```
 
 影像、模型 checkpoint、`data/out/` 與效能 log 都屬於執行資料，不需要時不要提交到 Git。
+test kiwi
