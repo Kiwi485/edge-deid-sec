@@ -1,0 +1,24 @@
+{
+  "analysis": "paired per-image Dice comparison",
+  "caution": "The fixed 15-image split does not measure sensitivity to data splitting or training randomness.",
+  "comparisons": [
+    {
+      "model_a": "U-Net + MobileNetV2",
+      "model_b": "U-Net + ResNet34",
+      "number_of_paired_images": 15,
+      "mean_per_image_dice_a": 0.881864,
+      "mean_per_image_dice_b": 0.862044,
+      "mean_paired_difference_a_minus_b": 0.01982,
+      "paired_bootstrap_ci_95": {
+        "lower": -0.00034,
+        "upper": 0.041545,
+        "repetitions": 10000,
+        "seed": 42
+      },
+      "wilcoxon_signed_rank": {
+        "statistic": 32.0,
+        "two_sided_p_value": 0.120544
+      }
+    }
+  ]
+}
