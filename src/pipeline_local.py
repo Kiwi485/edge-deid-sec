@@ -5,28 +5,32 @@ import json
 import csv
 import numpy as np
 import cv2
+try:
+    import pillow_heif
+    from PIL import Image as PILImage
+    pillow_heif.register_heif_opener()
+except ImportError:
+    PILImage = None
 from pathlib import Path
 from random import Random
 
 try:
     from roi.roi_mediapipe import extract_roi_mediapipe
     from roi.roi_fixed_crop import extract_roi_fixed
-    from roi.roi_yolo import load_yolo_bbox
     from roi.roi_yolo_detect import predict_yolo_bbox
     from roi.quality_check import check_quality
-    from deid.build_tongue_mask import build_mask
     from deid.deid_mask_only import deid_mask_only
+    from privacy.deid_metrics import PrivacyConfig, evaluate_privacy
     from seg.inference import run_inference
     from seg.feature_extractor import extract_features
 except ImportError:
     # Fallback when running as module from workspace root.
     from src.roi.roi_mediapipe import extract_roi_mediapipe
     from src.roi.roi_fixed_crop import extract_roi_fixed
-    from src.roi.roi_yolo import load_yolo_bbox
     from src.roi.roi_yolo_detect import predict_yolo_bbox
     from src.roi.quality_check import check_quality
-    from src.deid.build_tongue_mask import build_mask
     from src.deid.deid_mask_only import deid_mask_only
+    from src.privacy.deid_metrics import PrivacyConfig, evaluate_privacy
     from src.seg.inference import run_inference
     from src.seg.feature_extractor import extract_features
 
@@ -35,7 +39,7 @@ RAW_DIR = Path("data/raw")
 OUT_DIR = Path("data/out")
 LOG_DIR = Path("logs")
 CSV_PATH = LOG_DIR / "pipeline_latency_vm.csv"
-VALID_EXT = {".jpg", ".jpeg", ".png"}
+VALID_EXT = {".jpg", ".jpeg", ".png", ".heic"}
 # Set to (width, height) to force resize, or None to keep original
 RESIZE_TO = (640, 480)
 
@@ -43,12 +47,29 @@ RESIZE_TO = (640, 480)
 SEG_MODEL_PATH = Path("models/seg/best.pth")
 SEG_IMG_SIZE = 256
 SEG_THRESHOLD = 0.5
+PRIVACY_CFG = PrivacyConfig()
 
 
 def ensure_dirs(raw_dir: Path, out_dir: Path, csv_path: Path):
     raw_dir.mkdir(parents=True, exist_ok=True)
     out_dir.mkdir(parents=True, exist_ok=True)
     csv_path.parent.mkdir(parents=True, exist_ok=True)
+
+
+def _load_image(img_path: Path):
+    if img_path.suffix.lower() == ".heic":
+        if PILImage is None:
+            raise ImportError(
+                "HEIC support missing: install pillow_heif to load .heic images"
+            )
+        pil_img = PILImage.open(str(img_path)).convert("RGB")
+        return cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
+
+    buf = np.fromfile(str(img_path), dtype=np.uint8)
+    image = cv2.imdecode(buf, cv2.IMREAD_COLOR)
+    if image is None:
+        raise ValueError(f"Failed to read image {img_path}")
+    return image
 
 
 def write_csv_header_if_needed(csv_path: Path):
@@ -62,6 +83,16 @@ def write_csv_header_if_needed(csv_path: Path):
                 "seg_ms",
                 "feat_ms",
                 "deid_ms",
+                "image_load_ms",
+                "resize_ms",
+                "quality_ms",
+                "model_load_ms",
+                "seg_preprocess_ms",
+                "seg_forward_ms",
+                "seg_postprocess_ms",
+                "artifact_write_ms",
+                "privacy_ms",
+                "unaccounted_ms",
                 "total_ms",
                 "status"
             ])
@@ -109,6 +140,7 @@ def run_batch_pipeline(
     reset_csv: bool = False,
     clear_out: bool = False,
     append_csv: bool = False,
+    image_names: set[str] | None = None,
 ):
     if clear_out and out_dir.exists():
         shutil.rmtree(out_dir)
@@ -124,6 +156,11 @@ def run_batch_pipeline(
     write_csv_header_if_needed(csv_path)
 
     images = sorted([p for p in raw_dir.iterdir() if p.is_file() and p.suffix.lower() in VALID_EXT])
+    if image_names is not None:
+        images = [p for p in images if p.name in image_names]
+        missing = image_names.difference(p.name for p in images)
+        if missing:
+            raise FileNotFoundError(f"requested images not found: {', '.join(sorted(missing))}")
     if shuffle:
         rng = Random(seed)
         rng.shuffle(images)
@@ -138,35 +175,49 @@ def run_batch_pipeline(
         output_folder.mkdir(parents=True, exist_ok=True)
 
         roi_ms = seg_ms = feat_ms = deid_ms = total_ms = 0.0
+        image_load_ms = resize_ms = quality_ms = model_load_ms = 0.0
+        seg_preprocess_ms = seg_forward_ms = seg_postprocess_ms = 0.0
+        artifact_write_ms = privacy_ms = unaccounted_ms = 0.0
         status = "ok"
         error_msg = ""
         roi_method_used = ""
         roi_bbox = []
         deid_method = ""
+        privacy_metrics = {
+            "privacy_pass": False,
+            "background_leak_ratio": float("nan"),
+            "retention_completeness": float("nan"),
+            "privacy_risk_score": float("nan"),
+            "privacy_issues": ["privacy_not_evaluated"],
+        }
         quality_result = {"pass": False, "reason": "not_run", "metrics": {}}
 
         start_total = time.time()
 
         try:
-            image = cv2.imread(str(img_path))
-            if image is None:
-                raise ValueError("Failed to read image")
+            start = time.perf_counter()
+            image = _load_image(img_path)
+            image_load_ms = (time.perf_counter() - start) * 1000.0
 
             # optional resize
+            start = time.perf_counter()
             if RESIZE_TO is not None:
                 image = cv2.resize(image, RESIZE_TO)
+            resize_ms = (time.perf_counter() - start) * 1000.0
             h, w = image.shape[:2]
 
             # ======================
             # Quality gate
             # ======================
+            start = time.perf_counter()
             quality_result = check_quality(image)
+            quality_ms = (time.perf_counter() - start) * 1000.0
             if not quality_result["pass"]:
                 status = "quality_fail"
                 error_msg = quality_result["reason"]
 
             # ======================
-            # ROI: MediaPipe → YOLO detect → YOLO .txt label → fixed fallback
+            # ROI: MediaPipe → YOLO detect → fixed fallback
             # ======================
             start = time.time()
             roi_img, roi_bbox, mp_status, mp_error = extract_roi_mediapipe(image)
@@ -181,25 +232,11 @@ def run_batch_pipeline(
                     roi_method_used = "yolo_detect"
                     combined_error = f"mp: {mp_error}"
                 else:
-                    label_path = raw_dir / img_path.with_suffix(".txt").name
-                    yolo_bbox, yolo_status, yolo_error = load_yolo_bbox(
-                        label_path, image.shape
+                    roi_img, roi_bbox = extract_roi_fixed(image)
+                    roi_method_used = "fixed_fallback"
+                    combined_error = (
+                        f"mp: {mp_error}; yolo_detect: {det_error}"
                     )
-                    if yolo_status == "ok":
-                        x1, y1, x2, y2 = yolo_bbox
-                        roi_img = image[y1:y2, x1:x2].copy()
-                        roi_bbox = yolo_bbox
-                        roi_method_used = "yolo_label"
-                        combined_error = (
-                            f"mp: {mp_error}; yolo_detect: {det_error}"
-                        )
-                    else:
-                        roi_img, roi_bbox = extract_roi_fixed(image)
-                        roi_method_used = "fixed_fallback"
-                        combined_error = (
-                            f"mp: {mp_error}; yolo_detect: {det_error}; "
-                            f"label: {yolo_error}"
-                        )
 
             if roi_img is None:
                 raise ValueError(f"roi_all_fallbacks_failed: {combined_error}")
@@ -209,52 +246,61 @@ def run_batch_pipeline(
 
             roi_ms = (time.time() - start) * 1000
 
+            start = time.perf_counter()
             cv2.imwrite(str(output_folder / "roi.png"), roi_img)
+            artifact_write_ms += (time.perf_counter() - start) * 1000.0
 
             # ======================
             # Segmentation（U-Net model on ROI crop）
             # ======================
             start = time.time()
-            if SEG_MODEL_PATH.exists():
-                # Pass ROI array directly to avoid temp file disk I/O
-                roi_mask, _ = run_inference(
-                    "",
-                    str(SEG_MODEL_PATH),
-                    img_size=SEG_IMG_SIZE,
-                    threshold=SEG_THRESHOLD,
-                    image_array=roi_img,
+            if not SEG_MODEL_PATH.exists():
+                raise FileNotFoundError(
+                    f"seg_model_missing: {SEG_MODEL_PATH} (required, no fallback)"
                 )
 
-                # Keep only the largest connected component (removes chin/neck noise)
-                if roi_mask.max() > 0:
-                    _bin = (roi_mask > 0).astype(np.uint8)
-                    _n, _lbl, _stats, _ = cv2.connectedComponentsWithStats(_bin, connectivity=8)
-                    if _n > 2:
-                        _largest = 1 + int(np.argmax(_stats[1:, cv2.CC_STAT_AREA]))
-                        roi_mask = np.where(_lbl == _largest, roi_mask.max(), 0).astype(np.uint8)
+            # Pass ROI array directly to avoid temp file disk I/O
+            roi_mask, _, inference_timings = run_inference(
+                "",
+                str(SEG_MODEL_PATH),
+                img_size=SEG_IMG_SIZE,
+                threshold=SEG_THRESHOLD,
+                image_array=roi_img,
+                return_timings=True,
+            )
+            model_load_ms = inference_timings["model_load_ms"]
+            seg_preprocess_ms = inference_timings["seg_preprocess_ms"]
+            seg_forward_ms = inference_timings["seg_forward_ms"]
 
-                # Paste ROI mask back into full-image coordinates
-                x1, y1, x2, y2 = roi_bbox
-                roi_mask_resized = cv2.resize(roi_mask, (x2 - x1, y2 - y1), interpolation=cv2.INTER_NEAREST)
-                mask = np.zeros((h, w), dtype=np.uint8)
-                mask[y1:y2, x1:x2] = roi_mask_resized
-            else:
-                # Fallback to HSV method if model checkpoint not found
-                m = build_mask(image, roi_bbox)
-                if m is not None:
-                    mask = (m * 255).astype(np.uint8) if m.dtype == np.bool_ else np.where(m > 0, 255, 0).astype(np.uint8)
-                else:
-                    mask = np.zeros((h, w), dtype=np.uint8)
+            # Keep only the largest connected component (removes chin/neck noise)
+            postprocess_start = time.perf_counter()
+            if roi_mask.max() > 0:
+                _bin = (roi_mask > 0).astype(np.uint8)
+                _n, _lbl, _stats, _ = cv2.connectedComponentsWithStats(_bin, connectivity=8)
+                if _n > 2:
+                    _largest = 1 + int(np.argmax(_stats[1:, cv2.CC_STAT_AREA]))
+                    roi_mask = np.where(_lbl == _largest, roi_mask.max(), 0).astype(np.uint8)
+
+            # Paste ROI mask back into full-image coordinates
+            x1, y1, x2, y2 = roi_bbox
+            roi_mask_resized = cv2.resize(roi_mask, (x2 - x1, y2 - y1), interpolation=cv2.INTER_NEAREST)
+            mask = np.zeros((h, w), dtype=np.uint8)
+            mask[y1:y2, x1:x2] = roi_mask_resized
+            seg_postprocess_ms = (time.perf_counter() - postprocess_start) * 1000.0
             seg_ms = (time.time() - start) * 1000
+            write_start = time.perf_counter()
             cv2.imwrite(str(output_folder / "mask.png"), mask)
+            artifact_write_ms += (time.perf_counter() - write_start) * 1000.0
 
             # ======================
             # Feature 256
             # ======================
             start = time.time()
             feature_256 = extract_features(image, mask)
-            np.save(output_folder / "feature_256.npy", feature_256)
             feat_ms = (time.time() - start) * 1000
+            write_start = time.perf_counter()
+            np.save(output_folder / "feature_256.npy", feature_256)
+            artifact_write_ms += (time.perf_counter() - write_start) * 1000.0
 
             # ======================
             # DeID: keep only tongue mask pixels; everything else is black.
@@ -266,13 +312,45 @@ def run_batch_pipeline(
             deid_method = "mask_only"
             deid_ms = (time.time() - start) * 1000
 
+            write_start = time.perf_counter()
             cv2.imwrite(str(output_folder / "deid.png"), deid_img)
+            artifact_write_ms += (time.perf_counter() - write_start) * 1000.0
+
+            privacy_start = time.perf_counter()
+            try:
+                privacy_metrics = evaluate_privacy(
+                    image,
+                    deid_img,
+                    mask,
+                    cfg=PRIVACY_CFG,
+                )
+            except Exception as pe:
+                privacy_metrics = {
+                    "privacy_pass": False,
+                    "background_leak_ratio": float("nan"),
+                    "retention_completeness": float("nan"),
+                    "privacy_risk_score": float("nan"),
+                    "privacy_issues": [f"privacy_eval_error:{pe}"],
+                }
+            privacy_ms = (time.perf_counter() - privacy_start) * 1000.0
 
         except Exception as e:
             status = "error"
             error_msg = str(e)
 
         total_ms = (time.time() - start_total) * 1000
+        accounted_ms = (
+            image_load_ms
+            + resize_ms
+            + quality_ms
+            + roi_ms
+            + seg_ms
+            + feat_ms
+            + deid_ms
+            + artifact_write_ms
+            + privacy_ms
+        )
+        unaccounted_ms = max(0.0, total_ms - accounted_ms)
 
         # ======================
         # meta.json
@@ -289,37 +367,25 @@ def run_batch_pipeline(
                 "seg_ms": seg_ms,
                 "feat_ms": feat_ms,
                 "deid_ms": deid_ms,
+                "image_load_ms": image_load_ms,
+                "resize_ms": resize_ms,
+                "quality_ms": quality_ms,
+                "model_load_ms": model_load_ms,
+                "seg_preprocess_ms": seg_preprocess_ms,
+                "seg_forward_ms": seg_forward_ms,
+                "seg_postprocess_ms": seg_postprocess_ms,
+                "artifact_write_ms": artifact_write_ms,
+                "privacy_ms": privacy_ms,
+                "unaccounted_ms": unaccounted_ms,
                 "total_ms": total_ms
             },
+            "privacy_metrics": privacy_metrics,
             "status": status,
             "error": error_msg
         }
 
         with open(output_folder / "meta.json", "w") as f:
             json.dump(meta, f, indent=2)
-
-        # ======================
-        # Auto-write YOLO .txt label alongside image.
-        # So the next pipeline run can use yolo_fallback instead of fixed fallback.
-        # Only written when roi_bbox is valid; failure must not affect pipeline result.
-        # ======================
-        if roi_bbox and len(roi_bbox) == 4 and status != "error":
-            try:
-                x1, y1, x2, y2 = roi_bbox
-                h_img, w_img = image.shape[:2]
-                if w_img > 0 and h_img > 0 and x2 > x1 and y2 > y1:
-                    xc = (x1 + x2) / 2 / w_img
-                    yc = (y1 + y2) / 2 / h_img
-                    bw = (x2 - x1) / w_img
-                    bh = (y2 - y1) / h_img
-                    label_path = raw_dir / img_path.with_suffix(".txt").name
-                    if not label_path.exists():
-                        label_path.write_text(
-                            f"0 {xc:.6f} {yc:.6f} {bw:.6f} {bh:.6f}\n",
-                            encoding="utf-8",
-                        )
-            except Exception:
-                pass
 
         # ======================
         # Append CSV
@@ -333,6 +399,16 @@ def run_batch_pipeline(
                 seg_ms,
                 feat_ms,
                 deid_ms,
+                image_load_ms,
+                resize_ms,
+                quality_ms,
+                model_load_ms,
+                seg_preprocess_ms,
+                seg_forward_ms,
+                seg_postprocess_ms,
+                artifact_write_ms,
+                privacy_ms,
+                unaccounted_ms,
                 total_ms,
                 status
             ])

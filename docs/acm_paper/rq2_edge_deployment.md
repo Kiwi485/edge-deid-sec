@@ -247,7 +247,7 @@ budget in Environment A). Unlike latency, this metric was consistent across all 
 
 **Yes, for both models, in every environment tested, even at the noisy upper end.** Against a
 300–500ms/image clinical target: MobileNetV2's slowest mean (99.2ms, VM B) is still 3×+ inside
-budget; ResNet34's slowest single run across all 30 runs was 244ms (VM A, run 2) — still comfortably
+budget; ResNet34's slowest single run across its 15 runs was 244ms (VM A, run 2) — still comfortably
 under 300ms. Because the target has this much headroom, the answer to Q3 holds regardless of the
 Q1 uncertainty about *which* environment is fastest.
 
@@ -262,11 +262,11 @@ Q1 uncertainty about *which* environment is fastest.
 
 Memory and model size differences are large enough to trust despite the latency noise (peak RSS
 std is small; MobileNetV2 vs ResNet34 differ by 35–39%, far outside the ~1–3% run-to-run spread).
-The runtime gap is directionally consistent across every environment and every repeat (MobileNetV2
-was faster than ResNet34 in all 30/30 runs, even though the *size* of the gap varies with noise) —
-so "MobileNetV2 is faster" is solid; "MobileNetV2 is exactly 44% faster" is not, and the paper
-should quote a range rather than a single point estimate. Accuracy gap (n=15 test images) remains
-the weakest claim here, as noted in §3.
+The runtime gap favors MobileNetV2 in 14 of the 15 matched environment/repeat pairs. The exception
+is VM B run 3 (126.3ms for MobileNetV2 versus 70.9ms for ResNet34), consistent with the substantial
+run-to-run noise described above. The aggregate evidence supports MobileNetV2 as generally faster
+in this experiment, but not a claim of universal per-run superiority or an exact 44% advantage.
+Accuracy gap (n=15 test images) remains the weakest claim here, as noted in §3.
 
 ### Q5 — Does the selected model meet clinic-deployment requirements?
 
@@ -285,8 +285,9 @@ overall Q5 verdict since both models clear the target with wide margin in every 
 ## 9. Conclusion
 
 U-Net + MobileNetV2 is the better edge-deployment choice on the dimensions measured reliably here:
-it is consistently faster than ResNet34 (30/30 runs), meaningfully lighter on memory (35% less
-peak RSS) and disk (73% smaller checkpoint), and — on this small test set — at least as accurate.
+it is generally faster than ResNet34 (14 of 15 matched environment/repeat pairs), meaningfully
+lighter on memory (35% less peak RSS) and disk (73% smaller checkpoint), and — on this small test
+set — at least as accurate.
 
 Caveats to carry into the paper write-up, in order of how much they should temper the claims:
 

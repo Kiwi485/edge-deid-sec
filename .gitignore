@@ -12,6 +12,15 @@ __pycache__/
 # OS
 .DS_Store
 
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+
+# Runtime temporary files
+tmp/
+*.sock
+
 logs/*.csv
 !logs/example_latency_laptop.csv
 !logs/example_latency_vm.csv
@@ -26,8 +35,15 @@ docs/roi_eval.md
 # keep optional placeholders
 !data/out/.
 
-# evidence 
-evidence
+# Generated evidence; keep milestone acceptance reports
+evidence/*
+!evidence/batch/
+evidence/batch/*
+!evidence/batch/privacy_report.csv
+!evidence/batch/privacy_summary.md
+!evidence/batch/validation_summary.csv
+!evidence/batch/ipc_report.csv
+!evidence/batch/ipc_summary.md
 
 #raw/txt（原本為避免資料太大而忽略，若需將標註結果版本控，可將下列註解）
 # data/raw/*.txt
@@ -52,7 +68,7 @@ data/cvat/
 
 
 # 訓練產出的 model checkpoint（體積大）
-models/
+
 
 # 推論輸出圖片
 outputs/
@@ -92,7 +108,6 @@ data/raw/*.JPEG
 data/raw/*.png
 data/raw/*.PNG
 # .txt 標註保留（前面已經有 !data/raw/*.txt 例外）
-
 docs/.edge-pdf-profile
 docs/.edge-pdf-profile-figs
 docs/.edge-preview-profile
@@ -116,13 +131,9 @@ experiments/unet_backbone_compare/runs/
 # Block stray YOLO base-model downloads in the project root
 yolov8n-seg.pt
 
-# Allow RQ1 outputs
-!outputs/acm_paper/rq1/split_manifest.json
-!outputs/acm_paper/rq1/*.json
-!outputs/acm_paper/rq1/figures/
-
-# Allow RQ2 outputs
-!outputs/acm_paper/rq2/*.json
-!outputs/acm_paper/rq2/results.csv
-!outputs/acm_paper/rq2/figures/
-!outputs/acm_paper/rq2/figures/*.png
+# Private/local research assets removed from the repository by main remain
+# available locally but must not be re-added accidentally.
+acmpaper_data/
+data/raw/
+models/acm_paper/
+.claude/settings.local.json

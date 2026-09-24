@@ -22,8 +22,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 # 再把專案程式碼放進容器
 COPY . .
 
-# 先預留 API port，可依需求調整
-EXPOSE 8000
-
-# 目前先用 placeholder 指令，之後換成真正 API 入口
-CMD ["python", "mp_test.py"]
+# 預設啟動 extraction service；compose 會依服務覆蓋 command。
+CMD ["python", "src/services/extraction_service.py"]

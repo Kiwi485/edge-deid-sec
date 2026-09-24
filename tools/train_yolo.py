@@ -50,7 +50,8 @@ def main():
         patience=20,
     )
 
-    best_src = Path(args.project) / args.name / "weights" / "best.pt"
+    trainer = model.trainer
+    best_src = Path(trainer.best) if trainer is not None else Path()
     if not best_src.exists():
         raise SystemExit(f"best.pt not found at {best_src}")
 

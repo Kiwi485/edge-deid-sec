@@ -4,7 +4,7 @@ from datetime import datetime
 from pathlib import Path
 
 
-VALID_EXT = {".jpg", ".jpeg", ".png"}
+VALID_EXT = {".jpg", ".jpeg", ".png", ".heic"}
 BASE_DIR = Path(__file__).resolve().parents[1]
 RAW_DIR = BASE_DIR / "data/raw"
 OUT_DIR = BASE_DIR / "data/out"
@@ -83,7 +83,13 @@ def build_report_text():
 
     fallback_reason_counter = Counter()
     for m in metas:
-        if m.get("roi_method_used") in ("fallback", "yolo_fallback", "fixed_fallback"):
+        if m.get("roi_method_used") in (
+            "fallback",
+            "yolo_fallback",
+            "yolo_detect",
+            "yolo_label",
+            "fixed_fallback",
+        ):
             err = (m.get("error") or "")
             if "no_face_landmarks" in err:
                 fallback_reason_counter["no_face_landmarks"] += 1
@@ -93,7 +99,11 @@ def build_report_text():
                 fallback_reason_counter["other"] += 1
 
     mp_ok = roi_counter.get("mediapipe", 0)
-    yolo_fb = roi_counter.get("yolo_fallback", 0)
+    yolo_fb = (
+        roi_counter.get("yolo_fallback", 0)
+        + roi_counter.get("yolo_detect", 0)
+        + roi_counter.get("yolo_label", 0)
+    )
     fixed_fb = roi_counter.get("fixed_fallback", 0) + roi_counter.get("fallback", 0)
     fb_used = yolo_fb + fixed_fb
     q_ok = quality_counter.get("ok", 0)
