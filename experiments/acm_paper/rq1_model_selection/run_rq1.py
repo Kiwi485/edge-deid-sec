@@ -205,13 +205,23 @@ def train_smp_model(
 
     # ── Build datasets using manifest split ───────────────────────────
     # Strategy: load full dataset for each source split, then filter by manifest
+    # Determine the single source directory holding all samples (same logic
+    # as evaluate_smp.py's build_test_dataset): predefined splits are only
+    # used if the dataset actually has separate train/valid/test dirs.
+    # Otherwise every manifest split is carved out of the one directory that
+    # exists (e.g. a flat dataset placed under "train/").
+    if (data_path / "train").is_dir():
+        _src_split = "train"
+    elif (data_path / "valid").is_dir():
+        _src_split = "valid"
+    elif (data_path / "val").is_dir():
+        _src_split = "val"
+    else:
+        _src_split = ""
+
     def _build_split_ds(split_name: str, is_train: bool):
         """Build TongueSegDataset for one manifest split."""
-        # For Roboflow: use predefined split dir; for flat: use ""
-        src = split_name if split_name != "val" else "valid"
-        if not (data_path / src).is_dir() and not (data_path / split_name).is_dir():
-            src = ""  # flat mode
-
+        src = _src_split
         full_ds = TongueSegDataset(data_dir, split=src, img_size=img_size, is_train=is_train)
 
         indices = get_split_indices_for_dataset(
@@ -251,7 +261,7 @@ def train_smp_model(
 
     # ── Build model ───────────────────────────────────────────────────
     model = build_model_by_arch(arch, encoder_weights="imagenet").to(device)
-    trainable, total = count_parameters(model)
+    trainable = count_parameters(model)
     print(f"[run_rq1]   Trainable params: {trainable:,}")
 
     # ── Loss + Optimiser + Scheduler ──────────────────────────────────

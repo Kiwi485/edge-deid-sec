@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(.venv/Scripts/python.exe -c \"import psutil, torch, segmentation_models_pytorch as smp; print\\('psutil',psutil.__version__,'torch',torch.__version__,'smp',smp.__version__\\)\")",
+      "Bash(.venv/Scripts/python.exe -m experiments.acm_paper.rq1_model_selection.run_rq1 --help)",
+      "Bash(.venv/Scripts/python.exe -c \"import torch; print\\('torch ok', torch.__version__\\)\")",
+      "Bash(.venv/Scripts/python.exe -c \"import segmentation_models_pytorch as smp; print\\('smp ok', smp.__version__\\)\")",
+      "Bash(.venv/Scripts/python.exe -m pip install psutil==7.2.1)",
+      "Bash(.venv/Scripts/python.exe -m experiments.acm_paper.rq1_model_selection.run_rq1 --data-dir acmpaper_data --epochs 50 --batch-size 8 --img-size 256 --lr 1e-4 --seed 42 --device cpu --skip-yolo --output-dir outputs/acm_paper/rq1 --model-dir models/acm_paper/rq1)",
+      "Bash(tee /d/edge-deid-sec/rq1_train.log)",
+      "Bash(wsl -e bash -c \"cd /mnt/d/edge-deid-sec && python3 --version && python3 -m venv .venv_wsl 2>&1 | tail -20\")",
+      "Bash(wsl -e bash -c \"sudo -n apt-get install -y python3.12-venv python3-pip 2>&1 | tail -30\")",
+      "Bash(wsl -e bash -c \"sudo -n apt-get update 2>&1 | tail -15 && sudo -n apt-get install -y python3.12-venv python3-pip 2>&1 | tail -25\")",
+      "Bash(wsl -e bash -c \"cd /mnt/d/edge-deid-sec && python3 -m venv .venv_wsl && .venv_wsl/bin/pip install --upgrade pip -q && echo VENV_OK\")",
+      "Bash(wsl -e bash -c \"cd /mnt/d/edge-deid-sec && .venv_wsl/bin/pip install -q torch --index-url https://download.pytorch.org/whl/cpu && .venv_wsl/bin/pip install -q segmentation-models-pytorch psutil numpy pillow albumentations opencv-python-headless && echo DEPS_OK\")",
+      "Bash(.venv/Scripts/python.exe -m py_compile experiments/acm_paper/rq2_edge_deployment/benchmark_edge_deployment.py)",
+      "Bash(wsl -e bash -c \"systemd-run --scope -p MemoryMax=512M --wait --collect -- taskset -c 0,1 python3 -c 'import os; print\\(\\\\\"affinity_cores=\\\\\", len\\(os.sched_getaffinity\\(0\\)\\)\\)' 2>&1\")",
+      "Bash(head -3 outputs/acm_paper/rq2/results.csv > /tmp/results_clean.csv && cp /tmp/results_clean.csv outputs/acm_paper/rq2/results.csv *)",
+      "Bash(wsl -e bash -c 'cd /mnt/d/edge-deid-sec && taskset -c 0,1,2,3 bash -c \"ulimit -v 4194304; exec ~/venv_rq2/bin/python3 -m experiments.acm_paper.rq2_edge_deployment.benchmark_edge_deployment   --data-dir acmpaper_data   --arch unet_mobilenet   --checkpoint models/acm_paper/rq1/unet_mobilenet/best.pth   --environment-label vm_b_4c4g   --image-split all   --img-size 256   --torch-threads 4   --output outputs/acm_paper/rq2/unet_mobilenet_vm_b.json\" 2>&1 | tail -40')",
+      "Bash(wsl -e bash -c 'cd /mnt/d/edge-deid-sec && taskset -c 0,1,2,3 bash -c \"ulimit -v 4194304; exec ~/venv_rq2/bin/python3 -m experiments.acm_paper.rq2_edge_deployment.benchmark_edge_deployment   --data-dir acmpaper_data   --arch unet_resnet   --checkpoint models/acm_paper/rq1/unet_resnet/best.pth   --environment-label vm_b_4c4g   --image-split all   --img-size 256   --torch-threads 4   --output outputs/acm_paper/rq2/unet_resnet_vm_b.json\" 2>&1 | tail -40')",
+      "Bash(.venv/Scripts/python.exe -c ' *)",
+      "Bash(.venv/Scripts/python.exe -m experiments.acm_paper.rq2_edge_deployment.plot_rq2)",
+      "Bash(rm -f outputs/acm_paper/rq2/results.csv outputs/acm_paper/rq2/*.json)",
+      "Bash(wsl -e bash -c ' *)"
+    ],
+    "additionalDirectories": [
+      "\\tmp"
+    ]
+  }
+}

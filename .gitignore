@@ -120,3 +120,9 @@ yolov8n-seg.pt
 !outputs/acm_paper/rq1/split_manifest.json
 !outputs/acm_paper/rq1/*.json
 !outputs/acm_paper/rq1/figures/
+
+# Allow RQ2 outputs
+!outputs/acm_paper/rq2/*.json
+!outputs/acm_paper/rq2/results.csv
+!outputs/acm_paper/rq2/figures/
+!outputs/acm_paper/rq2/figures/*.png

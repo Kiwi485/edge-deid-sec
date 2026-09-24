@@ -353,9 +353,59 @@ The production pipeline (`src/seg/`) must remain fully functional and backward
 compatible regardless of any changes made to the experiment code.  Do not
 rename, replace, or restructure `src/seg/` for paper-specific reasons.
 
-## 20. No Results Available Yet
+## 20. Current Evidence and Model-Selection Interpretation
 
-> **No experiment results are available until the real dataset is uploaded
-> and evaluated.**  The `results.csv`, `results.json`, and `results.md`
-> files contain only `N/A` placeholders until all four models have been
-> trained and evaluated on the actual dataset.
+The current repository contains completed result files for two models on the
+same fixed 15-image test split. These are single-run results, not cross-validation
+or repeated-seed estimates.
+
+| Model | Global Dice | Global IoU | Precision | Recall | Per-image Dice (mean +/- SD) | Mean latency (ms) | Parameters | Checkpoint size (MB) |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| U-Net + MobileNetV2 | 0.8907 | 0.8029 | 0.8251 | 0.9677 | 0.8819 +/- 0.0502 | 92.5 | 6,628,945 | 76.2 |
+| U-Net + ResNet34 | 0.8723 | 0.7736 | 0.7970 | 0.9634 | 0.8620 +/- 0.0679 | 134.5 | 24,436,369 | 279.9 |
+
+The paired mean per-image Dice difference for MobileNetV2 minus ResNet34 was
++0.0198 (95% paired bootstrap CI -0.0003 to +0.0415; two-sided Wilcoxon
+signed-rank p=0.1205). The confidence interval includes zero. This comparison
+therefore does not support a claim that MobileNetV2 is universally superior;
+it supports an engineering trade-off interpretation on this split.
+
+U-Net + MobileNetV2 was selected as a balanced engineering choice rather than
+the universally best architecture. In the available results it combines
+competitive segmentation quality with lower latency, parameter count, and
+checkpoint size than U-Net + ResNet34, and it integrates directly with the
+dense-mask pipeline. The DeepLabV3+ and YOLOv8n-seg comparisons must be treated
+as pending until their result JSON files are generated under the same protocol.
+No ranking across all four candidates should be reported from this repository's
+current evidence.
+
+Reproduce the paired analysis after all model files are available:
+
+```powershell
+.\.venv\Scripts\python.exe -m experiments.acm_paper.rq1_model_selection.paired_compare `
+  outputs\acm_paper\rq1\unet_mobilenet.json `
+  outputs\acm_paper\rq1\unet_resnet.json `
+  outputs\acm_paper\rq1\deeplabv3.json `
+  outputs\acm_paper\rq1\yolov8n_seg.json `
+  --json outputs\acm_paper\rq1\paired_comparison.json `
+  --markdown outputs\acm_paper\rq1\paired_comparison.md
+```
+
+## 21. Study 1 Limitation and Strengthening Protocol
+
+The 15-image fixed split is small, and the observed ranking may depend on the
+split, training randomness, validation checkpoint selection, and individual
+difficult images. The per-image standard deviations above describe variation
+among images in one run; they are not run-to-run uncertainty. The paired test
+also does not address sensitivity to a different split.
+
+The preferred follow-up is five-fold cross-validation with folds formed at the
+subject or source level. Each fold must keep the test partition unavailable for
+checkpoint and threshold selection; preprocessing, augmentation, resolution,
+optimizer rules, epoch rules, and evaluation code must be held constant across
+models. If reliable subject/source grouping is unavailable, the study must not
+claim subject-level leakage prevention. As a minimum alternative, train every
+candidate with at least three documented seeds on the same fixed split and
+report mean +/- standard deviation across runs and images. Until one of these
+experiments is complete, the model choice remains a provisional engineering
+decision rather than evidence of architectural superiority.
