@@ -136,4 +136,4 @@ yolov8n-seg.pt
 acmpaper_data/
 data/raw/
 models/acm_paper/
-.claude/settings.local.json
+.claude/

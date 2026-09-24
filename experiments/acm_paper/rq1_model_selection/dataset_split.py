@@ -415,11 +415,11 @@ def create_or_load_manifest(
     if fmt == "roboflow":
         samples, split_counts = _enumerate_all_samples_roboflow(data_dir_path)
         split_policy = "predefined"
-        
+
         # Handle missing val and/or test directories
         missing_val = split_counts.get("val", 0) == 0
         missing_test = split_counts.get("test", 0) == 0
-        
+
         if missing_val or missing_test:
             if missing_val and missing_test:
                 print(
@@ -436,17 +436,17 @@ def create_or_load_manifest(
                     "[WARNING] No test/ directory found in Roboflow dataset.\n"
                     "          A 15% test split will be carved out of train."
                 )
-            
+
             # Re-assign: create val and/or test from train
             train_samples = [s for s in samples if s["assigned_split"] == "train"]
             other_samples = [s for s in samples if s["assigned_split"] != "train"]
             n_train_total = len(train_samples)
-            
+
             import random as _random
             rng = _random.Random(seed)
             indices = list(range(n_train_total))
             rng.shuffle(indices)
-            
+
             # Calculate split sizes
             if missing_val and missing_test:
                 # Create both val and test from train (70/15/15 split)
@@ -464,7 +464,7 @@ def create_or_load_manifest(
                 n_test = max(1, round(n_train_total * DEFAULT_TEST_RATIO / (DEFAULT_TRAIN_RATIO + DEFAULT_TEST_RATIO)))
                 test_indices = set(indices[:n_test])
                 val_indices = set()
-            
+
             # Reassign splits
             for i, s in enumerate(train_samples):
                 if i in test_indices:
@@ -472,7 +472,7 @@ def create_or_load_manifest(
                 elif i in val_indices:
                     s["assigned_split"] = "val"
                 # else remains "train"
-            
+
             samples = train_samples + other_samples
             split_counts = {
                 "train": sum(1 for s in samples if s["assigned_split"] == "train"),
