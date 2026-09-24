@@ -7,7 +7,23 @@ from typing import Dict, List, Tuple
 import numpy as np
 
 
-METRICS = ["roi_ms", "seg_ms", "feat_ms", "deid_ms", "total_ms"]
+METRICS = [
+    "image_load_ms",
+    "resize_ms",
+    "quality_ms",
+    "roi_ms",
+    "model_load_ms",
+    "seg_preprocess_ms",
+    "seg_forward_ms",
+    "seg_postprocess_ms",
+    "seg_ms",
+    "feat_ms",
+    "deid_ms",
+    "artifact_write_ms",
+    "privacy_ms",
+    "unaccounted_ms",
+    "total_ms",
+]
 VALID_STATUS = {"ok", "quality_fail", "error"}
 PERCENTILES = [("p50", 0.50), ("p95", 0.95), ("p99", 0.99)]
 
@@ -105,7 +121,18 @@ def format_table(title: str, stats: Dict[str, Dict[str, float]]) -> str:
 
 def bottleneck_text(percentiles: Dict[str, Dict[str, Dict[str, float]]]) -> str:
     ok = percentiles["ok"]
-    stage_metrics = ["roi_ms", "seg_ms", "feat_ms", "deid_ms"]
+    stage_metrics = [
+        "image_load_ms",
+        "resize_ms",
+        "quality_ms",
+        "roi_ms",
+        "seg_ms",
+        "feat_ms",
+        "deid_ms",
+        "artifact_write_ms",
+        "privacy_ms",
+        "unaccounted_ms",
+    ]
 
     def _pick(metric_key: str) -> Tuple[str, float]:
         pairs = [(m, ok[m][metric_key]) for m in stage_metrics]

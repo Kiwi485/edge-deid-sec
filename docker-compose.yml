@@ -2,6 +2,8 @@ services:
   acquisition:
     build: .
     container_name: edge-deid-acquisition
+    cpus: "0.50"
+    mem_limit: 512m
     command:
       - python
       - src/services/acquisition_service.py
@@ -22,6 +24,8 @@ services:
   extraction:
     build: .
     container_name: edge-deid-extraction
+    cpus: "2.0"
+    mem_limit: 4g
     command:
       - python
       - src/services/extraction_service.py
@@ -43,6 +47,8 @@ services:
   observability:
     build: .
     container_name: edge-deid-observability
+    cpus: "1.5"
+    mem_limit: 2g
     command:
       - python
       - src/services/observability_service.py

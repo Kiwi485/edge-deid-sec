@@ -11,6 +11,7 @@ inference.py — 舌頭 segmentation 推論腳本
 
 import argparse
 import sys
+import time
 from pathlib import Path
 
 import cv2
@@ -44,8 +45,9 @@ _CACHED_DEVICE = None
 def _get_model(model_path: str, device: torch.device, arch: str = "unet_mobilenet"):
     global _CACHED_MODEL, _CACHED_MODEL_PATH, _CACHED_DEVICE
     if _CACHED_MODEL is not None and _CACHED_MODEL_PATH == model_path:
-        return _CACHED_MODEL, _CACHED_DEVICE
+        return _CACHED_MODEL, _CACHED_DEVICE, 0.0
 
+    started = time.perf_counter()
     ckpt = torch.load(model_path, map_location=device, weights_only=False)
     saved_arch = ckpt.get("args", {}).get("arch", arch)
     model = build_model_by_arch(arch=saved_arch, encoder_weights=None)
@@ -55,7 +57,7 @@ def _get_model(model_path: str, device: torch.device, arch: str = "unet_mobilene
     _CACHED_MODEL = model
     _CACHED_MODEL_PATH = model_path
     _CACHED_DEVICE = device
-    return model, device
+    return model, device, (time.perf_counter() - started) * 1000.0
 
 
 def _preprocess(img_rgb: np.ndarray, img_size: int) -> torch.Tensor:
@@ -75,6 +77,7 @@ def run_inference(
     device: torch.device = None,
     arch: str = "unet_mobilenet",
     image_array: np.ndarray = None,
+    return_timings: bool = False,
 ):
     """
     對單張影像執行 tongue segmentation 推論。
@@ -108,14 +111,18 @@ def run_inference(
     img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
 
     # Load model (cached singleton)
-    model, device = _get_model(model_path, device, arch)
+    model, device, model_load_ms = _get_model(model_path, device, arch)
 
     # Preprocess
+    started = time.perf_counter()
     inp = _preprocess(img_rgb, img_size).to(device)
+    preprocess_ms = (time.perf_counter() - started) * 1000.0
 
     # Forward
+    started = time.perf_counter()
     logits = model(inp)                              # (1, 1, H, W)
     prob = torch.sigmoid(logits).squeeze().cpu().numpy()  # (H, W) float [0,1]
+    forward_ms = (time.perf_counter() - started) * 1000.0
 
     # Threshold → binary mask at model resolution
     mask_small = (prob > threshold).astype(np.uint8) * 255
@@ -129,6 +136,12 @@ def run_inference(
     tongue_only = img_rgb.copy()
     tongue_only[mask_np == 0] = 0
 
+    if return_timings:
+        return mask_np, tongue_only, {
+            "model_load_ms": model_load_ms,
+            "seg_preprocess_ms": preprocess_ms,
+            "seg_forward_ms": forward_ms,
+        }
     return mask_np, tongue_only
 
 
