@@ -107,10 +107,10 @@ Linux/macOS：
 
 - `face_landmarker.task`：MediaPipe face landmark model
 - `hand_landmarker.task`：MediaPipe hand landmark model
-- `models/seg/best.pth`：舌頭 segmentation checkpoint（存在時使用）
+- `models/seg/best.pth`：主 pipeline 必要的舌頭 segmentation checkpoint
 - `yolov8n-seg.pt`：YOLO 模型檔
 
-如果 `models/seg/best.pth` 不存在，pipeline 會使用 HSV mask fallback；主流程仍可執行，但 segmentation 品質會不同。
+如果 `models/seg/best.pth` 不存在，pipeline 會以 `seg_model_missing` 錯誤停止該影像處理；目前沒有 HSV segmentation fallback。請先訓練模型，並將 checkpoint 放到上述路徑。
 
 ## 使用 CVAT 訓練 segmentation 模型
 
