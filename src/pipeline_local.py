@@ -21,7 +21,6 @@ try:
     from roi.quality_check import check_quality
     from deid.deid_mask_only import deid_mask_only
     from privacy.deid_metrics import PrivacyConfig, evaluate_privacy
-    from seg.inference import run_inference
     from seg.feature_extractor import extract_features
 except ImportError:
     # Fallback when running as module from workspace root.
@@ -31,7 +30,6 @@ except ImportError:
     from src.roi.quality_check import check_quality
     from src.deid.deid_mask_only import deid_mask_only
     from src.privacy.deid_metrics import PrivacyConfig, evaluate_privacy
-    from src.seg.inference import run_inference
     from src.seg.feature_extractor import extract_features
 
 
@@ -141,7 +139,17 @@ def run_batch_pipeline(
     clear_out: bool = False,
     append_csv: bool = False,
     image_names: set[str] | None = None,
+    seg_backend: str = "torch",
+    seg_model_path: Path | None = None,
 ):
+    if seg_backend not in {"torch", "tflite"}:
+        raise ValueError(f"Unsupported segmentation backend: {seg_backend}")
+    model_path = seg_model_path or Path("models/seg/model.tflite" if seg_backend == "tflite" else SEG_MODEL_PATH)
+    if seg_backend == "tflite":
+        from src.seg.tflite_inference import run_inference as infer_segmentation
+    else:
+        from src.seg.inference import run_inference as infer_segmentation
+
     if clear_out and out_dir.exists():
         shutil.rmtree(out_dir)
 
@@ -254,15 +262,15 @@ def run_batch_pipeline(
             # Segmentation（U-Net model on ROI crop）
             # ======================
             start = time.time()
-            if not SEG_MODEL_PATH.exists():
+            if not model_path.exists():
                 raise FileNotFoundError(
-                    f"seg_model_missing: {SEG_MODEL_PATH} (required, no fallback)"
+                    f"seg_model_missing: {model_path} (required, no fallback)"
                 )
 
             # Pass ROI array directly to avoid temp file disk I/O
-            roi_mask, _, inference_timings = run_inference(
+            roi_mask, _, inference_timings = infer_segmentation(
                 "",
-                str(SEG_MODEL_PATH),
+                str(model_path),
                 img_size=SEG_IMG_SIZE,
                 threshold=SEG_THRESHOLD,
                 image_array=roi_img,
@@ -362,6 +370,8 @@ def run_batch_pipeline(
             "roi_bbox": roi_bbox if status != "error" else [],
             "quality_gate": quality_result,
             "deid_method": deid_method if status != "error" else "",
+            "seg_backend": seg_backend,
+            "seg_model_path": str(model_path),
             "timing_ms": {
                 "roi_ms": roi_ms,
                 "seg_ms": seg_ms,
@@ -480,6 +490,8 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Append rows to existing CSV instead of starting a clean file.",
     )
+    parser.add_argument("--seg-backend", choices=("torch", "tflite"), default="torch")
+    parser.add_argument("--seg-model", type=Path, default=None)
     return parser.parse_args()
 
 
@@ -495,4 +507,6 @@ if __name__ == "__main__":
         reset_csv=args.reset_csv,
         clear_out=args.clear_out,
         append_csv=args.append_csv,
+        seg_backend=args.seg_backend,
+        seg_model_path=args.seg_model,
     )

@@ -107,10 +107,10 @@ Linux/macOS：
 
 - `face_landmarker.task`：MediaPipe face landmark model
 - `hand_landmarker.task`：MediaPipe hand landmark model
-- `models/seg/best.pth`：舌頭 segmentation checkpoint（存在時使用）
+- `models/seg/best.pth`：主 pipeline 必要的舌頭 segmentation checkpoint
 - `yolov8n-seg.pt`：YOLO 模型檔
 
-如果 `models/seg/best.pth` 不存在，pipeline 會使用 HSV mask fallback；主流程仍可執行，但 segmentation 品質會不同。
+如果 `models/seg/best.pth` 不存在，pipeline 會以 `seg_model_missing` 錯誤停止該影像處理；目前沒有 HSV segmentation fallback。請先訓練模型，並將 checkpoint 放到上述路徑。
 
 ## 使用 CVAT 訓練 segmentation 模型
 
@@ -125,6 +125,8 @@ models/seg/best.pth
 ## Docker
 
 Docker/Compose 目前是部署骨架，詳細指令請看 [docs/DEPLOY.md](docs/DEPLOY.md)。主 pipeline 的本機執行方式仍以上面的 Python 指令為準。
+
+要用同一批照片比較 `best.pth` 與 TFLite 的 Docker 執行結果，請依照 [Docker 推論驗證步驟](docs/DEPLOY.md#用同一批照片驗證-docker-推論)操作；預設仍使用 `best.pth`，不會使用 `last.pth`。
 
 ## 專案結構
 
