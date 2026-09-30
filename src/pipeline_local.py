@@ -22,6 +22,7 @@ try:
     from deid.deid_mask_only import deid_mask_only
     from privacy.deid_metrics import PrivacyConfig, evaluate_privacy
     from seg.feature_extractor import FEATURE_VERSION, extract_features
+    from telemetry import mark_failed, trace_span
 except ImportError:
     # Fallback when running as module from workspace root.
     from src.roi.roi_mediapipe import extract_roi_mediapipe
@@ -31,6 +32,7 @@ except ImportError:
     from src.deid.deid_mask_only import deid_mask_only
     from src.privacy.deid_metrics import PrivacyConfig, evaluate_privacy
     from src.seg.feature_extractor import FEATURE_VERSION, extract_features
+    from src.telemetry import mark_failed, trace_span
 
 
 RAW_DIR = Path("data/raw")
@@ -200,153 +202,170 @@ def run_batch_pipeline(
         }
         quality_result = {"pass": False, "reason": "not_run", "metrics": {}}
 
-        start_total = time.time()
+        with trace_span("total", seg_backend=seg_backend, feature_version=FEATURE_VERSION) as total_span:
+            start_total = time.time()
 
-        try:
-            start = time.perf_counter()
-            image = _load_image(img_path)
-            image_load_ms = (time.perf_counter() - start) * 1000.0
-
-            # optional resize
-            start = time.perf_counter()
-            if RESIZE_TO is not None:
-                image = cv2.resize(image, RESIZE_TO)
-            resize_ms = (time.perf_counter() - start) * 1000.0
-            h, w = image.shape[:2]
-
-            # ======================
-            # Quality gate
-            # ======================
-            start = time.perf_counter()
-            quality_result = check_quality(image)
-            quality_ms = (time.perf_counter() - start) * 1000.0
-            if not quality_result["pass"]:
-                status = "quality_fail"
-                error_msg = quality_result["reason"]
-
-            # ======================
-            # ROI: MediaPipe → YOLO detect → fixed fallback
-            # ======================
-            start = time.time()
-            roi_img, roi_bbox, mp_status, mp_error = extract_roi_mediapipe(image)
-            combined_error = ""
-
-            if mp_status == "ok":
-                roi_method_used = "mediapipe"
-            else:
-                det_img, det_bbox, det_status, det_error = predict_yolo_bbox(image)
-                if det_status == "ok":
-                    roi_img, roi_bbox = det_img, det_bbox
-                    roi_method_used = "yolo_detect"
-                    combined_error = f"mp: {mp_error}"
-                else:
-                    roi_img, roi_bbox = extract_roi_fixed(image)
-                    roi_method_used = "fixed_fallback"
-                    combined_error = (
-                        f"mp: {mp_error}; yolo_detect: {det_error}"
-                    )
-
-            if roi_img is None:
-                raise ValueError(f"roi_all_fallbacks_failed: {combined_error}")
-
-            if combined_error and error_msg:
-                error_msg = f"{error_msg}; {combined_error}"
-
-            roi_ms = (time.time() - start) * 1000
-
-            start = time.perf_counter()
-            cv2.imwrite(str(output_folder / "roi.png"), roi_img)
-            artifact_write_ms += (time.perf_counter() - start) * 1000.0
-
-            # ======================
-            # Segmentation（U-Net model on ROI crop）
-            # ======================
-            start = time.time()
-            if not model_path.exists():
-                raise FileNotFoundError(
-                    f"seg_model_missing: {model_path} (required, no fallback)"
-                )
-
-            # Pass ROI array directly to avoid temp file disk I/O
-            roi_mask, _, inference_timings = infer_segmentation(
-                "",
-                str(model_path),
-                img_size=SEG_IMG_SIZE,
-                threshold=SEG_THRESHOLD,
-                image_array=roi_img,
-                return_timings=True,
-            )
-            model_load_ms = inference_timings["model_load_ms"]
-            seg_preprocess_ms = inference_timings["seg_preprocess_ms"]
-            seg_forward_ms = inference_timings["seg_forward_ms"]
-
-            # Keep only the largest connected component (removes chin/neck noise)
-            postprocess_start = time.perf_counter()
-            if roi_mask.max() > 0:
-                _bin = (roi_mask > 0).astype(np.uint8)
-                _n, _lbl, _stats, _ = cv2.connectedComponentsWithStats(_bin, connectivity=8)
-                if _n > 2:
-                    _largest = 1 + int(np.argmax(_stats[1:, cv2.CC_STAT_AREA]))
-                    roi_mask = np.where(_lbl == _largest, roi_mask.max(), 0).astype(np.uint8)
-
-            # Paste ROI mask back into full-image coordinates
-            x1, y1, x2, y2 = roi_bbox
-            roi_mask_resized = cv2.resize(roi_mask, (x2 - x1, y2 - y1), interpolation=cv2.INTER_NEAREST)
-            mask = np.zeros((h, w), dtype=np.uint8)
-            mask[y1:y2, x1:x2] = roi_mask_resized
-            seg_postprocess_ms = (time.perf_counter() - postprocess_start) * 1000.0
-            seg_ms = (time.time() - start) * 1000
-            write_start = time.perf_counter()
-            cv2.imwrite(str(output_folder / "mask.png"), mask)
-            artifact_write_ms += (time.perf_counter() - write_start) * 1000.0
-
-            # ======================
-            # Feature 256
-            # ======================
-            start = time.time()
-            feature_256 = extract_features(image, mask)
-            feat_ms = (time.time() - start) * 1000
-            write_start = time.perf_counter()
-            np.save(output_folder / "feature_256.npy", feature_256)
-            artifact_write_ms += (time.perf_counter() - write_start) * 1000.0
-
-            # ======================
-            # DeID: keep only tongue mask pixels; everything else is black.
-            # ======================
-            start = time.time()
-            deid_img, _ = deid_mask_only(image, mask)
-            if deid_img is None:
-                deid_img = apply_mask_only(image, mask)
-            deid_method = "mask_only"
-            deid_ms = (time.time() - start) * 1000
-
-            write_start = time.perf_counter()
-            cv2.imwrite(str(output_folder / "deid.png"), deid_img)
-            artifact_write_ms += (time.perf_counter() - write_start) * 1000.0
-
-            privacy_start = time.perf_counter()
             try:
-                privacy_metrics = evaluate_privacy(
-                    image,
-                    deid_img,
-                    mask,
-                    cfg=PRIVACY_CFG,
-                )
-            except Exception as pe:
-                privacy_metrics = {
-                    "privacy_pass": False,
-                    "background_leak_ratio": float("nan"),
-                    "retention_completeness": float("nan"),
-                    "privacy_risk_score": float("nan"),
-                    "privacy_issues": [f"privacy_eval_error:{pe}"],
-                }
-            privacy_ms = (time.perf_counter() - privacy_start) * 1000.0
+                start = time.perf_counter()
+                image = _load_image(img_path)
+                image_load_ms = (time.perf_counter() - start) * 1000.0
 
-        except Exception as e:
-            status = "error"
-            error_msg = str(e)
+                # optional resize
+                start = time.perf_counter()
+                if RESIZE_TO is not None:
+                    image = cv2.resize(image, RESIZE_TO)
+                resize_ms = (time.perf_counter() - start) * 1000.0
+                h, w = image.shape[:2]
 
-        total_ms = (time.time() - start_total) * 1000
+                # ======================
+                # Quality gate
+                # ======================
+                start = time.perf_counter()
+                quality_result = check_quality(image)
+                quality_ms = (time.perf_counter() - start) * 1000.0
+                if not quality_result["pass"]:
+                    status = "quality_fail"
+                    error_msg = quality_result["reason"]
+
+                # ======================
+                # ROI: MediaPipe → YOLO detect → fixed fallback
+                # ======================
+                with trace_span("roi") as roi_span:
+                    start = time.time()
+                    roi_img, roi_bbox, mp_status, mp_error = extract_roi_mediapipe(image)
+                    combined_error = ""
+
+                    if mp_status == "ok":
+                        roi_method_used = "mediapipe"
+                    else:
+                        det_img, det_bbox, det_status, det_error = predict_yolo_bbox(image)
+                        if det_status == "ok":
+                            roi_img, roi_bbox = det_img, det_bbox
+                            roi_method_used = "yolo_detect"
+                            combined_error = f"mp: {mp_error}"
+                        else:
+                            roi_img, roi_bbox = extract_roi_fixed(image)
+                            roi_method_used = "fixed_fallback"
+                            combined_error = (
+                                f"mp: {mp_error}; yolo_detect: {det_error}"
+                            )
+
+                    if roi_img is None:
+                        raise ValueError(f"roi_all_fallbacks_failed: {combined_error}")
+
+                    if combined_error and error_msg:
+                        error_msg = f"{error_msg}; {combined_error}"
+
+                    roi_ms = (time.time() - start) * 1000
+                    roi_span.set_attribute("roi.method", roi_method_used)
+
+                start = time.perf_counter()
+                cv2.imwrite(str(output_folder / "roi.png"), roi_img)
+                artifact_write_ms += (time.perf_counter() - start) * 1000.0
+
+                # ======================
+                # Segmentation（U-Net model on ROI crop）
+                # ======================
+                with trace_span("seg"):
+                    start = time.time()
+                    if not model_path.exists():
+                        raise FileNotFoundError(
+                            f"seg_model_missing: {model_path} (required, no fallback)"
+                        )
+
+                    # Pass ROI array directly to avoid temp file disk I/O
+                    roi_mask, _, inference_timings = infer_segmentation(
+                        "",
+                        str(model_path),
+                        img_size=SEG_IMG_SIZE,
+                        threshold=SEG_THRESHOLD,
+                        image_array=roi_img,
+                        return_timings=True,
+                    )
+                    model_load_ms = inference_timings["model_load_ms"]
+                    seg_preprocess_ms = inference_timings["seg_preprocess_ms"]
+                    seg_forward_ms = inference_timings["seg_forward_ms"]
+
+                    # Keep only the largest connected component (removes chin/neck noise)
+                    postprocess_start = time.perf_counter()
+                    if roi_mask.max() > 0:
+                        _bin = (roi_mask > 0).astype(np.uint8)
+                        _n, _lbl, _stats, _ = cv2.connectedComponentsWithStats(_bin, connectivity=8)
+                        if _n > 2:
+                            _largest = 1 + int(np.argmax(_stats[1:, cv2.CC_STAT_AREA]))
+                            roi_mask = np.where(_lbl == _largest, roi_mask.max(), 0).astype(np.uint8)
+
+                    # Paste ROI mask back into full-image coordinates
+                    x1, y1, x2, y2 = roi_bbox
+                    roi_mask_resized = cv2.resize(roi_mask, (x2 - x1, y2 - y1), interpolation=cv2.INTER_NEAREST)
+                    mask = np.zeros((h, w), dtype=np.uint8)
+                    mask[y1:y2, x1:x2] = roi_mask_resized
+                    seg_postprocess_ms = (time.perf_counter() - postprocess_start) * 1000.0
+                    seg_ms = (time.time() - start) * 1000
+                write_start = time.perf_counter()
+                cv2.imwrite(str(output_folder / "mask.png"), mask)
+                artifact_write_ms += (time.perf_counter() - write_start) * 1000.0
+
+                # ======================
+                # Feature 256
+                # ======================
+                with trace_span("feat"):
+                    start = time.time()
+                    feature_256 = extract_features(image, mask)
+                    feat_ms = (time.time() - start) * 1000
+                write_start = time.perf_counter()
+                np.save(output_folder / "feature_256.npy", feature_256)
+                artifact_write_ms += (time.perf_counter() - write_start) * 1000.0
+
+                # ======================
+                # DeID: keep only tongue mask pixels; everything else is black.
+                # ======================
+                with trace_span("deid"):
+                    start = time.time()
+                    deid_img, _ = deid_mask_only(image, mask)
+                    if deid_img is None:
+                        deid_img = apply_mask_only(image, mask)
+                    deid_method = "mask_only"
+                    deid_ms = (time.time() - start) * 1000
+
+                write_start = time.perf_counter()
+                cv2.imwrite(str(output_folder / "deid.png"), deid_img)
+                artifact_write_ms += (time.perf_counter() - write_start) * 1000.0
+
+                privacy_start = time.perf_counter()
+                try:
+                    with trace_span("privacy") as privacy_span:
+                        privacy_metrics = evaluate_privacy(
+                            image,
+                            deid_img,
+                            mask,
+                            cfg=PRIVACY_CFG,
+                        )
+                        privacy_pass = bool(privacy_metrics.get("privacy_pass", False))
+                        privacy_span.set_attribute("privacy.pass", privacy_pass)
+                        if not privacy_pass:
+                            mark_failed(privacy_span, "privacy_check_failed")
+                except Exception as pe:
+                    privacy_metrics = {
+                        "privacy_pass": False,
+                        "background_leak_ratio": float("nan"),
+                        "retention_completeness": float("nan"),
+                        "privacy_risk_score": float("nan"),
+                        "privacy_issues": [f"privacy_eval_error:{pe}"],
+                    }
+                privacy_ms = (time.perf_counter() - privacy_start) * 1000.0
+
+            except Exception as e:
+                status = "error"
+                error_msg = str(e)
+
+            total_ms = (time.time() - start_total) * 1000
+            total_span.set_attribute("pipeline.status", status)
+            total_span.set_attribute("privacy.pass", bool(privacy_metrics.get("privacy_pass", False)))
+            if status != "ok":
+                mark_failed(total_span, "pipeline_error" if status == "error" else "quality_fail")
+            elif not privacy_metrics.get("privacy_pass", False):
+                mark_failed(total_span, "privacy_check_failed")
         accounted_ms = (
             image_load_ms
             + resize_ms
