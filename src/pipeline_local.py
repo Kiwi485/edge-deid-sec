@@ -21,7 +21,7 @@ try:
     from roi.quality_check import check_quality
     from deid.deid_mask_only import deid_mask_only
     from privacy.deid_metrics import PrivacyConfig, evaluate_privacy
-    from seg.feature_extractor import extract_features
+    from seg.feature_extractor import FEATURE_VERSION, extract_features
 except ImportError:
     # Fallback when running as module from workspace root.
     from src.roi.roi_mediapipe import extract_roi_mediapipe
@@ -30,7 +30,7 @@ except ImportError:
     from src.roi.quality_check import check_quality
     from src.deid.deid_mask_only import deid_mask_only
     from src.privacy.deid_metrics import PrivacyConfig, evaluate_privacy
-    from src.seg.feature_extractor import extract_features
+    from src.seg.feature_extractor import FEATURE_VERSION, extract_features
 
 
 RAW_DIR = Path("data/raw")
@@ -372,6 +372,7 @@ def run_batch_pipeline(
             "deid_method": deid_method if status != "error" else "",
             "seg_backend": seg_backend,
             "seg_model_path": str(model_path),
+            "feature_version": FEATURE_VERSION,
             "timing_ms": {
                 "roi_ms": roi_ms,
                 "seg_ms": seg_ms,

@@ -12,12 +12,20 @@ feature_extractor.py — 256 維舌頭特徵提取
   [  0– 47]  HSV 顏色直方圖（H×16 + S×16 + V×16）
   [ 48– 95]  RGB 顏色統計（各 channel mean/std/p25/p50/p75/skew × 3ch → 18 → pad to 48）
   [ 96–143]  形狀特徵（面積比、長寬比、circularity、solidity、extent、hu_moments×7）→ 12 → pad to 48
-  [144–255]  LBP 紋理直方圖（112 維）
+    [144–239]  LBP 紋理直方圖（96 維）
+    [240–255]  Masked GLCM（4 方向 × 4 指標）
 """
 
 import cv2
 import numpy as np
 from typing import Optional
+from skimage.feature import graycomatrix, graycoprops
+
+
+FEATURE_VERSION = "v2_glcm"
+GLCM_LEVELS = 32
+GLCM_ANGLES = (0.0, np.pi / 4, np.pi / 2, 3 * np.pi / 4)
+GLCM_PROPERTIES = ("contrast", "dissimilarity", "homogeneity", "energy")
 
 
 # ---------------------------------------------------------------------------
@@ -120,7 +128,7 @@ def _shape_features(mask: np.ndarray) -> np.ndarray:
     return np.pad(feats, (0, 48 - len(feats)))  # pad to 48
 
 
-def _lbp_histogram(crop_bgr: np.ndarray, mask_bool: np.ndarray, bins: int = 112) -> np.ndarray:
+def _lbp_histogram(crop_bgr: np.ndarray, mask_bool: np.ndarray, bins: int = 96) -> np.ndarray:
     """8-neighbour LBP-like texture histogram over the cropped tongue region."""
     gray = cv2.cvtColor(crop_bgr, cv2.COLOR_BGR2GRAY)
 
@@ -140,7 +148,30 @@ def _lbp_histogram(crop_bgr: np.ndarray, mask_bool: np.ndarray, bins: int = 112)
     s = hist.sum()
     if s > 0:
         hist /= s
-    return hist  # 112 dims
+    return hist
+
+
+def _glcm_features(crop_bgr: np.ndarray, mask_bool: np.ndarray) -> np.ndarray:
+    """Exclude sentinel level zero so both endpoints of every pair are in the mask."""
+    gray = cv2.cvtColor(crop_bgr, cv2.COLOR_BGR2GRAY)
+    quantized = (gray.astype(np.uint16) * GLCM_LEVELS // 256 + 1).astype(np.uint8)
+    quantized[~mask_bool] = 0
+    matrices = graycomatrix(
+        quantized,
+        distances=[1],
+        angles=GLCM_ANGLES,
+        levels=GLCM_LEVELS + 1,
+        symmetric=True,
+        normed=False,
+    )[1:, 1:, :, :]
+    has_pairs = matrices.sum(axis=(0, 1))[0] > 0
+    features = np.column_stack([
+        graycoprops(matrices, prop)[0] for prop in GLCM_PROPERTIES
+    ])
+    features[:, 0] /= (GLCM_LEVELS - 1) ** 2
+    features[:, 1] /= GLCM_LEVELS - 1
+    features[~has_pairs] = 0.0
+    return features.ravel().astype(np.float32)
 
 
 # ---------------------------------------------------------------------------
@@ -180,9 +211,10 @@ def extract_features(image_bgr: np.ndarray, mask: np.ndarray) -> np.ndarray:
 
     hsv_feat = _hsv_histogram(crop_bgr, crop_mask, bins=16)        # 48
     rgb_feat = _rgb_stats(crop_bgr, mask_bool)                     # 48
-    lbp_feat = _lbp_histogram(crop_bgr, mask_bool, bins=112)       # 112
+    lbp_feat = _lbp_histogram(crop_bgr, mask_bool, bins=96)
+    glcm_feat = _glcm_features(crop_bgr, mask_bool)
 
-    feat = np.concatenate([hsv_feat, rgb_feat, shape_feat, lbp_feat])  # 256
+    feat = np.concatenate([hsv_feat, rgb_feat, shape_feat, lbp_feat, glcm_feat])
     assert feat.shape == (256,), f"Feature dim mismatch: {feat.shape}"
 
     # Clip to finite values (safety)
