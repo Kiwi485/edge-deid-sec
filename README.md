@@ -101,6 +101,19 @@ python -m pytest -q test/test_feature_extractor.py
 
 `logs/` 是效能記錄，不是 pipeline 啟動的必要輸入；不需要查看效能或研究報告時可以忽略它。
 
+## W8：OpenTelemetry 監控
+
+W8 為每張影像記錄 `total`、`roi`、`seg`、`feat`、`deid`、`privacy` spans，不改模型或特徵。預設關閉，啟用後輸出 JSON 到終端機／Docker logs；目前沒有監控網頁或遠端 Collector。
+
+Windows PowerShell（已安裝專案依賴的 Python 3.11 環境）：
+
+```powershell
+.\.venv311\Scripts\python.exe -m pip install "opentelemetry-api>=1.30,<2" "opentelemetry-sdk>=1.30,<2"
+.\.venv311\Scripts\python.exe -m pytest -q test/test_pipeline_telemetry.py
+```
+
+上面的測試不需要照片或模型。使用照片前，請依 [W8 操作與驗證步驟](docs/OPENTELEMETRY.md)設定 `EDGE_DEID_TRACING=console`；內含 PowerShell、Bash、Compose 指令與如何查看成功／失敗紀錄。
+
 ## Pipeline 程式位置
 
 | 功能 | 程式位置 |
