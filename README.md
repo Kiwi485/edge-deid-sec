@@ -126,6 +126,8 @@ models/seg/best.pth
 
 Docker/Compose 目前是部署骨架，詳細指令請看 [docs/DEPLOY.md](docs/DEPLOY.md)。主 pipeline 的本機執行方式仍以上面的 Python 指令為準。
 
+要用同一批照片比較 `best.pth` 與 TFLite 的 Docker 執行結果，請依照 [Docker 推論驗證步驟](docs/DEPLOY.md#用同一批照片驗證-docker-推論)操作；預設仍使用 `best.pth`，不會使用 `last.pth`。
+
 ## 專案結構
 
 ```text

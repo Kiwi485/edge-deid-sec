@@ -28,6 +28,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--socket-path", type=str, default=DEFAULT_SOCKET_PATH)
     parser.add_argument("--socket-server", action="store_true", help="Serve a Unix socket and wait for acquisition jobs.")
     parser.add_argument("--max-requests", type=int, default=1)
+    parser.add_argument("--seg-backend", choices=("torch", "tflite"), default="torch")
+    parser.add_argument("--seg-model", type=Path, default=None)
     return parser.parse_args()
 
 
@@ -36,6 +38,8 @@ def _handle_job(
     *,
     reset_csv: bool = False,
     clear_out: bool = False,
+    seg_backend: str = "torch",
+    seg_model_path: Path | None = None,
 ) -> dict:
     input_file = str(job.get("input_file", ""))
     job_id = str(job.get("job_id", "unknown"))
@@ -59,6 +63,8 @@ def _handle_job(
             clear_out=clear_out,
             append_csv=not reset_csv,
             image_names={input_file},
+            seg_backend=seg_backend,
+            seg_model_path=seg_model_path,
         )
         meta_path = out_dir / Path(input_file).stem / "meta.json"
         with open(meta_path, "r", encoding="utf-8") as f:
@@ -91,6 +97,8 @@ def main() -> None:
                 job,
                 reset_csv=args.reset_csv and first_job,
                 clear_out=args.clear_out and first_job,
+                seg_backend=args.seg_backend,
+                seg_model_path=args.seg_model,
             )
             first_job = False
             return response
@@ -121,6 +129,8 @@ def main() -> None:
         reset_csv=args.reset_csv,
         clear_out=args.clear_out,
         append_csv=False,
+        seg_backend=args.seg_backend,
+        seg_model_path=args.seg_model,
     )
 
     print("extraction completed")

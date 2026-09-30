@@ -19,6 +19,9 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
+ARG INSTALL_TFLITE=0
+RUN if [ "$INSTALL_TFLITE" = "1" ]; then pip install --no-cache-dir ai-edge-litert==1.4.0; fi
+
 # 再把專案程式碼放進容器
 COPY . .
 
