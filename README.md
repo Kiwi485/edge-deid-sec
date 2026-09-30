@@ -80,6 +80,19 @@ Linux/macOS：
 | `feature_256.npy` | 256 維影像特徵 |
 | `meta.json` | ROI 方法、品質結果、狀態與耗時 |
 
+### W7：HSV / GLCM 特徵
+
+特徵版本為 `v2_glcm`，pipeline 會將版本寫入 `meta.json` 的 `feature_version`。輸出仍是 `(256,) float32`：HSV 48 維、RGB 48 維、形狀 48 維、LBP 96 維、GLCM 16 維（RGB 與形狀區段含預留補零）。GLCM 只計算兩端都在舌頭 mask 內的像素配對。
+
+在 Python 3.11 環境安裝新增依賴並執行測試；Docker 使用前請重新 build：
+
+```bash
+python -m pip install "scikit-image>=0.25,<0.26"
+python -m pytest -q test/test_feature_extractor.py
+```
+
+完整配置、GLCM 參數與真實照片驗證步驟請看 [Feature 256 規格](docs/feature_256_spec.md)。舊版 LBP 是 112 維，不能與新版特徵混用；既有特徵資料需要重新產生，下游分類器也需重新訓練。W7 不改 segmentation 模型，也不代表已驗證分類效益或 Raspberry Pi 效能。
+
 其他輸出：
 
 - `docs/roi_eval.md`：ROI 成功率與 fallback 統計
