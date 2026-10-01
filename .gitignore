@@ -68,7 +68,8 @@ data/cvat/
 
 
 # 訓練產出的 model checkpoint（體積大）
-models/seg/model.tflite
+
+
 
 
 # 推論輸出圖片
