@@ -80,6 +80,19 @@ Linux/macOS：
 | `feature_256.npy` | 256 維影像特徵 |
 | `meta.json` | ROI 方法、品質結果、狀態與耗時 |
 
+### W7：HSV / GLCM 特徵
+
+特徵版本為 `v2_glcm`，pipeline 會將版本寫入 `meta.json` 的 `feature_version`。輸出仍是 `(256,) float32`：HSV 48 維、RGB 48 維、形狀 48 維、LBP 96 維、GLCM 16 維（RGB 與形狀區段含預留補零）。GLCM 只計算兩端都在舌頭 mask 內的像素配對。
+
+在 Python 3.11 環境安裝新增依賴並執行測試；Docker 使用前請重新 build：
+
+```bash
+python -m pip install "scikit-image>=0.25,<0.26"
+python -m pytest -q test/test_feature_extractor.py
+```
+
+完整配置、GLCM 參數與真實照片驗證步驟請看 [Feature 256 規格](docs/feature_256_spec.md)。舊版 LBP 是 112 維，不能與新版特徵混用；既有特徵資料需要重新產生，下游分類器也需重新訓練。W7 不改 segmentation 模型，也不代表已驗證分類效益或 Raspberry Pi 效能。
+
 其他輸出：
 
 - `docs/roi_eval.md`：ROI 成功率與 fallback 統計
@@ -87,6 +100,19 @@ Linux/macOS：
 - `data/raw/<image_id>.txt`：pipeline 可使用的 YOLO ROI label
 
 `logs/` 是效能記錄，不是 pipeline 啟動的必要輸入；不需要查看效能或研究報告時可以忽略它。
+
+## W8：OpenTelemetry 監控
+
+W8 為每張影像記錄 `total`、`roi`、`seg`、`feat`、`deid`、`privacy` spans，不改模型或特徵。預設關閉，啟用後輸出 JSON 到終端機／Docker logs；目前沒有監控網頁或遠端 Collector。
+
+Windows PowerShell（已安裝專案依賴的 Python 3.11 環境）：
+
+```powershell
+.\.venv311\Scripts\python.exe -m pip install "opentelemetry-api>=1.30,<2" "opentelemetry-sdk>=1.30,<2"
+.\.venv311\Scripts\python.exe -m pytest -q test/test_pipeline_telemetry.py
+```
+
+上面的測試不需要照片或模型。使用照片前，請依 [W8 操作與驗證步驟](docs/OPENTELEMETRY.md)設定 `EDGE_DEID_TRACING=console`；內含 PowerShell、Bash、Compose 指令與如何查看成功／失敗紀錄。
 
 ## Pipeline 程式位置
 
@@ -107,10 +133,10 @@ Linux/macOS：
 
 - `face_landmarker.task`：MediaPipe face landmark model
 - `hand_landmarker.task`：MediaPipe hand landmark model
-- `models/seg/best.pth`：舌頭 segmentation checkpoint（存在時使用）
+- `models/seg/best.pth`：主 pipeline 必要的舌頭 segmentation checkpoint
 - `yolov8n-seg.pt`：YOLO 模型檔
 
-如果 `models/seg/best.pth` 不存在，pipeline 會使用 HSV mask fallback；主流程仍可執行，但 segmentation 品質會不同。
+如果 `models/seg/best.pth` 不存在，pipeline 會以 `seg_model_missing` 錯誤停止該影像處理；目前沒有 HSV segmentation fallback。請先訓練模型，並將 checkpoint 放到上述路徑。
 
 ## 使用 CVAT 訓練 segmentation 模型
 
@@ -125,6 +151,8 @@ models/seg/best.pth
 ## Docker
 
 Docker/Compose 目前是部署骨架，詳細指令請看 [docs/DEPLOY.md](docs/DEPLOY.md)。主 pipeline 的本機執行方式仍以上面的 Python 指令為準。
+
+要用同一批照片比較 `best.pth` 與 TFLite 的 Docker 執行結果，請依照 [Docker 推論驗證步驟](docs/DEPLOY.md#用同一批照片驗證-docker-推論)操作；預設仍使用 `best.pth`，不會使用 `last.pth`。
 
 ## 專案結構
 
