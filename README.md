@@ -154,6 +154,55 @@ Docker/Compose 目前是部署骨架，詳細指令請看 [docs/DEPLOY.md](docs/
 
 要用同一批照片比較 `best.pth` 與 TFLite 的 Docker 執行結果，請依照 [Docker 推論驗證步驟](docs/DEPLOY.md#用同一批照片驗證-docker-推論)操作；預設仍使用 `best.pth`，不會使用 `last.pth`。
 
+### 用 Docker 執行 pipeline（Windows PowerShell）
+
+先開啟 Docker Desktop，把照片放在 `data/raw/`，在專案根目錄執行。`BATCH_LIMIT` 不可超過 `data/raw/` 的照片數，否則 extraction 會一直等待。
+
+| 後端 | 需要的模型 | 適合 |
+| --- | --- | --- |
+| `torch`（預設） | `models/seg/best.pth` | 一般使用、其他電腦 |
+| `tflite` | `models/seg/model.tflite` | 需要較快推論時 |
+
+`model.tflite` 不在 Git 裡，須另外複製或依 [DEPLOY.md](docs/DEPLOY.md#w6tflite-分割模型可選)匯出。
+
+**使用 PyTorch：**
+
+```powershell
+$env:BATCH_LIMIT = "5"
+$env:SEG_BACKEND = "torch"
+docker compose up --build --force-recreate
+```
+
+**使用 TFLite：**
+
+```powershell
+$env:BATCH_LIMIT = "5"
+$env:INSTALL_TFLITE = "1"
+$env:SEG_BACKEND = "tflite"
+docker compose up --build --force-recreate
+```
+
+PowerShell 關閉後環境變數會消失。若想讓自己的電腦固定使用 TFLite，可在專案根目錄建立 `.env`（已被 Git 忽略）：
+
+```text
+BATCH_LIMIT=5
+INSTALL_TFLITE=1
+SEG_BACKEND=tflite
+```
+
+之後只要執行 `docker compose up --build --force-recreate`。
+
+檢查每張照片使用的後端與狀態：
+
+```powershell
+Get-ChildItem .\data\out -Filter meta.json -Recurse | ForEach-Object {
+  $m = Get-Content $_.FullName -Raw | ConvertFrom-Json
+  [PSCustomObject]@{ Image=$_.Directory.Name; Status=$m.status; Backend=$m.seg_backend }
+} | Format-Table
+```
+
+> **注意：** Compose 每次執行都會清空 `data/out/` 並重建 `logs/pipeline_latency_vm.csv`。需要保留的結果請先複製到 `outputs/`。
+
 ## 專案結構
 
 ```text
