@@ -1,0 +1,53 @@
+policy_module(edge_deid, 1.0.0)
+
+require {
+    type container_t;
+    type container_runtime_t;
+    type container_file_t;
+    type container_ro_file_t;
+    type tmpfs_t;
+}
+
+type edge_deid_extraction_t;
+domain_type(edge_deid_extraction_t)
+
+type edge_deid_raw_t;
+files_type(edge_deid_raw_t)
+
+allow container_t edge_deid_raw_t:dir { getattr search open read };
+allow container_t edge_deid_raw_t:file { getattr open read map ioctl lock };
+allow container_t edge_deid_raw_t:lnk_file { getattr read };
+
+allow edge_deid_extraction_t self:process { fork sigchld signull signal getsched setsched };
+allow edge_deid_extraction_t self:fd use;
+allow edge_deid_extraction_t self:fifo_file { getattr read write ioctl };
+allow edge_deid_extraction_t self:unix_stream_socket { create connect bind listen accept read write getattr getopt setopt shutdown };
+allow edge_deid_extraction_t container_t:unix_stream_socket { connectto read write getattr getopt setopt shutdown };
+allow container_t edge_deid_extraction_t:unix_stream_socket { connectto read write getattr getopt setopt shutdown };
+allow edge_deid_extraction_t container_runtime_t:fd use;
+allow edge_deid_extraction_t container_runtime_t:fifo_file { getattr read write ioctl };
+
+allow edge_deid_extraction_t container_file_t:dir { getattr search open read write add_name remove_name create setattr rmdir };
+allow edge_deid_extraction_t container_file_t:file { getattr open read write append create unlink rename setattr map ioctl lock execute execute_no_trans entrypoint };
+allow edge_deid_extraction_t container_file_t:lnk_file { getattr read };
+allow edge_deid_extraction_t container_file_t:sock_file { getattr create unlink write setattr };
+allow edge_deid_extraction_t container_ro_file_t:dir { getattr search open read };
+allow edge_deid_extraction_t container_ro_file_t:file { getattr open read map ioctl lock execute execute_no_trans entrypoint };
+allow edge_deid_extraction_t container_ro_file_t:lnk_file { getattr read };
+allow edge_deid_extraction_t tmpfs_t:dir { getattr search open read write add_name remove_name create setattr rmdir };
+allow edge_deid_extraction_t tmpfs_t:file { getattr open read write append create unlink rename setattr map ioctl lock };
+allow edge_deid_extraction_t tmpfs_t:sock_file { getattr create unlink write setattr };
+
+files_read_etc_files(edge_deid_extraction_t)
+files_read_usr_files(edge_deid_extraction_t)
+libs_use_ld_so(edge_deid_extraction_t)
+libs_use_shared_libs(edge_deid_extraction_t)
+dev_read_urand(edge_deid_extraction_t)
+dev_read_rand(edge_deid_extraction_t)
+dev_rw_null(edge_deid_extraction_t)
+dev_rw_zero(edge_deid_extraction_t)
+kernel_read_system_state(edge_deid_extraction_t)
+fs_getattr_all_fs(edge_deid_extraction_t)
+
+neverallow edge_deid_extraction_t self:{ tcp_socket udp_socket rawip_socket } *;
+neverallow edge_deid_extraction_t edge_deid_raw_t:{ dir file lnk_file } *;

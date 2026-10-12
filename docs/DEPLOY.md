@@ -6,6 +6,8 @@
 - 已在專案根目錄 `edge-deid-sec/`
 - `models/seg/best.pth` 必須存在（pipeline 已移除 HSV fallback）
 
+W10 起容器使用 UID/GID `10001:10001`、唯讀根目錄與獨立的原圖/輸出掛載。啟動前請完成 [W10 安全部署與驗證](WEEK10_SECURITY.md) 的目錄權限設定；不要用 `chmod 777` 解決權限問題。extraction 禁網並且不能讀取宿主機 `data/raw`，acquisition 改為透過 Unix Socket 傳圖片內容。SELinux 必須另外在 enforcing 的宿主機安裝政策與使用覆寫設定，不能把 Docker 禁網當成 SELinux 證據。
+
 ## W6：TFLite 分割模型（可選）
 
 預設仍使用 PyTorch 的 `models/seg/best.pth`。在有 PyTorch、segmentation-models-pytorch 的開發環境安裝 `litert-torch`，再將 checkpoint 匯出成 float32 TFLite 模型：
@@ -34,7 +36,7 @@ INSTALL_TFLITE=1 SEG_BACKEND=tflite docker compose up --build
 python tools/compare_seg_backends.py --roi-dir data/out --limit 20
 ```
 
-報告中的 Dice／IoU 是**兩個 backend 遮罩的一致性**，不是對人工標註的分割準確率。模型在 x86 Python 3.11 的 LiteRT 1.4.0 已通過載入與執行；Raspberry Pi 上的 ARM64 套件安裝、真實資料精度、記憶體與延遲仍須實測。切換 backend 前請保存原始 benchmark：本機 pipeline 預設重建 CSV，Compose 的 extraction 還會清除舊輸出。產生的 `model.tflite` 留在本機且不納入 Git，部署到另一台機器時須重新匯出或安全地複製。TFLite 不保證達到單幀 80 ms。
+報告中的 Dice／IoU 是**兩個 backend 遮罩的一致性**，不是對人工標註的分割準確率。模型在 x86 Python 3.11 的 LiteRT 1.4.0 已通過載入與執行；Raspberry Pi 上的 ARM64 套件安裝、真實資料精度、記憶體與延遲仍須實測。切換 backend 前請保存原始 benchmark：本機 pipeline 預設重建 CSV，Compose 的 extraction 會重建 CSV，但不再自動刪除舊輸出。產生的 `model.tflite` 留在本機且不納入 Git，部署到另一台機器時須重新匯出或安全地複製。TFLite 不保證達到單幀 80 ms。
 
 ### 用同一批照片驗證 Docker 推論
 
@@ -88,8 +90,8 @@ docker compose up --build
 
 流程順序：
 
-1. acquisition
-2. extraction（依賴 acquisition 成功）
+1. extraction（建立 Socket，健康檢查確認可連線）
+2. acquisition（依賴 extraction 健康，傳送圖片）
 3. observability（依賴 extraction 成功）
 
 ## 檢查輸出

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import base64
 import csv
 import json
 import sys
@@ -16,6 +17,19 @@ if str(PROJECT_ROOT) not in sys.path:
 from src.services.ipc import DEFAULT_SOCKET_PATH, send_job  # noqa: E402
 
 VALID_EXT = {".jpg", ".jpeg", ".png", ".heic"}
+MAX_IMAGE_BYTES = 16 * 1024 * 1024
+
+
+def build_socket_job(image_path: Path) -> dict:
+    with image_path.open("rb") as image_file:
+        image_bytes = image_file.read(MAX_IMAGE_BYTES + 1)
+    if not image_bytes or len(image_bytes) > MAX_IMAGE_BYTES:
+        raise ValueError("image must contain 1 to 16777216 bytes")
+    return {
+        "job_id": image_path.stem,
+        "input_file": image_path.name,
+        "image_b64": base64.b64encode(image_bytes).decode("ascii"),
+    }
 
 
 def parse_args() -> argparse.Namespace:
@@ -90,15 +104,7 @@ def main() -> None:
         args.ipc_report.parent.mkdir(parents=True, exist_ok=True)
         ipc_rows = []
         for item in payload["items"]:
-            job = {
-                "job_id": item["image_id"],
-                "image_id": item["image_id"],
-                "input_file": item["input_file"],
-                "raw_dir": str(args.raw_dir),
-                "out_dir": "data/out",
-                "csv": "logs/pipeline_latency_vm.csv",
-                "manifest": str(args.manifest),
-            }
+            job = build_socket_job(args.raw_dir / item["input_file"])
             started = time.perf_counter()
             response = send_job(args.socket_path, job)
             elapsed_ms = (time.perf_counter() - started) * 1000.0

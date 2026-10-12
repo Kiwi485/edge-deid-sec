@@ -7,6 +7,8 @@ import time
 from typing import Any, Callable
 
 DEFAULT_SOCKET_PATH = "/tmp/edge_deid.sock"
+MAX_REQUEST_BYTES = 24 * 1024 * 1024
+SOCKET_TIMEOUT_SECONDS = 120.0
 
 
 def _supports_unix_socket() -> bool:
@@ -18,11 +20,15 @@ def send_job(sock_path: str = DEFAULT_SOCKET_PATH, job: dict[str, Any] | None = 
         raise RuntimeError("Unix domain sockets are unavailable on this platform. Run W4 inside Docker/Linux.")
 
     payload = job or {}
+    encoded = json.dumps(payload, separators=(",", ":")).encode("utf-8")
+    if len(encoded) > MAX_REQUEST_BYTES:
+        raise ValueError("IPC request exceeds size limit")
     start = time.perf_counter()
 
     with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
+        client.settimeout(SOCKET_TIMEOUT_SECONDS)
         client.connect(sock_path)
-        client.sendall(json.dumps(payload, separators=(",", ":")).encode("utf-8"))
+        client.sendall(encoded)
         client.shutdown(socket.SHUT_WR)
 
         chunks: list[bytes] = []
@@ -62,30 +68,32 @@ def serve_jobs(
     try:
         with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as server:
             server.bind(sock_path)
+            os.chmod(sock_path, 0o660)
             server.listen(5)
             request_count = 0
 
             while request_count < max_requests:
                 conn, _ = server.accept()
                 with conn:
-                    chunks: list[bytes] = []
-                    while True:
-                        chunk = conn.recv(4096)
-                        if not chunk:
-                            break
-                        chunks.append(chunk)
-
-                    if not chunks:
-                        continue
-
-                    request_count += 1
                     try:
-                        job = json.loads(b"".join(chunks).decode("utf-8"))
-                    except json.JSONDecodeError as exc:
-                        response = {"status": "error", "error": f"invalid_json: {exc}"}
-                    else:
+                        conn.settimeout(SOCKET_TIMEOUT_SECONDS)
+                        request = bytearray()
+                        while True:
+                            chunk = conn.recv(65536)
+                            if not chunk:
+                                break
+                            request.extend(chunk)
+                            if len(request) > MAX_REQUEST_BYTES:
+                                raise ValueError("IPC request exceeds size limit")
+                        if not request:
+                            continue
+                        job = json.loads(request.decode("utf-8"))
+                        if not isinstance(job, dict):
+                            raise ValueError("IPC request must be an object")
                         response = handler(job)
-
+                    except (ValueError, UnicodeDecodeError, socket.timeout) as exc:
+                        response = {"status": "error", "error": f"invalid_json: {exc}"}
+                    request_count += 1
                     conn.sendall(json.dumps(response, separators=(",", ":")).encode("utf-8"))
     finally:
         if os.path.exists(sock_path):
