@@ -114,6 +114,30 @@ Windows PowerShell（已安裝專案依賴的 Python 3.11 環境）：
 
 上面的測試不需要照片或模型。使用照片前，請依 [W8 操作與驗證步驟](docs/OPENTELEMETRY.md)設定 `EDGE_DEID_TRACING=console`；內含 PowerShell、Bash、Compose 指令與如何查看成功／失敗紀錄。
 
+## W10：安全隔離測試
+
+完整步驟與結果判讀請看 [W10 測試快速開始](docs/WEEK10_SECURITY.md#測試快速開始)，再依 [目錄權限與部署前置設定](docs/WEEK10_SECURITY.md#一般-linux-部署)執行容器測試。
+
+在專案根目錄使用 Linux Bash；Windows 建議使用 WSL2 並啟用 Docker Desktop 的 WSL integration：
+
+```bash
+python -m pip install pytest
+python -m pytest -q test/test_week10_security.py test/test_unix_socket_ipc.py
+python tools/check_week10_security.py --static-only --output evidence/security/week10-static.json
+```
+
+單元測試不需要照片或模型；設定檢查需要 Docker Compose 與啟動中的 Docker。照片與模型回歸則先準備至少 5 張圖片、分割模型及目錄權限，再執行：
+
+```bash
+docker compose build
+BATCH_LIMIT=5 docker compose up
+python tools/check_week10_security.py --output evidence/security/week10-runtime.json
+```
+
+預期單元測試全部通過，安全 JSON 的 `checks_passed` 為 `true`，並確認三服務完成且輸出與隱私驗證通過。extraction 設定為禁網、非 root、唯讀根目錄，且不掛載原圖目錄；圖片由 Unix Socket 傳入，在 tmpfs 暫存後清除。
+
+**設定或一般容器測試通過，不等於 W10 全部完成。** SELinux 必須在 enforcing 的 Linux 宿主機依 [SELinux 驗收步驟](docs/WEEK10_SECURITY.md#selinux-專用宿主機)另測；完整 CIS 稽核及最終安全配置下的 W9 效能測試仍是獨立交付。Docker Desktop／只有 AppArmor 的 Linux 不能當作 SELinux 證據。
+
 ## Pipeline 程式位置
 
 | 功能 | 程式位置 |
@@ -201,7 +225,7 @@ Get-ChildItem .\data\out -Filter meta.json -Recurse | ForEach-Object {
 } | Format-Table
 ```
 
-> **注意：** Compose 每次執行都會清空 `data/out/` 並重建 `logs/pipeline_latency_vm.csv`。需要保留的結果請先複製到 `outputs/`。
+> **注意：** W10 起 Compose 不再自動清空 `data/out/`，但仍會重建 `logs/pipeline_latency_vm.csv` 並覆寫同名影像的輸出。測試前請先備份需要保留的結果，切換批次時整理舊輸出，避免離線稽核混入其他批次。
 
 ## 專案結構
 

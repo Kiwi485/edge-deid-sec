@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import argparse
+import base64
 import json
 import sys
+import tempfile
 import time
 from pathlib import Path
 
@@ -11,6 +13,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.services.ipc import DEFAULT_SOCKET_PATH, serve_jobs  # noqa: E402
+from src.services.acquisition_service import MAX_IMAGE_BYTES, VALID_EXT
 
 
 def parse_args() -> argparse.Namespace:
@@ -40,32 +43,40 @@ def _handle_job(
     clear_out: bool = False,
     seg_backend: str = "torch",
     seg_model_path: Path | None = None,
+    out_dir: Path = Path("data/out"),
+    csv_path: Path = Path("logs/pipeline_latency_vm.csv"),
 ) -> dict:
     input_file = str(job.get("input_file", ""))
     job_id = str(job.get("job_id", "unknown"))
-    if not input_file or Path(input_file).name != input_file:
+    if not input_file or Path(input_file).name != input_file or Path(input_file).suffix.lower() not in VALID_EXT:
         return {"status": "error", "job_id": job_id, "error": "invalid input_file"}
 
-    raw_dir = Path(str(job.get("raw_dir", "data/raw")))
-    out_dir = Path(str(job.get("out_dir", "data/out")))
-    csv_path = Path(str(job.get("csv", "logs/pipeline_latency_vm.csv")))
     print(f"extraction received job={job_id} input_file={input_file}")
 
     started = time.perf_counter()
     try:
+        encoded_image = job.get("image_b64")
+        if not isinstance(encoded_image, str) or len(encoded_image) > 4 * ((MAX_IMAGE_BYTES + 2) // 3):
+            raise ValueError("missing or oversized image_b64")
+        image_bytes = base64.b64decode(encoded_image, validate=True)
+        if not image_bytes or len(image_bytes) > MAX_IMAGE_BYTES:
+            raise ValueError("invalid image size")
         from src.pipeline_local import run_batch_pipeline
 
-        run_batch_pipeline(
-            raw_dir=raw_dir,
-            out_dir=out_dir,
-            csv_path=csv_path,
-            reset_csv=reset_csv,
-            clear_out=clear_out,
-            append_csv=not reset_csv,
-            image_names={input_file},
-            seg_backend=seg_backend,
-            seg_model_path=seg_model_path,
-        )
+        with tempfile.TemporaryDirectory(prefix="edge-deid-input-") as input_directory:
+            raw_dir = Path(input_directory)
+            (raw_dir / input_file).write_bytes(image_bytes)
+            run_batch_pipeline(
+                raw_dir=raw_dir,
+                out_dir=out_dir,
+                csv_path=csv_path,
+                reset_csv=reset_csv,
+                clear_out=clear_out,
+                append_csv=not reset_csv,
+                image_names={input_file},
+                seg_backend=seg_backend,
+                seg_model_path=seg_model_path,
+            )
         meta_path = out_dir / Path(input_file).stem / "meta.json"
         with open(meta_path, "r", encoding="utf-8") as f:
             pipeline_status = json.load(f).get("status", "error")
@@ -99,6 +110,8 @@ def main() -> None:
                 clear_out=args.clear_out and first_job,
                 seg_backend=args.seg_backend,
                 seg_model_path=args.seg_model,
+                out_dir=args.out_dir,
+                csv_path=args.csv,
             )
             first_job = False
             return response

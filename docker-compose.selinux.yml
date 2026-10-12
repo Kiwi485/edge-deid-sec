@@ -1,0 +1,11 @@
+services:
+  acquisition:
+    volumes:
+      - ./data/raw:/app/data/raw:ro
+  extraction:
+    security_opt:
+      - no-new-privileges:true
+      - label=type:edge_deid_extraction_t
+  observability:
+    volumes:
+      - ./data/raw:/app/data/raw:ro

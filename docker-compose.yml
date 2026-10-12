@@ -1,5 +1,17 @@
+x-security: &security
+  user: "10001:10001"
+  read_only: true
+  cap_drop:
+    - ALL
+  security_opt:
+    - no-new-privileges:true
+  pids_limit: 256
+  tmpfs:
+    - /tmp:rw,noexec,nosuid,nodev,size=256m,mode=1777
+
 services:
   acquisition:
+    <<: *security
     build: .
     container_name: edge-deid-acquisition
     cpus: "0.50"
@@ -11,17 +23,19 @@ services:
       - "${BATCH_LIMIT:-100}"
       - --socket-mode
       - --socket-path
-      - /tmp/edge_deid.sock
+      - /run/edge-deid/edge_deid.sock
     depends_on:
       extraction:
-        condition: service_started
+        condition: service_healthy
     volumes:
-      - ./data:/app/data
-      - ./evidence:/app/evidence
-      - ./tmp:/tmp
+      - ./data/raw:/app/data/raw:ro,z
+      - ./evidence:/app/evidence:rw,z
+      - ipc:/run/edge-deid
     restart: "no"
 
   extraction:
+    <<: *security
+    network_mode: none
     build:
       context: .
       args:
@@ -38,20 +52,24 @@ services:
       - --seg-backend
       - ${SEG_BACKEND:-torch}
       - --socket-path
-      - /tmp/edge_deid.sock
+      - /run/edge-deid/edge_deid.sock
       - --max-requests
       - "${BATCH_LIMIT:-100}"
       - --reset-csv
-      - --clear-out
     volumes:
-      - ./data:/app/data
-      - ./logs:/app/logs
-      - ./models:/app/models
-      - ./evidence:/app/evidence
-      - ./tmp:/tmp
+      - ./data/out:/app/data/out:rw,z
+      - ./logs:/app/logs:rw,z
+      - ./models:/app/models:ro,z
+      - ipc:/run/edge-deid
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; connection = socket.socket(socket.AF_UNIX); connection.connect('/run/edge-deid/edge_deid.sock'); connection.close()"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
     restart: "no"
 
   observability:
+    <<: *security
     build: .
     container_name: edge-deid-observability
     cpus: "1.5"
@@ -65,8 +83,12 @@ services:
       extraction:
         condition: service_completed_successfully
     volumes:
-      - ./data:/app/data
-      - ./logs:/app/logs
-      - ./docs:/app/docs
-      - ./evidence:/app/evidence
+      - ./data/raw:/app/data/raw:ro,z
+      - ./data/out:/app/data/out:rw,z
+      - ./logs:/app/logs:ro,z
+      - ./docs:/app/docs:rw,z
+      - ./evidence:/app/evidence:rw,z
     restart: "no"
+
+volumes:
+  ipc:

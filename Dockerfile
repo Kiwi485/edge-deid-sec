@@ -3,7 +3,11 @@ FROM python:3.11-slim
 WORKDIR /app
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    HOME=/tmp \
+    XDG_CACHE_HOME=/tmp/.cache \
+    YOLO_CONFIG_DIR=/tmp/ultralytics \
+    MPLCONFIGDIR=/tmp/matplotlib
 
 # 安裝 OpenCV 需要的系統相依套件（含 libxcb1 等）
 RUN apt-get update && apt-get install -y \
@@ -24,6 +28,13 @@ RUN if [ "$INSTALL_TFLITE" = "1" ]; then pip install --no-cache-dir ai-edge-lite
 
 # 再把專案程式碼放進容器
 COPY . .
+
+RUN groupadd --gid 10001 edge-deid \
+    && useradd --uid 10001 --gid 10001 --no-create-home edge-deid \
+    && mkdir -p /app/data/out /app/logs /app/evidence /app/docs /run/edge-deid \
+    && chown 10001:10001 /run/edge-deid
+
+USER 10001:10001
 
 # 預設啟動 extraction service；compose 會依服務覆蓋 command。
 CMD ["python", "src/services/extraction_service.py"]
