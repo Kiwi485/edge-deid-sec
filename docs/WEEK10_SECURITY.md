@@ -21,7 +21,7 @@ python -m pip install pytest
 python -m pytest -q test/test_week10_security.py test/test_unix_socket_ipc.py
 ```
 
-預期全部通過（本次開發環境為 16 passed）。涵蓋圖片內容經 Socket 傳輸、拒絕不合法檔名/Base64/過大圖片、忽略客戶端讀寫路徑、成功與失敗後刪除暫存，以及 Compose 安全設定。模型處理使用替身，這不是實際分割品質測試。若未安裝 Docker，兩項 Compose 測試會略過，不能當作設定已驗證。
+預期全部通過（2026-10-24 的 Ubuntu WSL2 驗證為 21 passed，無略過）。涵蓋圖片內容經 Socket 傳輸、拒絕不合法檔名/Base64/過大圖片、忽略客戶端讀寫路徑、成功與失敗後刪除暫存、Compose 安全設定，以及安全探測指令與錯誤輸出回歸。模型處理使用替身，這不是實際分割品質測試。若未安裝 Docker，兩項 Compose 測試會略過，不能當作設定已驗證。
 
 ### 2. 不用模型的設定檢查
 
@@ -44,6 +44,14 @@ python tools/check_week10_security.py --output evidence/security/week10-runtime.
 docker compose ps -a
 ```
 
+若部署使用 TFLite，可改用以下指令；需先準備 `models/seg/model.tflite`，不必為了 W10 改回 PyTorch：
+
+```bash
+BATCH_LIMIT=5 INSTALL_TFLITE=1 SEG_BACKEND=tflite docker compose up --build --force-recreate
+python tools/check_week10_security.py --output evidence/security/week10-runtime.json
+docker compose ps -a
+```
+
 等待流程完成後再執行安全檢查。`BATCH_LIMIT` 不可超過可用照片數；圖片的檔名主體應唯一，避免不同副檔名覆寫同一個輸出 bundle。安全探測會另外建立一次性容器，不會執行模型或取代三服務回歸。
 
 | 查看項目 | 預期結果 |
@@ -52,7 +60,7 @@ docker compose ps -a
 | runtime JSON | `configuration` 與 `runtime.checks` 全為 `true`，`checks_passed` 為 `true` |
 | 宿主機外連對照 | `host_network_control` 為 `connected`；否則不能判定禁網驗證完整 |
 | 三服務狀態 | acquisition、extraction、observability 都正常完成，exit code 0 |
-| 每張 meta | `status=ok`、`seg_backend=torch`、`privacy_metrics.privacy_pass=true` |
+| 每張 meta | `status=ok`、`seg_backend` 與選用後端一致（`torch` 或 `tflite`）、`privacy_metrics.privacy_pass=true` |
 | 輸出驗證 | `evidence/batch/validation_summary.csv` 中本批次全部通過 |
 | 隱私報告 | `evidence/batch/privacy_summary.md` 中本批次 privacy pass rate 為 100% |
 
@@ -93,7 +101,7 @@ python tools/check_week10_security.py
 
 使用同一批輸入做回歸，先保存舊輸出；Compose 不再自動清除整個输出掛載點，以避免刪除 mount root 失敗。改用不同批次時，先備份並手動整理舊 bundle，避免離線稽核把不同批次混算。
 
-安全檢查工具不需要模型推論，但需要已建立的 extraction 映像與可寫的掛載目錄。不會自動 build，也不會自動修正宿主機權限。無映像、無權限、主機外連對照失敗都會記錄失敗，不會冒充通過。
+安全檢查工具不需要模型推論，但需要已建立的 extraction 映像與可寫的掛載目錄。探測前先確認映像存在，再以 `--pull never` 執行；不會自動 build，也不會自動修正宿主機權限。無映像、無權限、主機外連對照失敗都會記錄失敗，不會冒充通過。Docker 指令失敗時，JSON 的 `command_stderr` 與 `command_stdout` 會保留錯誤輸出。
 
 ```bash
 python tools/check_week10_security.py --static-only
@@ -147,10 +155,10 @@ sudo ausearch -m AVC,USER_AVC -ts recent > evidence/security/selinux-avc.log
 
 | 範圍 | 檢查 | 目前狀態 |
 |---|---|---|
-| 容器使用者 | 非 root UID/GID | 設定已加入；runtime 待實測 |
-| 權限 | drop ALL、no-new-privileges、不使用 privileged | 設定已加入；runtime 待實測 |
-| 檔案系統 | rootfs 唯讀、模型唯讀、指定可寫目錄 | 設定已加入；runtime 待實測 |
-| 網路與掛載 | extraction 禁網、不掛原圖或 Docker Socket | 設定已加入；runtime 待實測 |
+| 容器使用者 | 非 root UID/GID | WSL2 設定檢查通過；runtime 確認非 root、UID 10001；目標 SELinux VM 待驗證 |
+| 權限 | drop ALL、no-new-privileges、不使用 privileged | WSL2 runtime 確認有效 capabilities 為 0、禁止提權；不是完整 CIS 驗收 |
+| 檔案系統 | rootfs 唯讀、模型唯讀、指定可寫目錄 | WSL2 設定檢查通過；runtime 確認 rootfs 唯讀、輸出及日誌可寫；模型唯讀未另做寫入探測 |
+| 網路與掛載 | extraction 禁網、不掛原圖或 Docker Socket | WSL2 設定檢查通過；runtime 確認原圖目錄不存在、外連被阻擋且宿主機對照可連線 |
 | 資源 | CPU、RAM、PID limits | 設定已加入；宿主機 enforcement 待實測 |
 | LSM | seccomp 保持預設；SELinux enforcing 自訂政策 | SELinux 待編譯與實測 |
 | 宿主機 | 專用工作負載、更新、Docker 權限、auditd | 部署者稽核 |
@@ -169,4 +177,24 @@ sudo ausearch -m AVC,USER_AVC -ts recent > evidence/security/selinux-avc.log
 - CIS 固定版本全量清單、證據、適用性理由與合規率。
 - 最終安全配置下 W9 的 1,000 次測試；不得用之前未隔離的效能報告替代。
 
-目前開發環境只完成設定檢查與不依賴模型的單元測試；SELinux 宿主機測試、完整 CIS 稽核與真實模型/資料回歸尚未完成。
+## 階段驗證紀錄（2026-10-24）
+
+環境為 Ubuntu WSL2 + Docker Desktop，專案副本位於 Ubuntu 的 Linux 檔案系統。以下是本次開發驗證結果，不代表目標 SELinux 宿主機驗收或完整 CIS 合規：
+
+| 項目 | 本次結果 |
+|---|---|
+| 單元與 Compose 設定測試 | 21 passed，無失敗或略過 |
+| 靜態設定與 runtime 安全檢查 | 全部通過，`checks_passed=true` |
+| 禁網對照 | `host_network_control=connected`，extraction 外連被阻擋 |
+| 真實模型與圖片回歸 | TFLite 後端，5 張圖片全部 `status=ok` |
+| 三服務狀態 | acquisition、extraction、observability 皆 `Exited (0)` |
+| 輸出驗證 | 5 passed、0 failed |
+| 隱私驗證 | 5/5 通過，privacy pass rate 100%；僅代表本批次 |
+| SELinux | 宿主機不可用，`selinux_verified=false`，待另測 |
+| 完整 CIS 稽核 | 未執行 |
+
+本批次 `total_ms`：第一張 344.27 ms，包含 114.99 ms 模型載入；後四張平均 86.56 ms；全部五張平均 138.10 ms。五張皆未達單幀 <80 ms 目標，不能以模型 forward 時間取代 pipeline 總耗時，也不能以五張 smoke test 取代 W9 的 1,000 次測試、百分位數及 95% CI。首次處理與後續處理應分開報告。
+
+證據保存在執行測試的 Ubuntu 專案副本中，不會自動同步至 Windows 原專案。保留 `evidence/security/` 的 JSON、Compose 日誌與容器狀態，`evidence/batch/` 的輸出及隱私報告，以及 `logs/pipeline_latency_vm.csv`；若需保留影像、mask、特徵與每張 meta，另保存 `data/out/`。本機證據需備份並檢查敏感資訊，不應直接整批提交至公開儲存庫。
+
+下一步是 SELinux enforcing 宿主機驗證、完整 CIS 稽核與最終安全配置下的 1,000 次效能驗收。`week10_complete=false` 仍是正確結果。
