@@ -111,16 +111,19 @@ def main():
         evidence["host_selinux"] = run(["getenforce"]) if shutil.which("getenforce") else "unavailable"
         evidence["docker_security_options"] = json.loads(run(["docker", "info", "--format", "{{json .SecurityOptions}}"] ))
         if not args.static_only:
+            extraction = config["services"]["extraction"]
+            image = extraction.get("image") or f'{config["name"]}-extraction'
+            run(["docker", "image", "inspect", image])
             try:
                 with socket.create_connection(("1.1.1.1", 443), timeout=3):
                     evidence["host_network_control"] = "connected"
             except OSError:
                 evidence["host_network_control"] = "unavailable"
-            evidence["runtime"] = json.loads(run(compose + ["run", "--rm", "--no-deps", "--no-build", "--entrypoint", "python", "extraction", "-c", PROBE]))
+            evidence["runtime"] = json.loads(run(compose + ["run", "--rm", "--no-deps", "--pull", "never", "--entrypoint", "python", "extraction", "-c", PROBE]))
         if args.require_selinux and not args.static_only:
             evidence["raw_label"] = run(["ls", "-Zd", str(ROOT / "data/raw")])
             evidence["selinux_denials"] = json.loads(run(compose + [
-                "run", "--rm", "--no-deps", "--no-build", "-v", f"{ROOT / 'data/raw'}:/security-raw:ro",
+                "run", "--rm", "--no-deps", "--pull", "never", "-v", f"{ROOT / 'data/raw'}:/security-raw:ro",
                 "--entrypoint", "python", "extraction", "-c", SELINUX_PROBE,
             ]))
             evidence["selinux_verified"] = (
@@ -131,6 +134,9 @@ def main():
             )
     except (OSError, subprocess.SubprocessError, ValueError, KeyError) as exc:
         evidence["error"] = str(exc)
+        if isinstance(exc, subprocess.CalledProcessError):
+            evidence["command_stderr"] = exc.stderr
+            evidence["command_stdout"] = exc.stdout
     passed = "error" not in evidence and all(evidence.get("configuration", {}).values())
     if not args.static_only:
         passed = passed and bool(evidence.get("runtime")) and all(evidence.get("runtime", {}).get("checks", {}).values())

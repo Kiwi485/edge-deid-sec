@@ -15,6 +15,19 @@ from src.services.acquisition_service import build_socket_job
 from src.services.extraction_service import _handle_job
 
 
+def _wait_for_socket(sock_path):
+    deadline = time.monotonic() + 2
+    while True:
+        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
+            try:
+                client.connect(sock_path)
+                return
+            except (FileNotFoundError, ConnectionRefusedError):
+                if time.monotonic() >= deadline:
+                    raise
+        threading.Event().wait(0.01)
+
+
 @pytest.mark.parametrize("pipeline_error", [False, True])
 def test_socket_input_is_ephemeral_and_paths_are_server_owned(tmp_path, monkeypatch, pipeline_error):
     image_path = tmp_path / "image.png"
@@ -100,9 +113,7 @@ def test_image_content_roundtrip_over_socket(tmp_path, monkeypatch):
 
     server = threading.Thread(target=serve_jobs, args=(sock_path, handle), daemon=True)
     server.start()
-    deadline = time.monotonic() + 2
-    while not Path(sock_path).exists() and time.monotonic() < deadline:
-        threading.Event().wait(0.01)
+    _wait_for_socket(sock_path)
     response = send_job(sock_path, job)
     server.join(timeout=2)
     assert not server.is_alive()
@@ -119,9 +130,7 @@ def test_ipc_rejects_non_object_and_limits_request_size(tmp_path, monkeypatch):
     monkeypatch.setattr(ipc, "MAX_REQUEST_BYTES", 64)
     server = threading.Thread(target=ipc.serve_jobs, args=(sock_path, called.append), daemon=True)
     server.start()
-    deadline = time.monotonic() + 2
-    while not Path(sock_path).exists() and time.monotonic() < deadline:
-        threading.Event().wait(0.01)
+    _wait_for_socket(sock_path)
     assert stat.S_IMODE(Path(sock_path).stat().st_mode) == 0o660
     with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
         client.connect(sock_path)
@@ -159,7 +168,72 @@ def test_selinux_override_preserves_custom_raw_label():
     result = subprocess.run(["docker", "compose", "-f", "docker-compose.yml", "-f", "docker-compose.selinux.yml", "config", "--format", "json"], cwd=ROOT, capture_output=True, text=True, check=True)
     config = json.loads(result.stdout)
     assert "label=type:edge_deid_extraction_t" in config["services"]["extraction"]["security_opt"]
+    assert "no-new-privileges:true" in config["services"]["extraction"]["security_opt"]
     for name in ("acquisition", "observability"):
         raw = next(volume for volume in config["services"][name]["volumes"] if volume["target"] == "/app/data/raw")
         assert raw["read_only"]
         assert not raw.get("bind", {}).get("selinux")
+
+
+@pytest.mark.parametrize("require_selinux", [False, True])
+@pytest.mark.parametrize("explicit_image", [False, True])
+def test_runtime_probe_uses_existing_image(tmp_path, monkeypatch, require_selinux, explicit_image):
+    from tools import check_week10_security as checker
+
+    commands = []
+    image = "custom-extraction:local" if explicit_image else "test-project-extraction"
+    config = {"name": "test-project", "services": {"extraction": {"image": image} if explicit_image else {}}}
+
+    def fake_run(command):
+        commands.append(command)
+        if "config" in command:
+            return json.dumps(config)
+        if command[:3] == ["docker", "image", "inspect"]:
+            assert command[-1] == image
+            return "[]"
+        if "run" in command:
+            assert commands.index(["docker", "image", "inspect", image]) < len(commands) - 1
+            assert "--no-build" not in command
+            assert "--build" not in command
+            assert command[command.index("--pull") + 1] == "never"
+            return json.dumps({"checks": {"probe": True}, "security_context": "edge_deid_extraction_t"})
+        if command[0] == "getenforce":
+            return "Enforcing"
+        if command[0] == "ls":
+            return "edge_deid_raw_t"
+        return "[]"
+
+    class Connected:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+    output = tmp_path / "runtime.json"
+    monkeypatch.setattr(sys, "argv", ["checker", "--output", str(output)] + (["--require-selinux"] if require_selinux else []))
+    monkeypatch.setattr(checker, "run", fake_run)
+    monkeypatch.setattr(checker, "configuration_checks", lambda config: {"configuration": True})
+    monkeypatch.setattr(checker.shutil, "which", lambda name: name)
+    monkeypatch.setattr(checker.socket, "create_connection", lambda *args, **kwargs: Connected())
+    assert checker.main() == 0
+    evidence = json.loads(output.read_text())
+    assert evidence["checks_passed"]
+    assert evidence["selinux_verified"] == require_selinux
+    assert len([command for command in commands if "run" in command]) == (2 if require_selinux else 1)
+
+
+def test_checker_preserves_subprocess_error_output(tmp_path, monkeypatch):
+    import subprocess
+    from tools import check_week10_security as checker
+
+    def fail(command):
+        raise subprocess.CalledProcessError(1, command, output="", stderr="Docker diagnostic")
+
+    output = tmp_path / "failed.json"
+    monkeypatch.setattr(sys, "argv", ["checker", "--output", str(output)])
+    monkeypatch.setattr(checker, "run", fail)
+    assert checker.main() == 1
+    evidence = json.loads(output.read_text())
+    assert not evidence["checks_passed"]
+    assert evidence["command_stderr"] == "Docker diagnostic"

@@ -111,3 +111,5 @@ data/raw/*.png
 data/raw/*.PNG
 # .txt 標註保留（前面已經有 !data/raw/*.txt 例外）
 experiments
+
+.venv-wsl/
