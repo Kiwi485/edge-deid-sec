@@ -1,0 +1,220 @@
+### date
+2026-10-25T02:10:25+08:00
+### virtualization
+oracle
+VirtualBox
+innotek GmbH
+### os-release
+NAME="Fedora Linux"
+VERSION="44 (Workstation Edition)"
+RELEASE_TYPE=stable
+ID=fedora
+VERSION_ID=44
+VERSION_CODENAME=""
+PRETTY_NAME="Fedora Linux 44 (Workstation Edition)"
+ANSI_COLOR="0;38;2;60;110;180"
+LOGO=fedora-logo-icon
+CPE_NAME="cpe:/o:fedoraproject:fedora:44"
+DEFAULT_HOSTNAME="fedora"
+HOME_URL="https://fedoraproject.org/"
+DOCUMENTATION_URL="https://docs.fedoraproject.org/en-US/fedora/f44/"
+SUPPORT_URL="https://ask.fedoraproject.org/"
+BUG_REPORT_URL="https://bugzilla.redhat.com/"
+REDHAT_BUGZILLA_PRODUCT="Fedora"
+REDHAT_BUGZILLA_PRODUCT_VERSION=44
+REDHAT_SUPPORT_PRODUCT="Fedora"
+REDHAT_SUPPORT_PRODUCT_VERSION=44
+SUPPORT_END=2027-05-19
+VARIANT="Workstation Edition"
+VARIANT_ID=workstation
+### kernel
+6.19.10-300.fc44.x86_64
+x86_64
+### lscpu
+Architecture:                            x86_64
+CPU op-mode(s):                          32-bit, 64-bit
+Address sizes:                           39 bits physical, 48 bits virtual
+Byte Order:                              Little Endian
+CPU(s):                                  4
+On-line CPU(s) list:                     0-3
+Vendor ID:                               GenuineIntel
+Model name:                              12th Gen Intel(R) Core(TM) i5-1240P
+CPU family:                              6
+Model:                                   154
+Thread(s) per core:                      1
+Core(s) per socket:                      4
+Socket(s):                               1
+Stepping:                                3
+BogoMIPS:                                4224.01
+Flags:                                   fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx rdtscp lm constant_tsc rep_good nopl xtopology nonstop_tsc cpuid tsc_known_freq pni pclmulqdq ssse3 fma cx16 pcid sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch ibrs_enhanced fsgsbase bmi1 avx2 bmi2 invpcid rdseed adx clflushopt sha_ni arat md_clear flush_l1d arch_capabilities
+Hypervisor vendor:                       KVM
+Virtualization type:                     full
+L1d cache:                               192 KiB (4 instances)
+L1i cache:                               128 KiB (4 instances)
+L2 cache:                                5 MiB (4 instances)
+L3 cache:                                48 MiB (4 instances)
+NUMA node(s):                            1
+NUMA node0 CPU(s):                       0-3
+Vulnerability Gather data sampling:      Not affected
+Vulnerability Ghostwrite:                Not affected
+Vulnerability Indirect target selection: Mitigation; Aligned branch/return thunks
+Vulnerability Itlb multihit:             Not affected
+Vulnerability L1tf:                      Not affected
+Vulnerability Mds:                       Not affected
+Vulnerability Meltdown:                  Not affected
+Vulnerability Mmio stale data:           Not affected
+Vulnerability Old microcode:             Not affected
+Vulnerability Reg file data sampling:    Vulnerable: No microcode
+Vulnerability Retbleed:                  Mitigation; Enhanced IBRS
+Vulnerability Spec rstack overflow:      Not affected
+Vulnerability Spec store bypass:         Vulnerable
+Vulnerability Spectre v1:                Mitigation; usercopy/swapgs barriers and __user pointer sanitization
+Vulnerability Spectre v2:                Mitigation; Enhanced / Automatic IBRS; PBRSB-eIBRS SW sequence; BHI SW loop, KVM SW loop
+Vulnerability Srbds:                     Not affected
+Vulnerability Tsa:                       Not affected
+Vulnerability Tsx async abort:           Not affected
+Vulnerability Vmscape:                   Not affected
+### memory
+               total        used        free      shared  buff/cache   available
+Mem:           7.7Gi       3.4Gi       1.3Gi       181Mi       3.5Gi       4.3Gi
+Swap:          7.7Gi          0B       7.7Gi
+MemTotal:        8119008 kB
+### disk
+檔案系統        容量  已用  可用 已用% 掛載點
+/dev/sda3        68G   22G   46G   33% /home
+### git
+c42d0fee00731a9411ab029d97a44103c34cd6f5
+ M evidence/batch/ipc_report.csv
+ M evidence/batch/ipc_summary.md
+ M evidence/batch/privacy_report.csv
+ M evidence/batch/privacy_summary.md
+ M evidence/batch/validation_summary.csv
+ M security/selinux/edge_deid.te
+?? security/selinux/edge_deid.fc
+?? security/selinux/edge_deid.if
+?? security/selinux/edge_deid.pp
+--- uncommitted diff:
+diff --git a/security/selinux/edge_deid.te b/security/selinux/edge_deid.te
+index 596aba9..b441f59 100644
+--- a/security/selinux/edge_deid.te
++++ b/security/selinux/edge_deid.te
+@@ -6,10 +6,17 @@ require {
+     type container_file_t;
+     type container_ro_file_t;
+     type tmpfs_t;
++    role system_r;
+ }
+ 
+ type edge_deid_extraction_t;
+ domain_type(edge_deid_extraction_t)
++role system_r types edge_deid_extraction_t;
++mcs_constrained(edge_deid_extraction_t)
++
++# runc enters the domain via setexeccon under no-new-privileges.
++allow container_runtime_t edge_deid_extraction_t:process transition;
++container_runtime_typebounds(edge_deid_extraction_t)
+ 
+ type edge_deid_raw_t;
+ files_type(edge_deid_raw_t)
+@@ -21,7 +28,7 @@ allow container_t edge_deid_raw_t:lnk_file { getattr read };
+ allow edge_deid_extraction_t self:process { fork sigchld signull signal getsched setsched };
+ allow edge_deid_extraction_t self:fd use;
+ allow edge_deid_extraction_t self:fifo_file { getattr read write ioctl };
+-allow edge_deid_extraction_t self:unix_stream_socket { create connect bind listen accept read write getattr getopt setopt shutdown };
++allow edge_deid_extraction_t self:unix_stream_socket { create connect connectto bind listen accept read write getattr getopt setopt shutdown };
+ allow edge_deid_extraction_t container_t:unix_stream_socket { connectto read write getattr getopt setopt shutdown };
+ allow container_t edge_deid_extraction_t:unix_stream_socket { connectto read write getattr getopt setopt shutdown };
+ allow edge_deid_extraction_t container_runtime_t:fd use;
+@@ -46,6 +53,10 @@ dev_read_urand(edge_deid_extraction_t)
+ dev_read_rand(edge_deid_extraction_t)
+ dev_rw_null(edge_deid_extraction_t)
+ dev_rw_zero(edge_deid_extraction_t)
++# Container /dev nodes (/dev/null etc.) are container_file_t, and libraries read cgroup CPU limits.
++allow edge_deid_extraction_t container_file_t:chr_file { getattr open read write append ioctl };
++fs_search_cgroup_dirs(edge_deid_extraction_t)
++fs_read_cgroup_files(edge_deid_extraction_t)
+ kernel_read_system_state(edge_deid_extraction_t)
+ fs_getattr_all_fs(edge_deid_extraction_t)
+ 
+### selinux
+Enforcing
+SELinux status:                 enabled
+SELinuxfs mount:                /sys/fs/selinux
+SELinux root directory:         /etc/selinux
+Loaded policy name:             targeted
+Current mode:                   enforcing
+Mode from config file:          enforcing
+Policy MLS status:              enabled
+Policy deny_unknown status:     allowed
+Memory protection checking:     actual (secure)
+Max kernel policy version:      35
+### docker
+Client: Docker Engine - Community
+ Version:           29.9.2
+ API version:       1.56
+ Go version:        go1.26.10
+ Git commit:        a82e528
+ Built:             Tue Oct 20 18:49:09 2026
+ OS/Arch:           linux/amd64
+ Context:           default
+
+Server: Docker Engine - Community
+ Engine:
+  Version:          29.9.2
+  API version:      1.56 (minimum version 1.40)
+  Go version:       go1.26.10
+  Git commit:       0367cbe
+  Built:            Tue Oct 20 18:44:48 2026
+  OS/Arch:          linux/amd64
+  Experimental:     false
+ containerd:
+  Version:          v2.4.2
+  GitCommit:        b7a25261e029d68978bbf290df0a62fc819b3c51
+ runc:
+  Version:          1.5.2
+  GitCommit:        v1.5.2-0-g29dd3dc2
+ docker-init:
+  Version:          0.19.0
+  GitCommit:        de40ad0
+Docker Compose version v5.6.1
+default
+["name=seccomp,profile=builtin","name=selinux","name=cgroupns"]
+{ "selinux-enabled": true }
+### packages
+selinux-policy-44.11-1.fc44.noarch
+selinux-policy-targeted-44.11-1.fc44.noarch
+container-selinux-2.247.0-1.fc44.noarch
+selinux-policy-devel-44.11-1.fc44.noarch
+policycoreutils-python-utils-3.10-1.fc44.noarch
+checkpolicy-3.10-1.fc44.x86_64
+audit-4.1.4-1.fc44.x86_64
+docker-ce-29.9.2-1.fc44.x86_64
+containerd.io-2.4.2-3.fc44.x86_64
+### policy module
+edge_deid
+d5d3c35202f62e292e5600b88b62289285c64f697535f26520affcb86db72e53  security/selinux/edge_deid.pp
+5ab3944e2c8ce93da96e426f124be88bc90a08404c0d805eb4400b5953094673  security/selinux/edge_deid.te
+### fcontext
+/home/i1an/edge-deid-sec/data/raw(/.*)?            all files          system_u:object_r:edge_deid_raw_t:s0 
+### raw label
+unconfined_u:object_r:edge_deid_raw_t:s0 data/raw
+### auditd
+active
+enabled 1
+failure 1
+pid 885
+rate_limit 0
+backlog_limit 64
+lost 0
+backlog 0
+backlog_wait_time 60000
+backlog_wait_time_actual 0
+loginuid_immutable 0 unlocked
+### model
+647c5b26dee68b2aa75e4f9f5b7a499bb0510ca771dd923eb077852c42de1d81  models/seg/model.tflite
+### python
+Python 3.14.3
+pytest 9.1.1
+### round window
+2026-10-25T02:09:52+08:00
+2026-10-25T02:10:13+08:00
