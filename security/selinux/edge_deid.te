@@ -6,10 +6,17 @@ require {
     type container_file_t;
     type container_ro_file_t;
     type tmpfs_t;
+    role system_r;
 }
 
 type edge_deid_extraction_t;
 domain_type(edge_deid_extraction_t)
+role system_r types edge_deid_extraction_t;
+mcs_constrained(edge_deid_extraction_t)
+
+# runc enters the domain via setexeccon under no-new-privileges.
+allow container_runtime_t edge_deid_extraction_t:process transition;
+container_runtime_typebounds(edge_deid_extraction_t)
 
 type edge_deid_raw_t;
 files_type(edge_deid_raw_t)
@@ -21,7 +28,7 @@ allow container_t edge_deid_raw_t:lnk_file { getattr read };
 allow edge_deid_extraction_t self:process { fork sigchld signull signal getsched setsched };
 allow edge_deid_extraction_t self:fd use;
 allow edge_deid_extraction_t self:fifo_file { getattr read write ioctl };
-allow edge_deid_extraction_t self:unix_stream_socket { create connect bind listen accept read write getattr getopt setopt shutdown };
+allow edge_deid_extraction_t self:unix_stream_socket { create connect connectto bind listen accept read write getattr getopt setopt shutdown };
 allow edge_deid_extraction_t container_t:unix_stream_socket { connectto read write getattr getopt setopt shutdown };
 allow container_t edge_deid_extraction_t:unix_stream_socket { connectto read write getattr getopt setopt shutdown };
 allow edge_deid_extraction_t container_runtime_t:fd use;
@@ -46,6 +53,10 @@ dev_read_urand(edge_deid_extraction_t)
 dev_read_rand(edge_deid_extraction_t)
 dev_rw_null(edge_deid_extraction_t)
 dev_rw_zero(edge_deid_extraction_t)
+# Container /dev nodes (/dev/null etc.) are container_file_t, and libraries read cgroup CPU limits.
+allow edge_deid_extraction_t container_file_t:chr_file { getattr open read write append ioctl };
+fs_search_cgroup_dirs(edge_deid_extraction_t)
+fs_read_cgroup_files(edge_deid_extraction_t)
 kernel_read_system_state(edge_deid_extraction_t)
 fs_getattr_all_fs(edge_deid_extraction_t)
 

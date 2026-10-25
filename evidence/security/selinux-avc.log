@@ -1,0 +1,20 @@
+# Collected with: sudo ausearch -m AVC,USER_AVC,SELINUX_ERR -ts today, filtered to audit epoch window
+# Round window: 2026-10-25T02:09:52 (1792865392) .. 2026-10-25T02:10:13 (1792865413)
+# Normal pipeline (compose up): 2026-10-25T02:09:53 .. 2026-10-25T02:10:09; security probe (check_week10_security.py): 2026-10-25T02:10:09 .. 2026-10-25T02:10:13
+
+# phase=probe
+time->Sun Oct 25 02:10:11 2026
+type=AVC msg=audit(1792865411.018:300): avc:  denied  { create } for  pid=5769 comm="python" scontext=system_u:system_r:edge_deid_extraction_t:s0:c192,c359 tcontext=system_u:system_r:edge_deid_extraction_t:s0:c192,c359 tclass=tcp_socket permissive=0
+----
+# phase=probe
+time->Sun Oct 25 02:10:12 2026
+type=AVC msg=audit(1792865412.876:309): avc:  denied  { create } for  pid=5875 comm="python" scontext=system_u:system_r:edge_deid_extraction_t:s0:c293,c884 tcontext=system_u:system_r:edge_deid_extraction_t:s0:c293,c884 tclass=tcp_socket permissive=0
+----
+# phase=probe
+time->Sun Oct 25 02:10:12 2026
+type=AVC msg=audit(1792865412.876:310): avc:  denied  { create } for  pid=5875 comm="python" scontext=system_u:system_r:edge_deid_extraction_t:s0:c293,c884 tcontext=system_u:system_r:edge_deid_extraction_t:s0:c293,c884 tclass=tcp_socket permissive=0
+----
+# phase=probe
+time->Sun Oct 25 02:10:12 2026
+type=AVC msg=audit(1792865412.876:311): avc:  denied  { read } for  pid=5875 comm="python" name="raw" dev="sda3" ino=32006 scontext=system_u:system_r:edge_deid_extraction_t:s0:c293,c884 tcontext=unconfined_u:object_r:edge_deid_raw_t:s0 tclass=dir permissive=0
+----

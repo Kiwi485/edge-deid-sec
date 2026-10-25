@@ -1,0 +1,68 @@
+{
+  "image_id": "0BA08EE4-AB9D-47EB-A7FF-AC59CA1666C0",
+  "input_file": "0BA08EE4-AB9D-47EB-A7FF-AC59CA1666C0.jpg",
+  "roi_method_used": "mediapipe",
+  "roi_bbox": [
+    148,
+    267,
+    418,
+    480
+  ],
+  "quality_gate": {
+    "pass": true,
+    "reason": "ok",
+    "metrics": {
+      "width": 640,
+      "height": 480,
+      "laplacian_variance": 104.34424415078693,
+      "brightness_mean": 82.42646158854167,
+      "blur_var_threshold": 10.0,
+      "brightness_low": 45.0,
+      "brightness_high": 210.0
+    }
+  },
+  "deid_method": "mask_only",
+  "seg_backend": "tflite",
+  "seg_model_path": "models/seg/model.tflite",
+  "feature_version": "v2_glcm",
+  "timing_ms": {
+    "roi_ms": 17.870426177978516,
+    "seg_ms": 90.03806114196777,
+    "feat_ms": 3.985166549682617,
+    "deid_ms": 2.4521350860595703,
+    "image_load_ms": 42.224404000009486,
+    "resize_ms": 2.1068300000024465,
+    "quality_ms": 1.4115990000078682,
+    "model_load_ms": 0.0,
+    "seg_preprocess_ms": 3.3443709999971816,
+    "seg_forward_ms": 82.41796200000806,
+    "seg_postprocess_ms": 3.1284180000028528,
+    "artifact_write_ms": 8.19641599997567,
+    "privacy_ms": 12.088040999998384,
+    "unaccounted_ms": 0.31387172791141893,
+    "total_ms": 180.68695068359375
+  },
+  "privacy_metrics": {
+    "privacy_pass": true,
+    "background_leak_ratio": 0.0,
+    "retention_completeness": 1.0,
+    "privacy_risk_score": 0.0,
+    "privacy_issues": [],
+    "pixels": {
+      "foreground_total": 12410,
+      "background_total": 294790,
+      "background_leak_count": 0,
+      "foreground_retained_count": 12410
+    },
+    "thresholds": {
+      "black_threshold": 8,
+      "retain_tolerance": 8,
+      "pass_leak_max": 0.005,
+      "pass_retain_min": 0.98,
+      "pass_risk_max": 20.0,
+      "leak_ref": 0.02
+    }
+  },
+  "status": "ok",
+  "error": ""
+}
