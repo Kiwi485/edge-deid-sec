@@ -1,0 +1,6 @@
+# CIS Docker Benchmark v1.9.0 control 5.32
+# host: fedora  collected: 2026-10-27T14:30:07+08:00
+
+$ docker ps --quiet --all | xargs -r docker inspect --format '{{ .Name }} {{ .Id }}: Volumes={{ .Mounts }}' | grep docker.sock; echo grep_rc=$?
+grep_rc=1
+[exit=0]

@@ -1,0 +1,50 @@
+# CIS Docker Benchmark v1.9.0 control 4.10
+# host: fedora  collected: 2026-10-27T14:29:58+08:00
+
+$ grep -nE 'apt-get|pip install' Dockerfile
+13:RUN apt-get update && apt-get install -y \
+24:RUN pip install --no-cache-dir -r requirements.txt
+27:RUN if [ "$INSTALL_TFLITE" = "1" ]; then pip install --no-cache-dir ai-edge-litert==1.4.0; fi
+[exit=0]
+
+$ docker exec edge-deid-extraction sh -c 'ls /etc/apt/trusted.gpg.d /usr/share/keyrings; grep -rh allow-insecure /etc/apt/ 2>/dev/null; echo apt_insecure_grep_rc=$?'
+/etc/apt/trusted.gpg.d:
+debian-archive-bookworm-automatic.asc
+debian-archive-bookworm-security-automatic.asc
+debian-archive-bookworm-stable.asc
+debian-archive-bullseye-automatic.asc
+debian-archive-bullseye-security-automatic.asc
+debian-archive-bullseye-stable.asc
+debian-archive-trixie-automatic.asc
+debian-archive-trixie-security-automatic.asc
+debian-archive-trixie-stable.asc
+
+/usr/share/keyrings:
+debian-archive-bookworm-automatic.gpg
+debian-archive-bookworm-automatic.pgp
+debian-archive-bookworm-security-automatic.gpg
+debian-archive-bookworm-security-automatic.pgp
+debian-archive-bookworm-stable.gpg
+debian-archive-bookworm-stable.pgp
+debian-archive-bullseye-automatic.gpg
+debian-archive-bullseye-automatic.pgp
+debian-archive-bullseye-security-automatic.gpg
+debian-archive-bullseye-security-automatic.pgp
+debian-archive-bullseye-stable.gpg
+debian-archive-bullseye-stable.pgp
+debian-archive-keyring.gpg
+debian-archive-keyring.pgp
+debian-archive-removed-keys.gpg
+debian-archive-removed-keys.pgp
+debian-archive-trixie-automatic.gpg
+debian-archive-trixie-automatic.pgp
+debian-archive-trixie-security-automatic.gpg
+debian-archive-trixie-security-automatic.pgp
+debian-archive-trixie-stable.gpg
+debian-archive-trixie-stable.pgp
+apt_insecure_grep_rc=1
+[exit=0]
+
+$ grep -n -- '--hash' requirements.txt; echo pip_hash_grep_rc=$?
+pip_hash_grep_rc=1
+[exit=0]

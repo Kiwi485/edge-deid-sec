@@ -1,0 +1,10 @@
+# CIS Docker Benchmark v1.9.0 control 5.11
+# host: fedora  collected: 2026-10-28T01:36:08+08:00
+
+$ docker ps --quiet --all | xargs -r docker inspect --format '{{ .Name }} {{ .Id }}: Memory={{ .HostConfig.Memory }}'
+/edge-deid-acquisition e6667bf91130c61e9015d9163c07dbd2940d29136ce715a980511112ad8201d0: Memory=536870912
+/edge-deid-observability 1b5908c6f53523713e64f9848048b134a55df55cc54076933a9e1c618c8843e2: Memory=2147483648
+/cis-runtime-observability 0ba53a9203d4e03697e5f3c2876fe3b7b245b3bcae118decf4e239a797e33f01: Memory=2147483648
+/cis-runtime-acquisition 9e7586d171a24c19b9321e4b9dd7308411a5c7624e519f05652780ed52433c82: Memory=536870912
+/edge-deid-extraction acf4ec7df2d488dee4600bbdc4c3bd7c76b2126468e30f59422707b8c7bb6d9f: Memory=4294967296
+[exit=0]

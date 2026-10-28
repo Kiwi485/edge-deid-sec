@@ -1,0 +1,9 @@
+# CIS Docker Benchmark v1.9.0 control 1.1.16
+# host: fedora  collected: 2026-10-28T01:35:41+08:00
+
+$ ls -l /usr/bin/containerd-shim-runc-v1
+ls: 無法存取 '/usr/bin/containerd-shim-runc-v1': 沒有此一檔案或目錄
+[exit=2]
+
+$ auditctl -l | grep /usr/bin/containerd-shim-runc-v1
+[exit=1]

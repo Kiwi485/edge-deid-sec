@@ -1,0 +1,6 @@
+# CIS Docker Benchmark v1.9.0 control 2.5
+# host: fedora  collected: 2026-10-28T01:35:46+08:00
+
+$ docker info --format 'Insecure Registries: {{ .RegistryConfig.InsecureRegistryCIDRs }} IndexConfigs: {{ range .RegistryConfig.IndexConfigs }}{{ .Name }} secure={{ .Secure }}; {{ end }}'
+Insecure Registries: [127.0.0.0/8 ::1/128] IndexConfigs: docker.io secure=true; 
+[exit=0]

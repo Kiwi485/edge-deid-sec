@@ -1,0 +1,10 @@
+{
+  "selinux-enabled": true,
+  "icc": false,
+  "live-restore": true,
+  "userland-proxy": false,
+  "no-new-privileges": true,
+  "default-ulimits": {
+    "nofile": { "Name": "nofile", "Soft": 4096, "Hard": 8192 }
+  }
+}

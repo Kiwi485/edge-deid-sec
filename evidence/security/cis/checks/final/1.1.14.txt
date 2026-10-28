@@ -1,0 +1,10 @@
+# CIS Docker Benchmark v1.9.0 control 1.1.14
+# host: fedora  collected: 2026-10-28T01:35:41+08:00
+
+$ ls -l /usr/bin/containerd
+-rwxr-xr-x. 1 root root 44341224  1月 30  2023 /usr/bin/containerd
+[exit=0]
+
+$ auditctl -l | grep -E '/usr/bin/containerd( |$)'
+-w /usr/bin/containerd -p rwxa -k docker
+[exit=0]

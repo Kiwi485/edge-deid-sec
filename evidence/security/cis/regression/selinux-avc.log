@@ -1,0 +1,35 @@
+# Collected with: sudo ausearch -m AVC,USER_AVC,SELINUX_ERR -ts today, filtered to audit epoch window
+# Round window: 2026-10-28T01:35:16+08:00 (1793122516) .. 2026-10-28T01:35:32+08:00 (1793122532)
+# Normal pipeline (compose up): 2026-10-28T01:35:16+08:00 .. 2026-10-28T01:35:29+08:00; security probe (check_week10_security.py): 2026-10-28T01:35:29+08:00 .. 2026-10-28T01:35:32+08:00
+
+# phase=probe
+time->Wed Oct 28 01:35:30 2026
+type=PROCTITLE msg=audit(1793122530.884:1600): proctitle=707974686F6E002D63000A696D706F7274206572726E6F2C206A736F6E2C206F732C20736F636B65742C2074656D7066696C650A66726F6D20706174686C696220696D706F727420506174680A636865636B73203D207B226E6F6E5F726F6F74223A206F732E676574756964282920213D20307D0A737461747573203D206469
+type=SYSCALL msg=audit(1793122530.884:1600): arch=c000003e syscall=41 success=no exit=-13 a0=2 a1=80001 a2=0 a3=7f4d03a4a360 items=0 ppid=7328 pid=7355 auid=4294967295 uid=10001 gid=10001 euid=10001 suid=10001 fsuid=10001 egid=10001 sgid=10001 fsgid=10001 tty=(none) ses=4294967295 comm="python" exe="/usr/local/bin/python3.11" subj=system_u:system_r:edge_deid_extraction_t:s0:c740,c900 key=(null)
+type=AVC msg=audit(1793122530.884:1600): avc:  denied  { create } for  pid=7355 comm="python" scontext=system_u:system_r:edge_deid_extraction_t:s0:c740,c900 tcontext=system_u:system_r:edge_deid_extraction_t:s0:c740,c900 tclass=tcp_socket permissive=0
+----
+
+# phase=probe
+time->Wed Oct 28 01:35:31 2026
+type=PROCTITLE msg=audit(1793122531.815:1789): proctitle=707974686F6E002D63000A696D706F7274206572726E6F2C206A736F6E2C206F732C20736F636B65740A636865636B73203D207B7D0A666F722066616D696C792C206E616D6520696E202828736F636B65742E41465F494E45542C20227463705F736F636B65745F64656E69656422292C2028736F636B65742E41465F494E45
+type=SYSCALL msg=audit(1793122531.815:1789): arch=c000003e syscall=41 success=no exit=-13 a0=2 a1=80001 a2=0 a3=7f625ec7d360 items=0 ppid=7445 pid=7472 auid=4294967295 uid=10001 gid=10001 euid=10001 suid=10001 fsuid=10001 egid=10001 sgid=10001 fsgid=10001 tty=(none) ses=4294967295 comm="python" exe="/usr/local/bin/python3.11" subj=system_u:system_r:edge_deid_extraction_t:s0:c378,c910 key=(null)
+type=AVC msg=audit(1793122531.815:1789): avc:  denied  { create } for  pid=7472 comm="python" scontext=system_u:system_r:edge_deid_extraction_t:s0:c378,c910 tcontext=system_u:system_r:edge_deid_extraction_t:s0:c378,c910 tclass=tcp_socket permissive=0
+----
+
+# phase=probe
+time->Wed Oct 28 01:35:31 2026
+type=PROCTITLE msg=audit(1793122531.817:1790): proctitle=707974686F6E002D63000A696D706F7274206572726E6F2C206A736F6E2C206F732C20736F636B65740A636865636B73203D207B7D0A666F722066616D696C792C206E616D6520696E202828736F636B65742E41465F494E45542C20227463705F736F636B65745F64656E69656422292C2028736F636B65742E41465F494E45
+type=SYSCALL msg=audit(1793122531.817:1790): arch=c000003e syscall=41 success=no exit=-13 a0=a a1=80001 a2=0 a3=7f625ec7d360 items=0 ppid=7445 pid=7472 auid=4294967295 uid=10001 gid=10001 euid=10001 suid=10001 fsuid=10001 egid=10001 sgid=10001 fsgid=10001 tty=(none) ses=4294967295 comm="python" exe="/usr/local/bin/python3.11" subj=system_u:system_r:edge_deid_extraction_t:s0:c378,c910 key=(null)
+type=AVC msg=audit(1793122531.817:1790): avc:  denied  { create } for  pid=7472 comm="python" scontext=system_u:system_r:edge_deid_extraction_t:s0:c378,c910 tcontext=system_u:system_r:edge_deid_extraction_t:s0:c378,c910 tclass=tcp_socket permissive=0
+----
+
+# phase=probe
+time->Wed Oct 28 01:35:31 2026
+type=PROCTITLE msg=audit(1793122531.817:1791): proctitle=707974686F6E002D63000A696D706F7274206572726E6F2C206A736F6E2C206F732C20736F636B65740A636865636B73203D207B7D0A666F722066616D696C792C206E616D6520696E202828736F636B65742E41465F494E45542C20227463705F736F636B65745F64656E69656422292C2028736F636B65742E41465F494E45
+type=PATH msg=audit(1793122531.817:1791): item=0 name="/security-raw" inode=32006 dev=00:20 mode=040750 ouid=1000 ogid=10001 rdev=00:00 obj=unconfined_u:object_r:edge_deid_raw_t:s0 nametype=NORMAL cap_fp=0 cap_fi=0 cap_fe=0 cap_fver=0 cap_frootid=0
+type=CWD msg=audit(1793122531.817:1791): cwd="/app"
+type=SYSCALL msg=audit(1793122531.817:1791): arch=c000003e syscall=257 success=no exit=-13 a0=ffffff9c a1=7f625e0be420 a2=90800 a3=0 items=1 ppid=7445 pid=7472 auid=4294967295 uid=10001 gid=10001 euid=10001 suid=10001 fsuid=10001 egid=10001 sgid=10001 fsgid=10001 tty=(none) ses=4294967295 comm="python" exe="/usr/local/bin/python3.11" subj=system_u:system_r:edge_deid_extraction_t:s0:c378,c910 key=(null)
+type=AVC msg=audit(1793122531.817:1791): avc:  denied  { read } for  pid=7472 comm="python" name="raw" dev="sda3" ino=32006 scontext=system_u:system_r:edge_deid_extraction_t:s0:c378,c910 tcontext=unconfined_u:object_r:edge_deid_raw_t:s0 tclass=dir permissive=0
+----
+
+# events: pipeline=0 probe=4

@@ -1,0 +1,41 @@
+# CIS Docker Benchmark v1.9.0 control 4.7
+# host: fedora  collected: 2026-10-27T14:25:12+08:00
+
+$ for c in $(docker ps -q); do echo "== $(docker inspect --format {{.Name}} $c)"; docker export $c | tar -tv 2>/dev/null | grep -E '^[-rwx].*(s|S).*\s[0-9]'; done
+== /cis-runtime-observability
+-rwxr-sr-x 0/42         113848 2025-04-19 18:20 usr/bin/chage
+-rwsr-xr-x 0/0           70888 2025-04-19 18:20 usr/bin/chfn
+-rwsr-xr-x 0/0           52936 2025-04-19 18:20 usr/bin/chsh
+-rwxr-sr-x 0/42          31256 2025-04-19 18:20 usr/bin/expiry
+-rwsr-xr-x 0/0           88568 2025-04-19 18:20 usr/bin/gpasswd
+-rwsr-xr-x 0/0           72072 2026-07-31 23:34 usr/bin/mount
+-rwsr-xr-x 0/0           18816 2026-07-31 23:34 usr/bin/newgrp
+-rwsr-xr-x 0/0          118168 2025-04-19 18:20 usr/bin/passwd
+-rwsr-xr-x 0/0           84360 2026-07-31 23:34 usr/bin/su
+-rwsr-xr-x 0/0           55688 2026-07-31 23:34 usr/bin/umount
+-rwxr-sr-x 0/42          43256 2025-06-30 01:40 usr/sbin/unix_chkpwd
+== /cis-runtime-acquisition
+-rwxr-sr-x 0/42         113848 2025-04-19 18:20 usr/bin/chage
+-rwsr-xr-x 0/0           70888 2025-04-19 18:20 usr/bin/chfn
+-rwsr-xr-x 0/0           52936 2025-04-19 18:20 usr/bin/chsh
+-rwxr-sr-x 0/42          31256 2025-04-19 18:20 usr/bin/expiry
+-rwsr-xr-x 0/0           88568 2025-04-19 18:20 usr/bin/gpasswd
+-rwsr-xr-x 0/0           72072 2026-07-31 23:34 usr/bin/mount
+-rwsr-xr-x 0/0           18816 2026-07-31 23:34 usr/bin/newgrp
+-rwsr-xr-x 0/0          118168 2025-04-19 18:20 usr/bin/passwd
+-rwsr-xr-x 0/0           84360 2026-07-31 23:34 usr/bin/su
+-rwsr-xr-x 0/0           55688 2026-07-31 23:34 usr/bin/umount
+-rwxr-sr-x 0/42          43256 2025-06-30 01:40 usr/sbin/unix_chkpwd
+== /edge-deid-extraction
+-rwxr-sr-x 0/42         113848 2025-04-19 18:20 usr/bin/chage
+-rwsr-xr-x 0/0           70888 2025-04-19 18:20 usr/bin/chfn
+-rwsr-xr-x 0/0           52936 2025-04-19 18:20 usr/bin/chsh
+-rwxr-sr-x 0/42          31256 2025-04-19 18:20 usr/bin/expiry
+-rwsr-xr-x 0/0           88568 2025-04-19 18:20 usr/bin/gpasswd
+-rwsr-xr-x 0/0           72072 2026-07-31 23:34 usr/bin/mount
+-rwsr-xr-x 0/0           18816 2026-07-31 23:34 usr/bin/newgrp
+-rwsr-xr-x 0/0          118168 2025-04-19 18:20 usr/bin/passwd
+-rwsr-xr-x 0/0           84360 2026-07-31 23:34 usr/bin/su
+-rwsr-xr-x 0/0           55688 2026-07-31 23:34 usr/bin/umount
+-rwxr-sr-x 0/42          43256 2025-06-30 01:40 usr/sbin/unix_chkpwd
+[exit=0]

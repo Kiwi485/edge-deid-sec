@@ -1,0 +1,2 @@
+UUID=048920c0-40e7-4484-b304-104d150a0c96 /var/lib/docker ext4 defaults 0 2
+UUID=b54ef8a4-a555-4c8e-aebc-5316f372d089 /var/lib/containerd ext4 defaults 0 2

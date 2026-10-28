@@ -1,0 +1,6 @@
+# CIS Docker Benchmark v1.9.0 control 3.6
+# host: fedora  collected: 2026-10-28T01:35:48+08:00
+
+$ stat -c '%a %n' /etc/docker
+755 /etc/docker
+[exit=0]

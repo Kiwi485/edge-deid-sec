@@ -1,0 +1,9 @@
+# CIS Docker Benchmark v1.9.0 control 1.1.12
+# host: fedora  collected: 2026-10-27T14:24:52+08:00
+
+$ ls -l /etc/containerd/config.toml
+-rw-r--r--. 1 root root 886  1月 30  2023 /etc/containerd/config.toml
+[exit=0]
+
+$ auditctl -l | grep /etc/containerd/config.toml
+[exit=1]

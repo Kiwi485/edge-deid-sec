@@ -1,0 +1,31 @@
+# CIS Docker Benchmark v1.9.0 control 6.1
+# host: fedora  collected: 2026-10-28T01:36:16+08:00
+
+$ docker images --quiet | xargs docker image inspect --format '{{ .Id }}: Tags={{ .RepoTags }}'
+sha256:68e407d80185e187ce8ca5e712b1bfbf5cae3bb8e5f4276001001ae52eb86ea2: Tags=[edge-deid-sec-acquisition:latest]
+sha256:50d2d79c98c29c856655ea560ba4e26744268ec45f7087649daf220e96d98eb6: Tags=[edge-deid-sec-observability:latest]
+sha256:c2ce7947c5c9788ec897cd5efd4e8216b031f923d6bdb102d431df802531f971: Tags=[edge-deid-sec-extraction:latest]
+[exit=0]
+
+$ docker images -a
+IMAGE                                ID             DISK USAGE   CONTENT SIZE   EXTRA
+edge-deid-sec-acquisition:latest     68e407d80185         11GB         3.61GB   U    
+edge-deid-sec-extraction:latest      c2ce7947c5c9       11.1GB         3.62GB   U    
+edge-deid-sec-observability:latest   50d2d79c98c2         11GB         3.61GB   U    
+[exit=0]
+
+$ docker ps -a --format '{{.Names}} {{.Image}}'
+edge-deid-acquisition edge-deid-sec-acquisition
+edge-deid-observability edge-deid-sec-observability
+cis-runtime-observability edge-deid-sec-observability
+cis-runtime-acquisition edge-deid-sec-acquisition
+edge-deid-extraction edge-deid-sec-extraction
+[exit=0]
+
+$ docker system df
+TYPE            TOTAL     ACTIVE    SIZE      RECLAIMABLE
+Images          3         3         11.09GB   0B (0%)
+Containers      5         3         94.21kB   16.38kB (17%)
+Local Volumes   1         1         0B        0B
+Build Cache     18        0         14.57GB   3.476GB
+[exit=0]

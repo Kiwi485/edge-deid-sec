@@ -1,0 +1,17 @@
+# CIS Docker Benchmark v1.9.0 control 4.7
+# host: fedora  collected: 2026-10-28T01:36:02+08:00
+
+$ for c in $(docker ps -q); do p=$(docker inspect --format {{.State.Pid}} $c); echo "== $(docker inspect --format {{.Name}} $c) files=$(nsenter -t $p -m find / -xdev -type f | wc -l)"; nsenter -t $p -m find / -xdev -perm /6000 -type f -exec ls -l {} +; echo setuid_setgid_count=$(nsenter -t $p -m find / -xdev -perm /6000 -type f | wc -l); done
+== /cis-runtime-observability files=43547
+setuid_setgid_count=0
+== /cis-runtime-acquisition files=43547
+setuid_setgid_count=0
+== /edge-deid-extraction files=43668
+setuid_setgid_count=0
+[exit=0]
+
+$ p=$(docker inspect --format {{.State.Pid}} edge-deid-extraction); nsenter -t $p -m ls -l /usr/bin/su /usr/bin/passwd /usr/bin/mount
+-rwxr-xr-x. 1 root root  72072 Jul 31 15:34 /usr/bin/mount
+-rwxr-xr-x. 1 root root 118168 Apr 19  2025 /usr/bin/passwd
+-rwxr-xr-x. 1 root root  84360 Jul 31 15:34 /usr/bin/su
+[exit=0]

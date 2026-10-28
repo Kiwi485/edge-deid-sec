@@ -1,0 +1,4 @@
+NAME                      IMAGE                         COMMAND                   SERVICE         CREATED          STATUS                     PORTS
+edge-deid-acquisition     edge-deid-sec-acquisition     "python src/services…"   acquisition     15 seconds ago   Exited (0) 4 seconds ago   
+edge-deid-extraction      edge-deid-sec-extraction      "python src/services…"   extraction      16 seconds ago   Exited (0) 4 seconds ago   
+edge-deid-observability   edge-deid-sec-observability   "python src/services…"   observability   15 seconds ago   Exited (0) 2 seconds ago   

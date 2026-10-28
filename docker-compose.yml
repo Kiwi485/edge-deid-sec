@@ -31,7 +31,13 @@ services:
       - ./data/raw:/app/data/raw:ro,z
       - ./evidence:/app/evidence:rw,z
       - ipc:/run/edge-deid
-    restart: "no"
+    cpu_shares: 512
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; connection = socket.socket(socket.AF_UNIX); connection.connect('/run/edge-deid/edge_deid.sock'); connection.close()"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: on-failure:5
 
   extraction:
     <<: *security
@@ -66,7 +72,8 @@ services:
       interval: 2s
       timeout: 2s
       retries: 30
-    restart: "no"
+    cpu_shares: 768
+    restart: on-failure:5
 
   observability:
     <<: *security
@@ -88,7 +95,13 @@ services:
       - ./logs:/app/logs:ro,z
       - ./docs:/app/docs:rw,z
       - ./evidence:/app/evidence:rw,z
-    restart: "no"
+    cpu_shares: 512
+    healthcheck:
+      test: ["CMD", "python", "-c", "import os; assert os.access('/app/data/out', os.W_OK)"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: on-failure:5
 
 volumes:
   ipc:

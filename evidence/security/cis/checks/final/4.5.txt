@@ -1,0 +1,12 @@
+# CIS Docker Benchmark v1.9.0 control 4.5
+# host: fedora  collected: 2026-10-28T01:36:02+08:00
+
+$ for i in edge-deid-sec-acquisition:latest edge-deid-sec-extraction:latest edge-deid-sec-observability:latest; do echo "$i Healthcheck=$(docker inspect --format='{{ .Config.Healthcheck }}' $i)"; done
+edge-deid-sec-acquisition:latest Healthcheck={[CMD python -c import tempfile; tempfile.TemporaryFile().close()] 10s 5s 10s 0s 3}
+edge-deid-sec-extraction:latest Healthcheck={[CMD python -c import tempfile; tempfile.TemporaryFile().close()] 10s 5s 10s 0s 3}
+edge-deid-sec-observability:latest Healthcheck={[CMD python -c import tempfile; tempfile.TemporaryFile().close()] 10s 5s 10s 0s 3}
+[exit=0]
+
+$ grep -n HEALTHCHECK Dockerfile
+42:HEALTHCHECK --interval=10s --timeout=5s --start-period=10s --retries=3 \
+[exit=0]

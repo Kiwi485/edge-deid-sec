@@ -1,0 +1,27 @@
+# CIS Docker Benchmark v1.9.0 control 4.4
+# host: fedora  collected: 2026-10-27T14:25:06+08:00
+
+$ which trivy && trivy --version
+which: no trivy in (/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/var/lib/snapd/snap/bin)
+[exit=1]
+
+$ grep -ohE 'python:3.11-slim@sha256:[0-9a-f]{64}' ${BUILD_LOG:-/dev/null} | sort -u
+python:3.11-slim@sha256:b7a9e5f6a93d6d4a31f129bbd4bdee69efccb6ded0fb230d78aafaf37af98377
+[exit=0]
+
+$ docker buildx imagetools inspect python:3.11-slim --format '{{json .Manifest.Digest}}'
+"sha256:0a19f628b6a9a96b0a0df9e0d3a327e8d51cd857804b04efcf1495879c97326b"[exit=0]
+
+$ for i in edge-deid-sec-acquisition:latest edge-deid-sec-extraction:latest edge-deid-sec-observability:latest; do echo "== $i"; docker image inspect --format 'Created={{.Created}}' $i; done
+== edge-deid-sec-acquisition:latest
+Created=2026-10-25T01:27:26.043732364+08:00
+== edge-deid-sec-extraction:latest
+Created=2026-10-25T01:27:25.960768723+08:00
+== edge-deid-sec-observability:latest
+Created=2026-10-25T01:27:26.043732364+08:00
+[exit=0]
+
+$ docker image inspect --format 'base Created={{.Created}} {{.RepoDigests}}' python:3.11-slim
+
+Error response from daemon: No such image: python:3.11-slim
+[exit=1]

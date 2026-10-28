@@ -1,0 +1,16 @@
+# CIS Docker Benchmark v1.9.0 control 1.2.2
+# host: fedora  collected: 2026-10-27T14:24:53+08:00
+
+$ docker version --format 'client={{.Client.Version}} server={{.Server.Version}}'
+client=29.9.2 server=29.9.2
+[exit=0]
+
+$ rpm -q docker-ce docker-ce-cli containerd.io
+docker-ce-29.9.2-1.fc44.x86_64
+docker-ce-cli-29.9.2-1.fc44.x86_64
+containerd.io-2.4.2-3.fc44.x86_64
+[exit=0]
+
+$ dnf -q check-update docker-ce docker-ce-cli containerd.io docker-compose-plugin; echo dnf_check_update_rc=$?
+dnf_check_update_rc=0
+[exit=0]

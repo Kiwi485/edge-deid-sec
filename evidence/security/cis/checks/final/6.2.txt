@@ -1,0 +1,22 @@
+# CIS Docker Benchmark v1.9.0 control 6.2
+# host: fedora  collected: 2026-10-28T01:36:17+08:00
+
+$ docker info --format '{{ .Containers }}'
+5
+[exit=0]
+
+$ docker info --format '{{ .ContainersStopped }}'
+2
+[exit=0]
+
+$ docker info --format '{{ .ContainersRunning }}'
+3
+[exit=0]
+
+$ docker ps -a --format '{{.Names}} {{.Status}}'
+edge-deid-acquisition Created
+edge-deid-observability Created
+cis-runtime-observability Up 41 seconds (healthy)
+cis-runtime-acquisition Up 41 seconds (healthy)
+edge-deid-extraction Up 42 seconds (healthy)
+[exit=0]

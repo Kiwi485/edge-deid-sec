@@ -1,0 +1,9 @@
+# CIS Docker Benchmark v1.9.0 control 3.23
+# host: fedora  collected: 2026-10-27T14:24:58+08:00
+
+$ stat -c '%U:%G %n' /run/containerd/containerd.sock
+root:root /run/containerd/containerd.sock
+[exit=0]
+
+$ stat -c %U:%G /run/containerd/containerd.sock | grep -v root:root
+[exit=1]

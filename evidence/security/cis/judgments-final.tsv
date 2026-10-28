@@ -1,0 +1,118 @@
+# Final judgments (after remediation). Columns: control_id<TAB>status<TAB>exception_reason<TAB>remediation
+1.1.1	PASS		§C：新增 sdb1 ext4 獨立掛載 /var/lib/docker（並另掛 /var/lib/containerd）；重測 checks/final/1.1.1.txt
+1.1.2	PASS		
+1.1.3	PASS		§A：30-docker-cis.rules 加入 -k docker 監看並解除 -a task,never；重開機後仍為 14 條；重測 checks/final/1.1.3.txt
+1.1.4	PASS		§A：30-docker-cis.rules 加入 -k docker 監看並解除 -a task,never；重開機後仍為 14 條；重測 checks/final/1.1.4.txt
+1.1.5	PASS		§A：30-docker-cis.rules 加入 -k docker 監看並解除 -a task,never；重開機後仍為 14 條；重測 checks/final/1.1.5.txt
+1.1.6	PASS		§A：30-docker-cis.rules 加入 -k docker 監看並解除 -a task,never；重開機後仍為 14 條；重測 checks/final/1.1.6.txt
+1.1.7	PASS		§A：30-docker-cis.rules 加入 -k docker 監看並解除 -a task,never；重開機後仍為 14 條；重測 checks/final/1.1.7.txt
+1.1.8	PASS		§A：30-docker-cis.rules 加入 -k docker 監看並解除 -a task,never；重開機後仍為 14 條；重測 checks/final/1.1.8.txt
+1.1.9	PASS		§A：30-docker-cis.rules 加入 -k docker 監看並解除 -a task,never；重開機後仍為 14 條；重測 checks/final/1.1.9.txt
+1.1.10	N/A	/etc/default/docker 不存在（Fedora 不使用此檔；Benchmark 註明檔案不存在時不適用）	
+1.1.11	PASS		§A：30-docker-cis.rules 加入 -k docker 監看並解除 -a task,never；重開機後仍為 14 條；重測 checks/final/1.1.11.txt
+1.1.12	PASS		§A：30-docker-cis.rules 加入 -k docker 監看並解除 -a task,never；重開機後仍為 14 條；重測 checks/final/1.1.12.txt
+1.1.13	N/A	/etc/sysconfig/docker 不存在（Benchmark 註明檔案不存在時不適用）	
+1.1.14	PASS		§A：30-docker-cis.rules 加入 -k docker 監看並解除 -a task,never；重開機後仍為 14 條；重測 checks/final/1.1.14.txt
+1.1.15	N/A	/usr/bin/containerd-shim 不存在（containerd 2.x 只提供 shim-runc-v2；Benchmark 註明不存在時不適用）	
+1.1.16	N/A	/usr/bin/containerd-shim-runc-v1 不存在（Benchmark 註明不存在時不適用）	
+1.1.17	PASS		§A：30-docker-cis.rules 加入 -k docker 監看並解除 -a task,never；重開機後仍為 14 條；重測 checks/final/1.1.17.txt
+1.1.18	PASS		§A：30-docker-cis.rules 加入 -k docker 監看並解除 -a task,never；重開機後仍為 14 條；重測 checks/final/1.1.18.txt
+1.2.1	FAIL	未正式採用並驗證 CIS Fedora/RHEL 主機基準；僅有 SELinux Enforcing、auditd、firewalld 等部分措施。主機作業系統強化超出本 Issue（Docker Benchmark）範圍	本輪無修正；建議另開 Issue 套用 CIS Fedora/RHEL 主機基準（負責人決定）
+1.2.2	PASS		
+2.1	FAIL	dockerd 以 root 執行。rootless 模式與自訂 SELinux 政策 edge_deid_extraction_t（container_runtime_t 轉換）及 W10-1 驗證不相容，改用 rootless 需重做 SELinux 政策與驗證	本輪無修正；風險以 SELinux Enforcing、容器非 root、cap_drop ALL、no-new-privileges 降低；交負責人決定是否評估 rootless
+2.2	PASS		§B：daemon.json icc=false；重測預設 bridge enable_icc:false
+2.3	PASS		
+2.4	PASS		
+2.5	PASS		
+2.6	PASS		
+2.7	PASS		
+2.8	N/A	dockerd 僅以 -H fd://（Unix socket）啟動，未監聽 TCP 2375/2376；Benchmark 2.8 僅在需要遠端 TCP 存取時要求 TLS	
+2.9	PASS		§B：daemon.json default-ulimits nofile 4096/8192；容器 Ulimits 見 checks/final/5.19.txt
+2.10	N/A	三個映像皆預設非 root 使用者 USER 10001:10001；Benchmark 2.10 說明映像已有非 root 使用者時可略過此建議	
+2.11	PASS		
+2.12	PASS		
+2.13	FAIL	未設定 Docker 授權外掛。單機 VM、docker 群組僅管理者使用，無多使用者授權需求	本輪無修正；風險為能存取 docker.sock 者等同 root，以 docker.sock 權限 660 root:docker 與稽核規則 -k docker 追蹤
+2.14	FAIL	log driver 為本機 json-file，沒有集中／遠端日誌伺服器	本輪無修正；需要團隊提供集中日誌（syslog/journald 轉送）後再設定，交負責人決定
+2.15	PASS		§B：daemon.json no-new-privileges=true；docker info SecurityOptions 含 no-new-privileges
+2.16	PASS		§B：daemon.json live-restore=true；LiveRestoreEnabled=true
+2.17	PASS		§B：daemon.json userland-proxy=false；無 docker-proxy 行程
+2.18	N/A	使用 Docker 內建 seccomp profile（profile=builtin）；Benchmark 2.18 說明預設 profile 足夠時可不套用自訂 profile，本專案未有需要自訂的系統呼叫需求	
+2.19	PASS		
+3.1	PASS		
+3.2	PASS		
+3.3	PASS		
+3.4	PASS		
+3.5	PASS		
+3.6	PASS		
+3.7	N/A	/etc/docker/certs.d 不存在，未設定任何 registry 憑證	
+3.8	N/A	/etc/docker/certs.d 不存在，未設定任何 registry 憑證	
+3.9	N/A	daemon 未啟用 TLS（無 --tlscacert／daemon.json 無 tls 設定，且未監聽 TCP），沒有 TLS CA 憑證檔	
+3.10	N/A	daemon 未啟用 TLS，沒有 TLS CA 憑證檔	
+3.11	N/A	daemon 未啟用 TLS，沒有 server 憑證檔	
+3.12	N/A	daemon 未啟用 TLS，沒有 server 憑證檔	
+3.13	N/A	daemon 未啟用 TLS，沒有 server 憑證金鑰檔	
+3.14	N/A	daemon 未啟用 TLS，沒有 server 憑證金鑰檔	
+3.15	PASS		
+3.16	PASS		
+3.17	PASS		
+3.18	PASS		
+3.19	N/A	/etc/default/docker 不存在	
+3.20	N/A	/etc/default/docker 不存在	
+3.21	N/A	/etc/sysconfig/docker 不存在	
+3.22	N/A	/etc/sysconfig/docker 不存在	
+3.23	PASS		
+3.24	PASS		
+4.1	PASS		
+4.2	PASS		
+4.3	FAIL	TFLite 部署映像仍含 torch、CUDA/NVIDIA、ultralytics、pytest 等非執行必要套件（映像 11 GB）。移除需拆分 requirements 與重新驗證模型後端	本輪無修正；建議下一輪拆分 runtime/dev requirements 並改用最小 TFLite 映像，同時可減少 4.4 弱點數
+4.4	FAIL	已以 Trivy 0.76.1 掃描三個最終映像（tool-output/trivy-vulns.csv）並以 registry 最新基底重建：Debian 套件沒有可修正的弱點（232 筆皆無修補版本，含 CRITICAL libxml2 CVE-2026-6653），但 Python 套件有 71 筆可修正弱點未修補：pillow 12.1.0（5 CRITICAL、36 HIGH，修正於 13.0.0）、pillow_heif 1.2.0、基底內建 pip 24.0、setuptools 79.0.1（含 vendored wheel 0.45.1、jaraco.context 5.3.0）	本輪無修正：pillow 需升主版本 13，影響共用 requirements.txt 與樹莓派部署，需負責人決定；計畫升級 pillow>=13.0.0、pillow-heif>=1.3.0，Dockerfile 升級 pip/setuptools/wheel 後重建、重跑回歸與 Trivy。暫時緩解：extraction 以 SELinux edge_deid_extraction_t、network none、非 root、唯讀根目錄執行
+4.5	PASS		§D：Dockerfile HEALTHCHECK；三映像 Config.Healthcheck 已設定
+4.6	PASS		
+4.7	PASS		§D：Dockerfile 移除 setuid/setgid；三個執行中容器 setuid_setgid_count=0
+4.8	PASS		
+4.9	PASS		
+4.10	FAIL	pip 套件未以 --hash 驗證（apt 套件有 Debian keyring 驗證）	本輪無修正；建議以 pip-compile --generate-hashes 產生鎖定檔後 pip install --require-hashes
+4.11	FAIL	未驗證基底映像簽章（DOCKER_CONTENT_TRUST 未啟用；Docker 29 已移除 docker trust）	本輪無修正；以 digest 固定與記錄（cis-environment.md）作為替代追溯，建議評估 cosign 驗證 Docker Official Images
+5.1	PASS		
+5.2	N/A	主機核心未啟用 AppArmor（/sys/kernel/security/apparmor 不存在），Docker Security Options 只有 selinux；改由 5.3 SELinux 限制	
+5.3	PASS		
+5.4	PASS		
+5.5	PASS		
+5.6	PASS		
+5.7	PASS		
+5.8	PASS		
+5.9	PASS		
+5.10	PASS		
+5.11	PASS		
+5.12	PASS		§F：cpu_shares extraction 768、acquisition/observability 512
+5.13	PASS		
+5.14	PASS		
+5.15	PASS		§F：restart on-failure:5（三個服務容器 MaximumRetryCount=5；cis-runtime-* 為稽核用暫時容器）
+5.16	PASS		
+5.17	PASS		
+5.18	PASS		
+5.19	PASS		
+5.20	PASS		
+5.21	PASS		
+5.22	PASS		
+5.23	PASS		§A：-k docker 規則生效（含 /usr/bin/docker -p x）；ausearch 無 docker exec --privileged 事件
+5.24	PASS		§A：-k docker 規則生效；ausearch 無 docker exec --user=root 事件
+5.25	PASS		
+5.26	PASS		
+5.27	PASS		§F：Compose healthcheck；三個執行中容器 Health=healthy
+5.28	PASS		§E：以 --pull 重建，建置 log 基底 digest ae952e… 等於 registry 最新
+5.29	PASS		
+5.30	PASS		
+5.31	PASS		
+5.32	PASS		
+6.1	PASS		
+6.2	PASS		
+7.1	N/A	Swarm 未啟用（LocalNodeState=inactive，見 5.1），本稽核不選 Level 1 - Docker Swarm profile	
+7.2	N/A	Swarm 未啟用，無 2377／7946 監聽	
+7.3	N/A	Swarm 未啟用，沒有 overlay 網路	
+7.4	N/A	Swarm 未啟用，不使用 swarm secret	
+7.5	N/A	Swarm 未啟用，沒有 swarm manager	
+7.6	N/A	Swarm 未啟用，沒有 auto-lock key	
+7.7	N/A	Swarm 未啟用，沒有 node 憑證	
+7.8	N/A	Swarm 未啟用，沒有 swarm CA 憑證	
+7.9	N/A	Swarm 未啟用，沒有 management／data plane	

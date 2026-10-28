@@ -1,0 +1,55 @@
+edge-deid-extraction  | extraction received job=01973586-466F-4163-810D-430AF5DFC80B input_file=01973586-466F-4163-810D-430AF5DFC80B.jpeg
+edge-deid-extraction  | WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+edge-deid-extraction  | W0000 00:00:1793122526.508367      37 face_landmarker_graph.cc:174] Sets FaceBlendshapesGraph acceleration to xnnpack by default.
+edge-deid-extraction  | INFO: Created TensorFlow Lite XNNPACK delegate for CPU.
+edge-deid-extraction  | W0000 00:00:1793122526.517817      39 inference_feedback_manager.cc:114] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+edge-deid-extraction  | W0000 00:00:1793122526.529900      39 inference_feedback_manager.cc:114] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+edge-deid-extraction  | INFO: Created TensorFlow Lite XNNPACK delegate for CPU.
+edge-deid-extraction  | Batch processing completed.
+edge-deid-extraction  | CSV: logs/pipeline_latency_vm.csv
+edge-deid-extraction  | Processed: 1
+edge-deid-extraction  | Status counts: ok=1, quality_fail=0, error=0
+edge-deid-extraction  | extraction received job=0BA08EE4-AB9D-47EB-A7FF-AC59CA1666C0 input_file=0BA08EE4-AB9D-47EB-A7FF-AC59CA1666C0.jpg
+edge-deid-extraction  | Batch processing completed.
+edge-deid-extraction  | CSV: logs/pipeline_latency_vm.csv
+edge-deid-extraction  | Processed: 1
+edge-deid-extraction  | Status counts: ok=1, quality_fail=0, error=0
+edge-deid-extraction  | extraction received job=0EB948F0-A873-4EBD-B4B1-8357DB187DE4 input_file=0EB948F0-A873-4EBD-B4B1-8357DB187DE4.jpeg
+edge-deid-extraction  | Batch processing completed.
+edge-deid-extraction  | CSV: logs/pipeline_latency_vm.csv
+edge-deid-extraction  | Processed: 1
+edge-deid-extraction  | Status counts: ok=1, quality_fail=0, error=0
+edge-deid-extraction  | extraction received job=190CF20D-AA88-4BAB-A6E3-2362EF1554F9 input_file=190CF20D-AA88-4BAB-A6E3-2362EF1554F9.jpeg
+edge-deid-extraction  | Batch processing completed.
+edge-deid-extraction  | CSV: logs/pipeline_latency_vm.csv
+edge-deid-extraction  | Processed: 1
+edge-deid-extraction  | Status counts: ok=1, quality_fail=0, error=0
+edge-deid-extraction  | extraction received job=36860C73-4B69-4035-BD0C-44BB8B7F7100 input_file=36860C73-4B69-4035-BD0C-44BB8B7F7100.jpeg
+edge-deid-extraction  | Batch processing completed.
+edge-deid-extraction  | CSV: logs/pipeline_latency_vm.csv
+edge-deid-extraction  | Processed: 1
+edge-deid-extraction  | Status counts: ok=1, quality_fail=0, error=0
+edge-deid-acquisition  | job=01973586-466F-4163-810D-430AF5DFC80B status=ok ipc_ms=1.35 processing_ms=2666.19 round_trip_ms=2667.55
+edge-deid-acquisition  | job=0BA08EE4-AB9D-47EB-A7FF-AC59CA1666C0 status=ok ipc_ms=0.92 processing_ms=147.47 round_trip_ms=148.39
+edge-deid-acquisition  | job=0EB948F0-A873-4EBD-B4B1-8357DB187DE4 status=ok ipc_ms=2.45 processing_ms=127.89 round_trip_ms=130.33
+edge-deid-acquisition  | job=190CF20D-AA88-4BAB-A6E3-2362EF1554F9 status=ok ipc_ms=1.67 processing_ms=125.53 round_trip_ms=127.20
+edge-deid-acquisition  | job=36860C73-4B69-4035-BD0C-44BB8B7F7100 status=ok ipc_ms=2.00 processing_ms=137.52 round_trip_ms=139.52
+edge-deid-acquisition  | acquisition socket completed
+edge-deid-acquisition  | total=5
+edge-deid-acquisition  | manifest=evidence/batch/acquisition_manifest.json
+edge-deid-acquisition  | ipc_report=evidence/batch/ipc_report.csv
+edge-deid-acquisition  | ipc_summary=evidence/batch/ipc_summary.md
+edge-deid-observability  | Updated report: /app/docs/roi_eval.md
+edge-deid-observability  | Updated report: /app/evidence/batch/roi_eval.md
+edge-deid-observability  | privacy evaluation completed
+edge-deid-observability  | bundles=5 ok=5 error=0
+edge-deid-observability  | report_csv=/app/evidence/batch/privacy_report.csv
+edge-deid-observability  | summary_md=/app/evidence/batch/privacy_summary.md
+edge-deid-observability  | Validation summary
+edge-deid-observability  | ==================
+edge-deid-observability  | Total images: 5
+edge-deid-observability  | Pass: 5
+edge-deid-observability  | Fail: 0
+edge-deid-observability  | Output CSV: /app/evidence/batch/validation_summary.csv
+edge-deid-observability  | observability completed
+edge-deid-observability  | updated: docs/roi_eval.md, evidence/batch/privacy_summary.md, evidence/batch/validation_summary.csv

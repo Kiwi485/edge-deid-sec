@@ -1,0 +1,12 @@
+# CIS Docker Benchmark v1.9.0 control 4.11
+# host: fedora  collected: 2026-10-28T01:36:06+08:00
+
+$ env | grep -i DOCKER_CONTENT_TRUST; echo dct_env_rc=$?
+dct_env_rc=1
+[exit=0]
+
+$ docker trust inspect python:3.11-slim 2>&1 | head -20
+docker: unknown command: docker trust
+
+Run 'docker --help' for more information
+[exit=0]

@@ -1,0 +1,11 @@
+# CIS Docker Benchmark v1.9.0 control 4.5
+# host: fedora  collected: 2026-10-27T14:25:12+08:00
+
+$ for i in edge-deid-sec-acquisition:latest edge-deid-sec-extraction:latest edge-deid-sec-observability:latest; do echo "$i Healthcheck=$(docker inspect --format='{{ .Config.Healthcheck }}' $i)"; done
+edge-deid-sec-acquisition:latest Healthcheck=<nil>
+edge-deid-sec-extraction:latest Healthcheck=<nil>
+edge-deid-sec-observability:latest Healthcheck=<nil>
+[exit=0]
+
+$ grep -n HEALTHCHECK Dockerfile
+[exit=1]
