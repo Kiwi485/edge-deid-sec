@@ -9,9 +9,10 @@ import numpy as np
 _INTERPRETERS = {}
 
 
-def _load_interpreter(model_path):
-    if model_path in _INTERPRETERS:
-        return _INTERPRETERS[model_path], 0.0
+def _load_interpreter(model_path, num_threads=None):
+    cache_key = (model_path, num_threads)
+    if cache_key in _INTERPRETERS:
+        return _INTERPRETERS[cache_key], 0.0
 
     try:
         from tflite_runtime.interpreter import Interpreter
@@ -22,9 +23,12 @@ def _load_interpreter(model_path):
             raise ImportError("Install tflite-runtime or ai-edge-litert to run a TFLite model") from exc
 
     started = time.perf_counter()
-    interpreter = Interpreter(model_path=model_path)
+    interpreter_options = {"model_path": model_path}
+    if num_threads is not None:
+        interpreter_options["num_threads"] = num_threads
+    interpreter = Interpreter(**interpreter_options)
     interpreter.allocate_tensors()
-    _INTERPRETERS[model_path] = interpreter
+    _INTERPRETERS[cache_key] = interpreter
     return interpreter, (time.perf_counter() - started) * 1000.0
 
 
@@ -46,6 +50,7 @@ def run_inference(
     threshold=0.5,
     image_array=None,
     return_timings=False,
+    num_threads=None,
 ):
     if not 0.0 < threshold < 1.0:
         raise ValueError("threshold must be between 0 and 1")
@@ -58,7 +63,10 @@ def run_inference(
 
     height, width = image_bgr.shape[:2]
     image_rgb = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2RGB)
-    interpreter, model_load_ms = _load_interpreter(str(model_path))
+    if num_threads is None:
+        interpreter, model_load_ms = _load_interpreter(str(model_path))
+    else:
+        interpreter, model_load_ms = _load_interpreter(str(model_path), num_threads)
     input_details = interpreter.get_input_details()[0]
     output_details = interpreter.get_output_details()[0]
 

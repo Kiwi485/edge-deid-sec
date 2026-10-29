@@ -143,9 +143,12 @@ def run_batch_pipeline(
     image_names: set[str] | None = None,
     seg_backend: str = "torch",
     seg_model_path: Path | None = None,
+    inference_threads: int | None = None,
 ):
     if seg_backend not in {"torch", "tflite"}:
         raise ValueError(f"Unsupported segmentation backend: {seg_backend}")
+    if inference_threads is not None and inference_threads < 1:
+        raise ValueError("inference_threads must be positive")
     model_path = seg_model_path or Path("models/seg/model.tflite" if seg_backend == "tflite" else SEG_MODEL_PATH)
     if seg_backend == "tflite":
         from src.seg.tflite_inference import run_inference as infer_segmentation
@@ -203,7 +206,7 @@ def run_batch_pipeline(
         quality_result = {"pass": False, "reason": "not_run", "metrics": {}}
 
         with trace_span("total", seg_backend=seg_backend, feature_version=FEATURE_VERSION) as total_span:
-            start_total = time.time()
+            start_total = time.perf_counter()
 
             try:
                 start = time.perf_counter()
@@ -231,7 +234,7 @@ def run_batch_pipeline(
                 # ROI: MediaPipe → YOLO detect → fixed fallback
                 # ======================
                 with trace_span("roi") as roi_span:
-                    start = time.time()
+                    start = time.perf_counter()
                     roi_img, roi_bbox, mp_status, mp_error = extract_roi_mediapipe(image)
                     combined_error = ""
 
@@ -256,7 +259,7 @@ def run_batch_pipeline(
                     if combined_error and error_msg:
                         error_msg = f"{error_msg}; {combined_error}"
 
-                    roi_ms = (time.time() - start) * 1000
+                    roi_ms = (time.perf_counter() - start) * 1000.0
                     roi_span.set_attribute("roi.method", roi_method_used)
 
                 start = time.perf_counter()
@@ -267,20 +270,25 @@ def run_batch_pipeline(
                 # Segmentation（U-Net model on ROI crop）
                 # ======================
                 with trace_span("seg"):
-                    start = time.time()
+                    start = time.perf_counter()
                     if not model_path.exists():
                         raise FileNotFoundError(
                             f"seg_model_missing: {model_path} (required, no fallback)"
                         )
 
                     # Pass ROI array directly to avoid temp file disk I/O
+                    inference_options = {
+                        "img_size": SEG_IMG_SIZE,
+                        "threshold": SEG_THRESHOLD,
+                        "image_array": roi_img,
+                        "return_timings": True,
+                    }
+                    if seg_backend == "tflite":
+                        inference_options["num_threads"] = inference_threads
                     roi_mask, _, inference_timings = infer_segmentation(
                         "",
                         str(model_path),
-                        img_size=SEG_IMG_SIZE,
-                        threshold=SEG_THRESHOLD,
-                        image_array=roi_img,
-                        return_timings=True,
+                        **inference_options,
                     )
                     model_load_ms = inference_timings["model_load_ms"]
                     seg_preprocess_ms = inference_timings["seg_preprocess_ms"]
@@ -301,7 +309,7 @@ def run_batch_pipeline(
                     mask = np.zeros((h, w), dtype=np.uint8)
                     mask[y1:y2, x1:x2] = roi_mask_resized
                     seg_postprocess_ms = (time.perf_counter() - postprocess_start) * 1000.0
-                    seg_ms = (time.time() - start) * 1000
+                    seg_ms = (time.perf_counter() - start) * 1000.0
                 write_start = time.perf_counter()
                 cv2.imwrite(str(output_folder / "mask.png"), mask)
                 artifact_write_ms += (time.perf_counter() - write_start) * 1000.0
@@ -310,9 +318,9 @@ def run_batch_pipeline(
                 # Feature 256
                 # ======================
                 with trace_span("feat"):
-                    start = time.time()
+                    start = time.perf_counter()
                     feature_256 = extract_features(image, mask)
-                    feat_ms = (time.time() - start) * 1000
+                    feat_ms = (time.perf_counter() - start) * 1000.0
                 write_start = time.perf_counter()
                 np.save(output_folder / "feature_256.npy", feature_256)
                 artifact_write_ms += (time.perf_counter() - write_start) * 1000.0
@@ -321,12 +329,12 @@ def run_batch_pipeline(
                 # DeID: keep only tongue mask pixels; everything else is black.
                 # ======================
                 with trace_span("deid"):
-                    start = time.time()
+                    start = time.perf_counter()
                     deid_img, _ = deid_mask_only(image, mask)
                     if deid_img is None:
                         deid_img = apply_mask_only(image, mask)
                     deid_method = "mask_only"
-                    deid_ms = (time.time() - start) * 1000
+                    deid_ms = (time.perf_counter() - start) * 1000.0
 
                 write_start = time.perf_counter()
                 cv2.imwrite(str(output_folder / "deid.png"), deid_img)
@@ -359,7 +367,7 @@ def run_batch_pipeline(
                 status = "error"
                 error_msg = str(e)
 
-            total_ms = (time.time() - start_total) * 1000
+            total_ms = (time.perf_counter() - start_total) * 1000.0
             total_span.set_attribute("pipeline.status", status)
             total_span.set_attribute("privacy.pass", bool(privacy_metrics.get("privacy_pass", False)))
             if status != "ok":
@@ -512,6 +520,12 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--seg-backend", choices=("torch", "tflite"), default="torch")
     parser.add_argument("--seg-model", type=Path, default=None)
+    parser.add_argument(
+        "--inference-threads",
+        type=int,
+        default=None,
+        help="TFLite interpreter threads (default: runtime setting).",
+    )
     return parser.parse_args()
 
 
@@ -529,4 +543,5 @@ if __name__ == "__main__":
         append_csv=args.append_csv,
         seg_backend=args.seg_backend,
         seg_model_path=args.seg_model,
+        inference_threads=args.inference_threads,
     )
