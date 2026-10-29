@@ -1,14 +1,14 @@
 # CIS Docker Benchmark v1.9.0 control 2.10
-# host: fedora  collected: 2026-10-28T01:35:47+08:00
+# host: fedora  collected: 2026-10-29T17:39:30+08:00
 
 $ docker info --format '{{ .SecurityOptions }}'
 [name=seccomp,profile=builtin name=selinux name=cgroupns name=no-new-privileges]
 [exit=0]
 
 $ docker inspect --format='{{ .State.Pid }}' $(docker ps -q) | while read -r line; do ps -h -p "$line" -o pid,user; done
-   7955 10001
-   7841 10001
-   7725 10001
+  20417 10001
+  20307 10001
+  20189 10001
 [exit=0]
 
 $ for i in edge-deid-sec-acquisition:latest edge-deid-sec-extraction:latest edge-deid-sec-observability:latest; do echo "$i User=$(docker image inspect --format '{{.Config.User}}' $i)"; done

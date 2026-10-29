@@ -2,7 +2,7 @@
 
 - Benchmark：CIS Docker Benchmark v1.9.0；Profile：Level 1 + Level 2 - Docker - Linux（Swarm 9 項列 N/A）
 - 目標：W10-1 的 Fedora 44 SELinux Enforcing VM（見 `cis-environment.md`）
-- 最終檢查：2026-10-28 01:35:41–01:36:18（UTC+8），`checks/final/`；完整表格 `cis-controls.csv`
+- 最終檢查：2026-10-29 17:39:26–17:40:04（UTC+8），`checks/final/`；完整表格 `cis-controls.csv`
 - 本報告為團隊內部自我評估，不是 CIS 官方認證
 
 ## 合規率計算
@@ -40,7 +40,7 @@ python3 -c "import csv,collections; r=list(csv.DictReader(open('cis-controls.csv
 
 | ID | Level | 風險 | 現況與緩解 | 建議處理 |
 |---|---|---|---|---|
-| **4.4** 映像掃描與修補 | L1 | **高**。pillow 12.1.0 有 5 CRITICAL、36 HIGH 可修正弱點（影像解碼，本系統正是處理照片）；基底內建 pip／setuptools／wheel 也有可修正弱點。Debian 層 232 筆目前都沒有修補版本 | 已掃描並以最新基底重建；extraction 在 SELinux `edge_deid_extraction_t`、`network_mode: none`、非 root、唯讀根目錄、cap_drop ALL 下執行，降低被利用後的影響 | **優先處理**：requirements 升級 `pillow>=13.0.0`、`pillow-heif>=1.3.0`，Dockerfile 升級 pip／setuptools／wheel，重建後重跑回歸與 Trivy。因 pillow 升主版本、影響樹莓派部署，需負責人同意 |
+| **4.4** 映像掃描與修補 | L1 | **高**。pillow 12.1.0 有 5 CRITICAL、36 HIGH 可修正弱點（影像解碼，本系統正是處理照片）；基底內建 pip／setuptools／wheel 也有可修正弱點。Debian 層 234 筆目前都沒有修補版本 | 已掃描並以最新基底重建；extraction 在 SELinux `edge_deid_extraction_t`、`network_mode: none`、非 root、唯讀根目錄、cap_drop ALL 下執行，降低被利用後的影響 | **優先處理**：requirements 升級 `pillow>=13.0.0`、`pillow-heif>=1.3.0`，Dockerfile 升級 pip／setuptools／wheel，重建後重跑回歸與 Trivy。因 pillow 升主版本、影響樹莓派部署，需負責人同意 |
 | 4.3 只安裝必要套件 | L1 | 中。TFLite 映像仍含 torch、CUDA、ultralytics、pytest，映像 11 GB，攻擊面與弱點數變大 | 未修正 | 拆分 runtime／dev requirements，建立最小 TFLite 映像（同時改善 4.4 與樹莓派部署） |
 | 4.10 安裝套件的驗證 | L1 | 中。pip 套件沒有 hash 驗證，供應鏈被竄改時無法發現 | apt 有 Debian keyring 驗證；pip 版本大多固定 | `pip-compile --generate-hashes` + `pip install --require-hashes` |
 | 4.11 映像簽章驗證 | L2 | 中低。未驗證基底映像簽章 | 以 digest 記錄並固定（`cis-environment.md`）；Docker 29 已移除 `docker trust` | 評估 cosign 驗證 Docker Official Images，或 Dockerfile `FROM` 固定 digest |

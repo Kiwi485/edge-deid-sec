@@ -1,5 +1,5 @@
 # CIS Docker Benchmark v1.9.0 control 4.5
-# host: fedora  collected: 2026-10-28T01:36:02+08:00
+# host: fedora  collected: 2026-10-29T17:39:45+08:00
 
 $ for i in edge-deid-sec-acquisition:latest edge-deid-sec-extraction:latest edge-deid-sec-observability:latest; do echo "$i Healthcheck=$(docker inspect --format='{{ .Config.Healthcheck }}' $i)"; done
 edge-deid-sec-acquisition:latest Healthcheck={[CMD python -c import tempfile; tempfile.TemporaryFile().close()] 10s 5s 10s 0s 3}

@@ -7,7 +7,7 @@
 - 流程：quality gate -> MediaPipe ROI -> YOLO fallback -> fixed-crop fallback
 - 批次執行指令：`python src/pipeline_local.py`
 - 報告更新指令：`python src/update_roi_eval.py`
-- 產生時間：2026-10-27 17:35:28
+- 產生時間：2026-10-29 09:39:13
 
 ## 驗收檢查
 - 批次穩定性（目標 100 張）：目前 5 張統計中無 pipeline hard error。

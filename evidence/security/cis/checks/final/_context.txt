@@ -1,8 +1,8 @@
 # CIS Docker Benchmark v1.9.0 control _context
-# host: fedora  collected: 2026-10-28T01:35:41+08:00
+# host: fedora  collected: 2026-10-29T17:39:26+08:00
 
 $ date -Is
-2026-10-28T01:35:41+08:00
+2026-10-29T17:39:26+08:00
 [exit=0]
 
 $ cat /etc/os-release
@@ -101,7 +101,7 @@ Server:
   /etc/cdi
   /var/run/cdi
  Swarm: inactive
- Runtimes: io.containerd.runc.v2 runc
+ Runtimes: runc io.containerd.runc.v2
  Default Runtime: runc
  Init Binary: docker-init
  containerd version: b7a25261e029d68978bbf290df0a62fc819b3c51
@@ -133,11 +133,11 @@ Server:
 [exit=0]
 
 $ docker ps -a --format '{{.ID}} {{.Names}} {{.Image}} {{.Status}}'
-e6667bf91130 edge-deid-acquisition edge-deid-sec-acquisition Created
-1b5908c6f535 edge-deid-observability edge-deid-sec-observability Created
-0ba53a9203d4 cis-runtime-observability edge-deid-sec-observability Up 5 seconds (health: starting)
-9e7586d171a2 cis-runtime-acquisition edge-deid-sec-acquisition Up 5 seconds (healthy)
-acf4ec7df2d4 edge-deid-extraction edge-deid-sec-extraction Up 6 seconds (healthy)
+68dab3506df6 edge-deid-acquisition edge-deid-sec-acquisition Created
+3665c8078eb0 edge-deid-observability edge-deid-sec-observability Created
+d6f6d08fa936 cis-runtime-observability edge-deid-sec-observability Up 5 seconds (health: starting)
+3093240cc8da cis-runtime-acquisition edge-deid-sec-acquisition Up 6 seconds (healthy)
+9041558ef9d1 edge-deid-extraction edge-deid-sec-extraction Up 7 seconds (healthy)
 [exit=0]
 
 $ auditctl -l

@@ -1,5 +1,5 @@
 # CIS Docker Benchmark v1.9.0 control 2.2
-# host: fedora  collected: 2026-10-28T01:35:46+08:00
+# host: fedora  collected: 2026-10-29T17:39:30+08:00
 
 $ docker network ls --quiet | xargs docker network inspect --format '{{ .Name }}: {{ .Options }}'
 bridge: map[com.docker.network.bridge.default_bridge:true com.docker.network.bridge.enable_icc:false com.docker.network.bridge.enable_ip_masquerade:true com.docker.network.bridge.host_binding_ipv4:0.0.0.0 com.docker.network.bridge.name:docker0 com.docker.network.driver.mtu:1500]
@@ -9,7 +9,7 @@ none: map[]
 [exit=0]
 
 $ ps -ef | grep '[d]ockerd'
-root        1232       1 32 01:26 ?        00:03:07 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+root        1298       1  2 15:41 ?        00:03:28 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
 [exit=0]
 
 $ cat /etc/docker/daemon.json

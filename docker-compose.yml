@@ -37,7 +37,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
-    restart: on-failure:5
+    # 一次性批次：重啟會從第一張重送，耗盡 extraction 的 --max-requests 額度，所以不自動重啟（CIS 5.15 允許 no）
+    restart: "no"
 
   extraction:
     <<: *security

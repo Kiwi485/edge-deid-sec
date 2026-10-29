@@ -21,11 +21,17 @@ case "$ACTION" in
     # compose run ignores the service restart policy, so also create (not start) the real service
     # containers; HostConfig checks over 'docker ps --all' then cover the deployed configuration too.
     "${COMPOSE[@]}" create --no-build --no-recreate acquisition observability
+    health=
     for _ in $(seq 1 30); do
-      [ "$(docker inspect --format '{{.State.Health.Status}}' edge-deid-extraction)" = healthy ] && break
+      health=$(docker inspect --format '{{.State.Health.Status}}' edge-deid-extraction)
+      [ "$health" = healthy ] && break
       sleep 2
     done
     docker ps --format '{{.Names}} {{.Status}}'
+    if [ "$health" != healthy ]; then
+      echo "extraction did not become healthy (last status: $health)" >&2
+      exit 1
+    fi
     ;;
   down)
     docker rm -f cis-runtime-acquisition cis-runtime-observability 2>/dev/null || true

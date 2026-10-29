@@ -1,5 +1,5 @@
 # CIS Docker Benchmark v1.9.0 control 4.4
-# host: fedora  collected: 2026-10-28T01:35:56+08:00
+# host: fedora  collected: 2026-10-29T17:39:39+08:00
 
 $ which trivy && trivy --version
 /usr/sbin/trivy
@@ -7,19 +7,19 @@ Version: 0.76.1
 [exit=0]
 
 $ grep -ohE 'python:3.11-slim@sha256:[0-9a-f]{64}' ${BUILD_LOG:-/dev/null} | sort -u
-python:3.11-slim@sha256:ae952e0a57138a4317b9b61caaa19a8217c2f356803f8d7e63aad08769950937
+python:3.11-slim@sha256:673719e071ecf27434fd2635bbd8d00f49f4fdd81f243143438a42ced8bedf60
 [exit=0]
 
 $ docker buildx imagetools inspect python:3.11-slim --format '{{json .Manifest.Digest}}'
-"sha256:ae952e0a57138a4317b9b61caaa19a8217c2f356803f8d7e63aad08769950937"[exit=0]
+"sha256:673719e071ecf27434fd2635bbd8d00f49f4fdd81f243143438a42ced8bedf60"[exit=0]
 
 $ for i in edge-deid-sec-acquisition:latest edge-deid-sec-extraction:latest edge-deid-sec-observability:latest; do echo "== $i"; docker image inspect --format 'Created={{.Created}}' $i; done
 == edge-deid-sec-acquisition:latest
-Created=2026-10-28T01:35:12.011154897+08:00
+Created=2026-10-29T17:38:55.430745665+08:00
 == edge-deid-sec-extraction:latest
-Created=2026-10-28T01:30:02.24756554+08:00
+Created=2026-10-29T17:34:09.406779977+08:00
 == edge-deid-sec-observability:latest
-Created=2026-10-28T01:35:12.011154897+08:00
+Created=2026-10-29T17:38:55.430745665+08:00
 [exit=0]
 
 $ docker image inspect --format 'base Created={{.Created}} {{.RepoDigests}}' python:3.11-slim
@@ -27,15 +27,16 @@ $ docker image inspect --format 'base Created={{.Created}} {{.RepoDigests}}' pyt
 Error response from daemon: No such image: python:3.11-slim
 [exit=1]
 
-# --- manual addendum 2026-10-28T01:48:32+08:00: Trivy results (per-CVE list in tool-output/trivy-vulns.csv; full JSON kept on the audit VM, see tool-output/README.md) ---
-$ trivy image --image-src docker --scanners vuln --timeout 90m --format json --output tool-output/trivy-<svc>.json edge-deid-sec-<svc>:latest
-== acquisition ImageID=sha256:68e407d80185e187ce8ca5e712b1bfbf5cae3bb8e5f4276001001ae52eb86ea2 scanned=2026-10-28T01:47:34.025386468+08:00
-  debian: total=232 {'CRITICAL': 1, 'HIGH': 55, 'LOW': 99, 'MEDIUM': 75, 'UNKNOWN': 2} fixable=0 {}
+# --- manual addendum 2026-10-29T17:48:08+08:00: Trivy results for these image IDs ---
+# per-CVE list in tool-output/trivy-vulns.csv; full JSON kept on the audit VM, see tool-output/README.md
+$ trivy image --image-src docker --scanners vuln --timeout 90m --format json --output trivy-<svc>.json edge-deid-sec-<svc>:latest
+== acquisition ImageID=sha256:91531e85a6545e2e3f80888c0d0a39a74f1f295f2f87950b5d9a1af678ca1b5d scanned=2026-10-29T17:47:20.44021115+08:00
+  debian: total=234 {'CRITICAL': 1, 'HIGH': 55, 'LOW': 99, 'MEDIUM': 75, 'UNKNOWN': 4} fixable=0 {}
   python-pkg: total=71 {'CRITICAL': 5, 'HIGH': 38, 'LOW': 2, 'MEDIUM': 26} fixable=71 {'CRITICAL': 5, 'HIGH': 38, 'LOW': 2, 'MEDIUM': 26}
-== extraction ImageID=sha256:c2ce7947c5c9788ec897cd5efd4e8216b031f923d6bdb102d431df802531f971 scanned=2026-10-28T01:44:44.47146934+08:00
-  debian: total=232 {'CRITICAL': 1, 'HIGH': 55, 'LOW': 99, 'MEDIUM': 75, 'UNKNOWN': 2} fixable=0 {}
+== extraction ImageID=sha256:c45511b8603f3a9cb60aa3cfe9d7bd4ca13407a33fc204560506404078c8c8f5 scanned=2026-10-29T17:43:44.951452268+08:00
+  debian: total=234 {'CRITICAL': 1, 'HIGH': 55, 'LOW': 99, 'MEDIUM': 75, 'UNKNOWN': 4} fixable=0 {}
   python-pkg: total=71 {'CRITICAL': 5, 'HIGH': 38, 'LOW': 2, 'MEDIUM': 26} fixable=71 {'CRITICAL': 5, 'HIGH': 38, 'LOW': 2, 'MEDIUM': 26}
-== observability ImageID=sha256:50d2d79c98c29c856655ea560ba4e26744268ec45f7087649daf220e96d98eb6 scanned=2026-10-28T01:47:34.571752184+08:00
-  debian: total=232 {'CRITICAL': 1, 'HIGH': 55, 'LOW': 99, 'MEDIUM': 75, 'UNKNOWN': 2} fixable=0 {}
+== observability ImageID=sha256:e3f19d623efe0d6816ea04697a6b14acaa4d58fa94495fc150b50b112b88b50a scanned=2026-10-29T17:47:21.385267818+08:00
+  debian: total=234 {'CRITICAL': 1, 'HIGH': 55, 'LOW': 99, 'MEDIUM': 75, 'UNKNOWN': 4} fixable=0 {}
   python-pkg: total=71 {'CRITICAL': 5, 'HIGH': 38, 'LOW': 2, 'MEDIUM': 26} fixable=71 {'CRITICAL': 5, 'HIGH': 38, 'LOW': 2, 'MEDIUM': 26}
-judgement: scanned and rebuilt on latest base (ae952e...), but 71 fixable Python package vulnerabilities (pillow 12.1.0 incl. 5 CRITICAL) remain -> FAIL
+judgement: scanned and rebuilt on latest base (673719e...), but 71 fixable Python package vulnerabilities (pillow 12.1.0 incl. 5 CRITICAL) remain -> FAIL

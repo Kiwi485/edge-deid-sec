@@ -1,7 +1,15 @@
 # CIS Docker Benchmark v1.9.0 control 5.23
-# host: fedora  collected: 2026-10-28T01:36:09+08:00
+# host: fedora  collected: 2026-10-29T17:39:52+08:00
 
 $ ausearch -k docker 2>&1 | grep exec | grep privileged; echo grep_rc=$?
+grep_rc=1
+[exit=0]
+
+$ LC_ALL=C ausearch -k docker -m EXECVE -i 2>/dev/null | grep -E ' a0=(/usr/bin/)?docker ' | grep -E ' a[0-9]+=exec( |$)' | wc -l
+49
+[exit=0]
+
+$ LC_ALL=C ausearch -k docker -m EXECVE -i 2>/dev/null | grep -E ' a0=(/usr/bin/)?docker ' | grep -E ' a[0-9]+=exec( |$)' | grep -E -- ' a[0-9]+=--privileged(=true)?( |$)'; echo grep_rc=$?
 grep_rc=1
 [exit=0]
 

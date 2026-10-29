@@ -1,5 +1,5 @@
 # CIS Docker Benchmark v1.9.0 control 1.2.1
-# host: fedora  collected: 2026-10-28T01:35:41+08:00
+# host: fedora  collected: 2026-10-29T17:39:26+08:00
 
 $ cat /etc/os-release
 NAME="Fedora Linux"
@@ -46,20 +46,22 @@ $ rpm -q scap-security-guide openscap-scanner
 
 $ ss -ltnup
 Netid State  Recv-Q Send-Q Local Address:Port  Peer Address:PortProcess                                   
-udp   UNCONN 0      0         127.0.0.54:53         0.0.0.0:*    users:(("systemd-resolve",pid=797,fd=20))
-udp   UNCONN 0      0      127.0.0.53%lo:53         0.0.0.0:*    users:(("systemd-resolve",pid=797,fd=18))
-udp   UNCONN 0      0          127.0.0.1:323        0.0.0.0:*    users:(("chronyd",pid=959,fd=4))         
-udp   UNCONN 0      0            0.0.0.0:5353       0.0.0.0:*    users:(("avahi-daemon",pid=955,fd=12))   
-udp   UNCONN 0      0            0.0.0.0:5355       0.0.0.0:*    users:(("systemd-resolve",pid=797,fd=12))
-udp   UNCONN 0      0              [::1]:323           [::]:*    users:(("chronyd",pid=959,fd=5))         
-udp   UNCONN 0      0               [::]:5353          [::]:*    users:(("avahi-daemon",pid=955,fd=13))   
-udp   UNCONN 0      0               [::]:5355          [::]:*    users:(("systemd-resolve",pid=797,fd=14))
-tcp   LISTEN 0      4096         0.0.0.0:5355       0.0.0.0:*    users:(("systemd-resolve",pid=797,fd=13))
-tcp   LISTEN 0      4096      127.0.0.54:53         0.0.0.0:*    users:(("systemd-resolve",pid=797,fd=21))
-tcp   LISTEN 0      4096   127.0.0.53%lo:53         0.0.0.0:*    users:(("systemd-resolve",pid=797,fd=19))
-tcp   LISTEN 0      4096       127.0.0.1:631        0.0.0.0:*    users:(("cupsd",pid=1150,fd=8))          
-tcp   LISTEN 0      511        127.0.0.1:13839      0.0.0.0:*    users:(("code-insiders",pid=4153,fd=39)) 
-tcp   LISTEN 0      511        127.0.0.1:34359      0.0.0.0:*    users:(("code-insiders",pid=4135,fd=40)) 
-tcp   LISTEN 0      4096            [::]:5355          [::]:*    users:(("systemd-resolve",pid=797,fd=15))
-tcp   LISTEN 0      4096           [::1]:631           [::]:*    users:(("cupsd",pid=1150,fd=7))          
+udp   UNCONN 0      0         127.0.0.54:53         0.0.0.0:*    users:(("systemd-resolve",pid=803,fd=20))
+udp   UNCONN 0      0      127.0.0.53%lo:53         0.0.0.0:*    users:(("systemd-resolve",pid=803,fd=18))
+udp   UNCONN 0      0          127.0.0.1:323        0.0.0.0:*    users:(("chronyd",pid=965,fd=4))         
+udp   UNCONN 0      0            0.0.0.0:5353       0.0.0.0:*    users:(("avahi-daemon",pid=961,fd=12))   
+udp   UNCONN 0      0            0.0.0.0:5355       0.0.0.0:*    users:(("systemd-resolve",pid=803,fd=12))
+udp   UNCONN 0      0              [::1]:323           [::]:*    users:(("chronyd",pid=965,fd=5))         
+udp   UNCONN 0      0               [::]:5353          [::]:*    users:(("avahi-daemon",pid=961,fd=13))   
+udp   UNCONN 0      0               [::]:5355          [::]:*    users:(("systemd-resolve",pid=803,fd=14))
+tcp   LISTEN 0      10           0.0.0.0:27500      0.0.0.0:*    users:(("passimd",pid=7218,fd=10))       
+tcp   LISTEN 0      4096   127.0.0.53%lo:53         0.0.0.0:*    users:(("systemd-resolve",pid=803,fd=19))
+tcp   LISTEN 0      4096      127.0.0.54:53         0.0.0.0:*    users:(("systemd-resolve",pid=803,fd=21))
+tcp   LISTEN 0      4096       127.0.0.1:631        0.0.0.0:*    users:(("cupsd",pid=1156,fd=8))          
+tcp   LISTEN 0      511        127.0.0.1:45217      0.0.0.0:*    users:(("code-insiders",pid=4126,fd=40)) 
+tcp   LISTEN 0      511        127.0.0.1:37973      0.0.0.0:*    users:(("code-insiders",pid=4174,fd=38)) 
+tcp   LISTEN 0      511        127.0.0.1:38271      0.0.0.0:*    users:(("code-insiders",pid=4909,fd=27)) 
+tcp   LISTEN 0      4096         0.0.0.0:5355       0.0.0.0:*    users:(("systemd-resolve",pid=803,fd=13))
+tcp   LISTEN 0      4096           [::1]:631           [::]:*    users:(("cupsd",pid=1156,fd=7))          
+tcp   LISTEN 0      4096            [::]:5355          [::]:*    users:(("systemd-resolve",pid=803,fd=15))
 [exit=0]

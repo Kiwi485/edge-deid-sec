@@ -1,14 +1,14 @@
 # CIS Docker Benchmark v1.9.0 control 5.7
-# host: fedora  collected: 2026-10-28T01:36:07+08:00
+# host: fedora  collected: 2026-10-29T17:39:49+08:00
 
 $ for c in $(docker ps -q); do echo "== $(docker inspect --format {{.Name}} $c)"; docker top $c -eo pid,user,comm; done
 == /cis-runtime-observability
 PID                 USER                COMMAND
-7955                10001               sleep
+20417               10001               sleep
 == /cis-runtime-acquisition
 PID                 USER                COMMAND
-7841                10001               sleep
+20307               10001               sleep
 == /edge-deid-extraction
 PID                 USER                COMMAND
-7725                10001               python
+20189               10001               python
 [exit=0]

@@ -4,12 +4,12 @@
 - `trivy-<服務>.log`：每次掃描的執行紀錄；`trivy-version.txt`：Trivy 與弱點資料庫版本。
 - 嚴重度統計與判定：`../checks/final/4.4.txt` 最後的 manual addendum。
 
-完整 JSON 原始輸出（每個映像約 3 萬行）因為太大，不放進 Git，以受控方式保存在稽核 VM 的 `~/cis-benchmark/trivy-raw/`：
+完整 JSON 原始輸出（每個映像約 3 萬行）因為太大，不放進 Git，以受控方式保存在稽核 VM 的 `~/cis-benchmark/trivy-raw/`（2026-10-29 以基底 `673719e…` 重建後的掃描；前一版 `ae952e…` 映像的掃描保存在 `~/cis-benchmark/trivy-raw-ae952e/`）：
 
 | 檔案 | SHA-256 |
 |---|---|
-| `trivy-acquisition.json` | `6d33f48fb701ac15eacdc8741b6c7560b4daf7daa2257fe979ae9b3ae2efde7e` |
-| `trivy-extraction.json` | `6846eebfd38ada12a16426271e5a4241ae3ca1bc297e728ba4b34abac8869203` |
-| `trivy-observability.json` | `89ad4124d3e79325c9cf6073399a118ce8c39b4c884236e18640edbe525a006f` |
+| `trivy-acquisition.json` | `16689a88c3d1aa125e9f75591dd7beb3d211ceb19c5a00b16adc9e3f3fd1978b` |
+| `trivy-extraction.json` | `12ce4bc6c4effc1b2255e346395990fd4835c2663a0a5788ec69d6ed3202756f` |
+| `trivy-observability.json` | `43179ca8361d24855685dfcb4f5a7c202f559442f4a3603ae6e01bc223e14941` |
 
 產生指令：`trivy image --image-src docker --scanners vuln --timeout 90m --format json --output trivy-<服務>.json edge-deid-sec-<服務>:latest`

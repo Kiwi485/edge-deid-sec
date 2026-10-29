@@ -1,5 +1,5 @@
 # CIS Docker Benchmark v1.9.0 control 1.2.2
-# host: fedora  collected: 2026-10-28T01:35:42+08:00
+# host: fedora  collected: 2026-10-29T17:39:27+08:00
 
 $ docker version --format 'client={{.Client.Version}} server={{.Server.Version}}'
 client=29.9.2 server=29.9.2

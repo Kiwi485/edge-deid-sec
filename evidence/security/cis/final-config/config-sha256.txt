@@ -1,4 +1,4 @@
-# sha256 of the final host/project configuration (2026-10-28)
+# sha256 of the final host/project configuration (2026-10-29)
 264db7cc7cd193434c700d4c8421ed29656cde50d0625c0a2a4e7a3602d298f5  /etc/docker/daemon.json
 1fd3fe7d74abead8a8e83728f0523955b986675a874cd0ecb2b278f1c4e04166  /etc/audit/rules.d/10-base-config.rules
 611d469f1efc673f12797796417af851ab7f10e4991f8e9ece131d21714aa264  /etc/audit/rules.d/30-docker-cis.rules
@@ -9,7 +9,7 @@ e2bdf61ad4c980e7439ed09a1ab65441afadede63087761679a97cc77cd4d20d  /etc/container
 a12d90fd03761bf79659a185c4a2c40e08934d7ada9e05130e64bd5eb4d634aa  /usr/lib/systemd/system/docker.service
 96cd0d89474816ddfb03893b44c36e7d744254aed1bf6d30eca65ff396114656  /usr/lib/systemd/system/docker.socket
 f7f8b400c2aba897c7b8f4990779d2db61fe69510ca944d21ec60f3167d37db3  Dockerfile
-1960c8f7882d55127ed88aa7cc8355e8d9c1a0f0cb82175331790fa1032a5251  docker-compose.yml
+9c87134f035667908296e4da3e79e6ec85939829d45d2fef8212ed226ca4223f  docker-compose.yml
 c44658fa4b0b5a26aaf5542a33c336a51533979573e80fde3644dfcdabed8377  docker-compose.selinux.yml
 78767f0df3e63d4d81fb12e8d9cea775e05c5a6314abe70a47522fef14193f13  requirements.txt
 5ab3944e2c8ce93da96e426f124be88bc90a08404c0d805eb4400b5953094673  security/selinux/edge_deid.te

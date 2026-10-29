@@ -1,5 +1,5 @@
 # CIS Docker Benchmark v1.9.0 control 4.11
-# host: fedora  collected: 2026-10-28T01:36:06+08:00
+# host: fedora  collected: 2026-10-29T17:39:48+08:00
 
 $ env | grep -i DOCKER_CONTENT_TRUST; echo dct_env_rc=$?
 dct_env_rc=1

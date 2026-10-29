@@ -1,5 +1,5 @@
 # CIS Docker Benchmark v1.9.0 control 1.1.1
-# host: fedora  collected: 2026-10-28T01:35:41+08:00
+# host: fedora  collected: 2026-10-29T17:39:26+08:00
 
 $ grep '/var/lib/docker\s' /proc/mounts
 /dev/sdb1 /var/lib/docker ext4 rw,seclabel,relatime 0 0
@@ -16,5 +16,5 @@ TARGET          SOURCE    FSTYPE OPTIONS
 
 $ df -h /var/lib/docker
 檔案系統        容量  已用  可用 已用% 掛載點
-/dev/sdb1       5.9G  2.6M  5.6G    1% /var/lib/docker
+/dev/sdb1       5.9G  2.8M  5.6G    1% /var/lib/docker
 [exit=0]

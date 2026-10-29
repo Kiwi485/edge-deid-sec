@@ -11,10 +11,10 @@
 ## 稽核時間（UTC+8）
 
 - 修正前基準檢查：2026-10-27（`checks/baseline/`，每檔第 2 行有收集時間）
-- 修正、重建映像：2026-10-27 至 2026-10-28
-- 最終回歸：2026-10-28 01:35:16–01:35:32（`regression/round-window.txt`）
-- 最終 CIS 檢查：2026-10-28 01:35:41–01:36:18（`checks/final/`）
-- Trivy 掃描：2026-10-28（`tool-output/trivy-version.txt` 與各 log）
+- 修正、重建映像：2026-10-27 至 2026-10-29（10-29 依 PR 程式碼審查修正 acquisition 重啟設定，並因基底更新重建；見 `cis-remediation.md` §I）
+- 最終回歸：2026-10-29 17:39:01–17:39:17（`regression/round-window.txt`）
+- 最終 CIS 檢查：2026-10-29 17:39:26–17:40:04（`checks/final/`）
+- Trivy 掃描：2026-10-29 17:40–17:47（`tool-output/trivy-version.txt` 與各 log；弱點資料庫 2026-10-29 更新版）
 
 ## 目標主機（與 W10-1 SELinux 驗證同一台 VM）
 
@@ -59,10 +59,10 @@
 
 | 映像 | Image ID |
 |---|---|
-| edge-deid-sec-acquisition:latest | `sha256:68e407d80185e187ce8ca5e712b1bfbf5cae3bb8e5f4276001001ae52eb86ea2` |
-| edge-deid-sec-extraction:latest | `sha256:c2ce7947c5c9788ec897cd5efd4e8216b031f923d6bdb102d431df802531f971` |
-| edge-deid-sec-observability:latest | `sha256:50d2d79c98c29c856655ea560ba4e26744268ec45f7087649daf220e96d98eb6` |
-| 基底 | `python:3.11-slim@sha256:ae952e0a57138a4317b9b61caaa19a8217c2f356803f8d7e63aad08769950937`（建置當下 registry 最新） |
+| edge-deid-sec-acquisition:latest | `sha256:91531e85a6545e2e3f80888c0d0a39a74f1f295f2f87950b5d9a1af678ca1b5d` |
+| edge-deid-sec-extraction:latest | `sha256:c45511b8603f3a9cb60aa3cfe9d7bd4ca13407a33fc204560506404078c8c8f5` |
+| edge-deid-sec-observability:latest | `sha256:e3f19d623efe0d6816ea04697a6b14acaa4d58fa94495fc150b50b112b88b50a` |
+| 基底 | `python:3.11-slim@sha256:673719e071ecf27434fd2635bbd8d00f49f4fdd81f243143438a42ced8bedf60`（2026-10-29 建置當下 registry 最新） |
 
 映像只存在本機，沒有推送到 registry。
 

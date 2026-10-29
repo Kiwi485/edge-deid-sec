@@ -1,5 +1,5 @@
 # CIS Docker Benchmark v1.9.0 control 3.3
-# host: fedora  collected: 2026-10-28T01:35:48+08:00
+# host: fedora  collected: 2026-10-29T17:39:31+08:00
 
 $ systemctl show -p FragmentPath docker.socket
 FragmentPath=/usr/lib/systemd/system/docker.socket

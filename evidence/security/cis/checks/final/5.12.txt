@@ -1,10 +1,10 @@
 # CIS Docker Benchmark v1.9.0 control 5.12
-# host: fedora  collected: 2026-10-28T01:36:08+08:00
+# host: fedora  collected: 2026-10-29T17:39:50+08:00
 
 $ docker ps --quiet --all | xargs -r docker inspect --format '{{ .Name }} {{ .Id }}: CpuShares={{ .HostConfig.CpuShares }}'
-/edge-deid-acquisition e6667bf91130c61e9015d9163c07dbd2940d29136ce715a980511112ad8201d0: CpuShares=512
-/edge-deid-observability 1b5908c6f53523713e64f9848048b134a55df55cc54076933a9e1c618c8843e2: CpuShares=512
-/cis-runtime-observability 0ba53a9203d4e03697e5f3c2876fe3b7b245b3bcae118decf4e239a797e33f01: CpuShares=512
-/cis-runtime-acquisition 9e7586d171a24c19b9321e4b9dd7308411a5c7624e519f05652780ed52433c82: CpuShares=512
-/edge-deid-extraction acf4ec7df2d488dee4600bbdc4c3bd7c76b2126468e30f59422707b8c7bb6d9f: CpuShares=768
+/edge-deid-acquisition 68dab3506df63ed77b5abff371735d40282024ff52d03124353307276a9cceb4: CpuShares=512
+/edge-deid-observability 3665c8078eb0b227a7211e4403fb5182b74d7f36a3ccaab101b6dbdd37cd2ad2: CpuShares=512
+/cis-runtime-observability d6f6d08fa936720895ab6cac47c78372abf69ca10de97636c72f605b9ceaaa95: CpuShares=512
+/cis-runtime-acquisition 3093240cc8da6ccc3bc8c524049ea3eae64dedde60ded3e8e83d42c97d1d5acf: CpuShares=512
+/edge-deid-extraction 9041558ef9d165b18cc43893f70772d1efd97098659c7f145c148308911a8d6f: CpuShares=768
 [exit=0]

@@ -1,15 +1,15 @@
 ## CIS Docker 稽核交接
 
-- 稽核日期／時間範圍：2026-10-27 14:24（修正前基準檢查）至 2026-10-28 01:48（UTC+8）。最終回歸 01:35:16–01:35:32、最終 CIS 檢查 01:35:41–01:36:18、Trivy 01:40–01:47，全部使用同一組映像與設定。
+- 稽核日期／時間範圍：2026-10-27 14:24（修正前基準檢查）至 2026-10-29 17:47（UTC+8）。最終一輪在 2026-10-29：回歸 17:39:01–17:39:17、CIS 檢查 17:39:26–17:40:04、Trivy 17:40–17:47，全部使用同一組映像與設定。
 - 目標 VM／OS：W10-1 同一台 VM。Oracle VirtualBox，4 vCPU、8 GB RAM（實體主機為 i5-1240P／16 GB 筆電）；Fedora Linux 44 Workstation，kernel 6.19.10-300.fc44，SELinux Enforcing。
 - Benchmark 版本及 profile：CIS Docker Benchmark v1.9.0；Level 1 + Level 2 - Docker - Linux（Swarm profile 9 項列 N/A）。本報告為內部自我評估，不是 CIS 官方認證。
 - Docker／Compose／輔助工具版本：Docker Engine 29.9.2（rootful，`-H fd://`，containerd image store）、Compose v5.6.1、containerd 2.4.2、runc 1.5.2；Trivy 0.76.1（只用於 4.4 弱點掃描）。沒有使用 Docker Bench for Security，全部控制項依 Benchmark 原文逐項判定。
 - Git commit；是否有未提交修改：稽核時基於 `0383d43`，提交時改接在 main `5d36358`（W10-1 已合併；兩者程式與設定相同，只差一行文件）。分支 `w10-2-cis-audit`。稽核時 `Dockerfile`、`docker-compose.yml` 的 CIS 修正尚未提交，之後與本目錄一起提交。
 - 最終配置與映像識別：`final-config/`（Compose 展開、daemon.json、稽核規則、docker.service drop-in、fstab、設定 SHA-256、SELinux 模組）。映像 ID：
-  - acquisition `sha256:68e407d8…`
-  - extraction `sha256:c2ce7947…`
-  - observability `sha256:50d2d79c…`
-  - 基底 `python:3.11-slim@sha256:ae952e0a…`
+  - acquisition `sha256:91531e85…`
+  - extraction `sha256:c45511b8…`
+  - observability `sha256:e3f19d62…`
+  - 基底 `python:3.11-slim@sha256:673719e0…`
   - 完整值見 `final-config/images.txt`
 - 控制項總數 117；適用 88；N/A 29。
 - PASS 80；FAIL 8；NOT_CHECKED 0。
@@ -30,7 +30,7 @@
   - daemon.json：icc=false、no-new-privileges、default-ulimits、live-restore、userland-proxy=false。
   - `/var/lib/docker`、`/var/lib/containerd` 改到獨立硬碟。
   - Dockerfile：HEALTHCHECK、移除 setuid／setgid、以最新基底重建。
-  - Compose：cpu_shares、healthcheck、restart on-failure:5。
+  - Compose：cpu_shares、healthcheck；extraction、observability 為 restart on-failure:5，acquisition 為一次性批次維持 restart no。
   - 各項重測結果在 `checks/final/`。
 - SELinux 回歸：通過，證據在 `cis-regression.md`、`regression/week10-selinux.json`、`regression/selinux-avc.log`。
   - `selinux_verified=true`、`checks_passed=true`。
@@ -40,7 +40,7 @@
 - 五張圖片輸出及隱私回歸：通過，證據在 `regression/`。
   - 21 tests passed；三服務 Exited (0)。
   - 5／5 `status=ok`（tflite）、輸出驗證 5／5 pass。
-  - 隱私 5／5、通過率 100%；IPC p95 2.445 ms。
+  - 隱私 5／5、通過率 100%；IPC p95 2.426 ms。
 - 完整控制項、原始證據與最終配置的受控位置：`evidence/security/cis/`。
   - `cis-controls.csv`、`checks/baseline/`、`checks/final/`、`tool-output/`、`final-config/`、`regression/`、`scripts/`
   - CIS Benchmark PDF 依授權只保存在稽核 VM，不上傳。

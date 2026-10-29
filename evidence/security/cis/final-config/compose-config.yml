@@ -1,7 +1,7 @@
 name: edge-deid-sec
 services:
   acquisition:
-    restart: on-failure:5
+    restart: 'no'
     container_name: edge-deid-acquisition
     cap_drop:
       - ALL

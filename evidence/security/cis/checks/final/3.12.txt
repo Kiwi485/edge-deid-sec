@@ -1,11 +1,11 @@
 # CIS Docker Benchmark v1.9.0 control 3.12
-# host: fedora  collected: 2026-10-28T01:35:48+08:00
+# host: fedora  collected: 2026-10-29T17:39:32+08:00
 
 $ grep -E 'tls' /etc/docker/daemon.json
 [exit=1]
 
 $ ps -ef | grep '[d]ockerd'
-root        1232       1 32 01:26 ?        00:03:07 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+root        1298       1  2 15:41 ?        00:03:28 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
 [exit=0]
 
 $ cat /etc/docker/daemon.json

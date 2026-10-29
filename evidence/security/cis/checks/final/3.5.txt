@@ -1,5 +1,5 @@
 # CIS Docker Benchmark v1.9.0 control 3.5
-# host: fedora  collected: 2026-10-28T01:35:48+08:00
+# host: fedora  collected: 2026-10-29T17:39:31+08:00
 
 $ stat -c '%U:%G %n' /etc/docker
 root:root /etc/docker

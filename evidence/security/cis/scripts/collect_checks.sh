@@ -150,8 +150,18 @@ run 5.19 "$INSPECT_ALL '{{ .Name }} {{ .Id }}: Ulimits={{ .HostConfig.Ulimits }}
 run 5.20 "$INSPECT_ALL '{{ .Name }} {{ .Id }}: Propagation={{range \$mnt := .Mounts}} {{json \$mnt.Propagation}} {{end}}'"
 run 5.21 "$INSPECT_ALL '{{ .Name }} {{ .Id }}: UTSMode={{ .HostConfig.UTSMode }}'"
 run 5.22 "$INSPECT_ALL '{{ .Name }} {{ .Id }}: SecurityOpt={{ .HostConfig.SecurityOpt }}'" "docker info --format '{{ .SecurityOptions }}'"
-run 5.23 "ausearch -k docker 2>&1 | grep exec | grep privileged; echo grep_rc=\$?" "auditctl -l | grep -E -- '-k docker'"
-run 5.24 "ausearch -k docker 2>&1 | grep exec | grep user; echo grep_rc=\$?" "auditctl -l | grep -E -- '-k docker'"
+# 5.23/5.24: the Benchmark's own grep first, then a stricter look at decoded docker CLI EXECVE
+# records (a0=docker, so runc exec from healthchecks is excluded), because "grep user" misses
+# short forms such as "-u 0", "-u0" or "-itu root". Any match is reviewed by hand.
+EXEC_RECORDS="LC_ALL=C ausearch -k docker -m EXECVE -i 2>/dev/null | grep -E ' a0=(/usr/bin/)?docker ' | grep -E ' a[0-9]+=exec( |\$)'"
+run 5.23 "ausearch -k docker 2>&1 | grep exec | grep privileged; echo grep_rc=\$?" \
+  "$EXEC_RECORDS | wc -l" \
+  "$EXEC_RECORDS | grep -E -- ' a[0-9]+=--privileged(=true)?( |\$)'; echo grep_rc=\$?" \
+  "auditctl -l | grep -E -- '-k docker'"
+run 5.24 "ausearch -k docker 2>&1 | grep exec | grep user; echo grep_rc=\$?" \
+  "$EXEC_RECORDS | wc -l" \
+  "$EXEC_RECORDS | grep -E -- ' a[0-9]+=(--user(=| |\$)|-[a-zA-Z]*u)'; echo grep_rc=\$?" \
+  "auditctl -l | grep -E -- '-k docker'"
 run 5.25 "$INSPECT_ALL '{{ .Name }} {{ .Id }}: CgroupParent={{ .HostConfig.CgroupParent }}'"
 run 5.26 "$INSPECT_ALL '{{ .Name }} {{ .Id }}: SecurityOpt={{ .HostConfig.SecurityOpt }}'" "grep no-new-privileges /etc/docker/daemon.json"
 run 5.27 "docker ps --quiet | xargs -r docker inspect | python3 -c 'import json,sys; [print(c[\"Name\"], c[\"Id\"][:12]+\":\", \"Health=\"+(c[\"State\"].get(\"Health\") or {}).get(\"Status\",\"<none>\")) for c in json.load(sys.stdin)]'"

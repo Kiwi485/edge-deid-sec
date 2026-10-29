@@ -1,5 +1,5 @@
 # CIS Docker Benchmark v1.9.0 control 7.9
-# host: fedora  collected: 2026-10-28T01:36:18+08:00
+# host: fedora  collected: 2026-10-29T17:40:04+08:00
 
 $ docker info --format 'Swarm LocalNodeState={{ .Swarm.LocalNodeState }} ControlAvailable={{ .Swarm.ControlAvailable }} Managers={{ .Swarm.Managers }}'
 Swarm LocalNodeState=inactive ControlAvailable=false Managers=0

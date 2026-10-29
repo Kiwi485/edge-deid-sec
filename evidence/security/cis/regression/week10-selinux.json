@@ -1,5 +1,5 @@
 {
-  "created_at": "2026-10-27T17:35:29.596250+00:00",
+  "created_at": "2026-10-29T09:39:14.465350+00:00",
   "scope": "configuration-and-runtime",
   "cis_full_audit": "not_run",
   "selinux_verified": true,
@@ -38,7 +38,7 @@
       "external_network_blocked": true
     },
     "uid": 10001,
-    "security_context": "system_u:system_r:edge_deid_extraction_t:s0:c740,c900"
+    "security_context": "system_u:system_r:edge_deid_extraction_t:s0:c185,c855"
   },
   "raw_label": "unconfined_u:object_r:edge_deid_raw_t:s0 /home/i1an/edge-deid-sec/data/raw",
   "selinux_denials": {

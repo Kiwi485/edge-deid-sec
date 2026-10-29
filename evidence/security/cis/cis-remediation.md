@@ -71,16 +71,19 @@
 
 - 風險：使用舊快取基底映像，未包含已發布的安全修補。
 - 原始證據：`checks/baseline/5.28.txt`，映像以 `python:3.11-slim@sha256:b7a9e5…` 建置，registry 已有新版本。
-- 變更：以 `docker compose build --pull` 重新建置。建置期間 registry 又發布新版本（`0a19f6…` → `ae952e…`），因此重建到驗證當下的最新 digest。
+- 變更：以 `docker compose build --pull` 重新建置。建置期間 registry 又發布新版本（`0a19f6…` → `ae952e…`），因此重建到驗證當下的最新 digest。2026-10-29 重跑時 registry 再更新為 `673719e…`，再次以 `--pull` 重建（§I）。
 - 建置可靠性：VM 網路下載約 6 GB Python 套件時兩次失敗（read timeout、broken pipe），Dockerfile 的 pip 加上 `--default-timeout=300 --retries 10`，並改用 BuildKit cache mount（`--mount=type=cache,target=/tmp/.cache/pip`），讓已下載套件可在重試時沿用；cache 不寫入映像層。
-- 5.28 重測：`checks/final/5.28.txt`，建置 log 的基底 digest `ae952e…` 等於 registry 最新 → PASS。
-- 4.4：以 Trivy 0.76.1 掃描三個最終映像（`tool-output/trivy-vulns.csv`；完整 JSON 保存在 VM，見 `tool-output/README.md`，摘要附在 `checks/final/4.4.txt` 最後）。Debian 層 232 筆弱點目前都沒有修補版本，表示基底已是最新修補；但 Python 套件 71 筆可修正弱點未修補（pillow 12.1.0 含 5 CRITICAL，修正於 13.0.0），**4.4 仍判 FAIL，本輪無修正**。pillow 需升主版本、影響共用 requirements 與樹莓派部署，交負責人決定，計畫見 `cis-summary.md`。
+- 5.28 重測：`checks/final/5.28.txt`，建置 log 的基底 digest `673719e…` 等於 registry 最新 → PASS。
+- 4.4：以 Trivy 0.76.1 掃描三個最終映像（`tool-output/trivy-vulns.csv`；完整 JSON 保存在 VM，見 `tool-output/README.md`，摘要附在 `checks/final/4.4.txt` 最後）。Debian 層 234 筆弱點目前都沒有修補版本，表示基底已是最新修補；但 Python 套件 71 筆可修正弱點未修補（pillow 12.1.0 含 5 CRITICAL，修正於 13.0.0），**4.4 仍判 FAIL，本輪無修正**。pillow 需升主版本、影響共用 requirements 與樹莓派部署，交負責人決定，計畫見 `cis-summary.md`。
 
 ## F. 容器 runtime（5.12、5.15、5.27）
 
 - 5.12 風險：沒有 CPU 優先權，資源競爭時 extraction 可能被其他容器擠壓。變更：`cpu_shares` extraction 768、acquisition／observability 512（原本的 `cpus` 上限保留）。
-- 5.15 風險：Benchmark 建議 on-failure 最多 5 次，避免無限重啟或完全不重啟。變更：三服務 `restart: on-failure:5`。
-  - 正常流程結束碼為 0，不會重啟。失敗路徑已在一次回歸中實際觸發（見 `cis-regression.md` 第一次嘗試）：acquisition、observability 失敗後各自最多重試，最後停止，沒有無限重啟。
+- 5.15 風險：無限重啟可能造成主機 DoS，也會掩蓋容器失敗的原因。Benchmark 建議需要自動重啟時用 on-failure 且最多 5 次；只有 `always` 判為不符合，`no` 原文說明「可能是安全的選項」。
+  - 變更：extraction、observability 改為 `restart: on-failure:5`；acquisition 維持 `restart: "no"`。
+  - acquisition 不自動重啟的原因（PR 程式碼審查發現）：acquisition 是一次性批次，重啟會從第一張重送，而 extraction 用 `--max-requests` 限制只處理 `BATCH_LIMIT` 筆。若 acquisition 在送出部分或全部工作後才失敗（例如第一次回歸時寫報告沒有權限），重啟會耗盡 extraction 額度，使結果重複或不完整。因此最初「三服務都 on-failure:5」的修改已改回，並重跑完整回歸。
+  - 修正前基準把 `RestartPolicyName=no` 判為 FAIL，比 Benchmark 原文嚴格；基準紀錄保留原判定，不追溯修改。
+  - 正常流程結束碼為 0，不會重啟。
 - 5.27 風險：acquisition、observability 沒有 runtime health。變更：Compose 為 acquisition 加上「可連到 extraction Unix Socket」的健康檢查，observability 加上「輸出目錄可寫入」的健康檢查；extraction 維持原本 socket readiness 檢查。
 - 回復：還原 docker-compose.yml。
 
@@ -91,3 +94,16 @@
 ## H. 稽核過程中的非安全性問題
 
 - `evidence/batch/` 的既有 CSV 在 W10-1 以 `git restore` 還原後，擁有者變成 `i1an:i1an 644`，容器使用者 10001 無法寫入，導致第一次回歸 acquisition／observability 結束碼 1。依 W10-1 權限規劃（群組 10001 可寫）修正後重跑通過。這不是 CIS 修改造成的，但 `git restore` 後需重設群組權限。
+
+## I. PR 程式碼審查後的修正（2026-10-29）
+
+PR 的自動程式碼審查提出 4 項問題，經確認都成立，已修正並重跑完整回歸與 CIS 檢查。
+
+| 問題 | 修正 | 影響 |
+|---|---|---|
+| acquisition 自動重啟會耗盡 extraction 的處理額度 | acquisition 改回 `restart: "no"`（見 §F 5.15） | 系統設定變更 → 重跑回歸 |
+| 5.24 用 `grep user` 抓不到 `docker exec -u 0`、`-u0`、`-itu root` | `scripts/collect_checks.sh` 的 5.23／5.24 除 Benchmark 原本的 grep 外，再以 `ausearch -m EXECVE -i` 解碼 docker CLI 參數，比對 `--privileged`、`--user`、`-u` 及合併短參數；有符合就人工檢視 | 只改稽核腳本 |
+| 回歸腳本失敗後仍繼續收集 CIS 證據，結束碼為 0 | `scripts/run_final_round.sh` 每一步失敗即停止並回傳非 0；`compose up` 加 `--abort-on-container-failure`，並確認每個服務結束碼為 0 | 只改稽核腳本 |
+| extraction 一直沒有 healthy 時，runtime window 仍繼續 | `scripts/runtime_window.sh` 等候 60 秒仍非 healthy 即失敗 | 只改稽核腳本 |
+
+重跑時發現 registry 的 `python:3.11-slim` 又發布新版，為維持 5.28，使用 `--pull` 以新基底重建三個映像，並重做 Trivy 掃描（見 §E 與 `cis-environment.md`）。
