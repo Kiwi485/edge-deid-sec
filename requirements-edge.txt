@@ -1,0 +1,3 @@
+# Additional runtime needed for Raspberry Pi TFLite inference.
+# Install the main project dependencies from requirements.txt for full-pipeline mode.
+ai-edge-litert==1.4.0

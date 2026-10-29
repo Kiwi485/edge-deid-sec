@@ -1,5 +1,7 @@
 import numpy as np
 import pytest
+import sys
+import types
 
 from src.seg import tflite_inference
 
@@ -72,3 +74,28 @@ def test_tflite_quantized_output(monkeypatch):
 
     assert interpreter.input.dtype == np.int8
     assert np.all(mask[:2] == 255) and np.all(mask[2:] == 0)
+
+
+def test_interpreter_receives_explicit_thread_count(monkeypatch):
+    constructor_args = []
+    interpreter_module = types.ModuleType("tflite_runtime.interpreter")
+
+    class ThreadedInterpreter:
+        def __init__(self, **kwargs):
+            constructor_args.append(kwargs)
+
+        def allocate_tensors(self):
+            pass
+
+    interpreter_module.Interpreter = ThreadedInterpreter
+    package_module = types.ModuleType("tflite_runtime")
+    package_module.__path__ = []
+    monkeypatch.setitem(sys.modules, "tflite_runtime", package_module)
+    monkeypatch.setitem(sys.modules, "tflite_runtime.interpreter", interpreter_module)
+
+    tflite_inference._load_interpreter("threaded-model.tflite", num_threads=2)
+
+    assert constructor_args == [{
+        "model_path": "threaded-model.tflite",
+        "num_threads": 2,
+    }]
