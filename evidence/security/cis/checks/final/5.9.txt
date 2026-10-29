@@ -1,0 +1,8 @@
+# CIS Docker Benchmark v1.9.0 control 5.9
+# host: fedora  collected: 2026-10-29T17:39:50+08:00
+
+$ docker ps --quiet | xargs -r docker inspect --format '{{ .Name }} {{ .Id }}: Ports={{ .NetworkSettings.Ports }}'
+/cis-runtime-observability d6f6d08fa936720895ab6cac47c78372abf69ca10de97636c72f605b9ceaaa95: Ports=map[]
+/cis-runtime-acquisition 3093240cc8da6ccc3bc8c524049ea3eae64dedde60ded3e8e83d42c97d1d5acf: Ports=map[]
+/edge-deid-extraction 9041558ef9d165b18cc43893f70772d1efd97098659c7f145c148308911a8d6f: Ports=map[]
+[exit=0]

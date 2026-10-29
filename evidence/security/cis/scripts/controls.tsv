@@ -1,0 +1,118 @@
+# CIS Docker Benchmark v1.9.0 recommendation IDs, profile, assessment mode and short title
+1.1.1	Level 1 - Docker - Linux	Manual	Ensure a separate partition for containers has been created
+1.1.2	Level 1 - Docker - Linux	Manual	Ensure only trusted users are allowed to control Docker daemon
+1.1.3	Level 1 - Docker - Linux	Automated	Ensure auditing is configured for the Docker daemon
+1.1.4	Level 1 - Docker - Linux	Manual	Ensure auditing is configured for Docker files and directories - /run/containerd
+1.1.5	Level 1 - Docker - Linux	Manual	Ensure auditing is configured for Docker files and directories - /var/lib/docker
+1.1.6	Level 1 - Docker - Linux	Automated	Ensure auditing is configured for Docker files and directories - /etc/docker
+1.1.7	Level 2 - Docker - Linux	Automated	Ensure auditing is configured for Docker files and directories - docker.service
+1.1.8	Level 2 - Docker - Linux	Automated	Ensure auditing is configured for Docker files and directories - containerd.sock
+1.1.9	Level 2 - Docker - Linux	Automated	Ensure auditing is configured for Docker files and directories - docker.sock
+1.1.10	Level 2 - Docker - Linux	Automated	Ensure auditing is configured for Docker files and directories - /etc/default/docker
+1.1.11	Level 2 - Docker - Linux	Automated	Ensure auditing is configured for Docker files and directories - /etc/docker/daemon.json
+1.1.12	Level 2 - Docker - Linux	Automated	Ensure auditing is configured for Docker files and directories - /etc/containerd/config.toml
+1.1.13	Level 2 - Docker - Linux	Automated	Ensure auditing is configured for Docker files and directories - /etc/sysconfig/docker
+1.1.14	Level 2 - Docker - Linux	Automated	Ensure auditing is configured for Docker files and directories - /usr/bin/containerd
+1.1.15	Level 2 - Docker - Linux	Automated	Ensure auditing is configured for Docker files and directories - /usr/bin/containerd-shim
+1.1.16	Level 2 - Docker - Linux	Manual	Ensure auditing is configured for Docker files and directories - /usr/bin/containerd-shim-runc-v1
+1.1.17	Level 2 - Docker - Linux	Automated	Ensure auditing is configured for Docker files and directories - /usr/bin/containerd-shim-runc-v2
+1.1.18	Level 2 - Docker - Linux	Automated	Ensure auditing is configured for Docker files and directories - /usr/bin/runc
+1.2.1	Level 1 - Docker - Linux	Manual	Ensure the container host has been Hardened
+1.2.2	Level 1 - Docker - Linux	Manual	Ensure that the version of Docker is up to date
+2.1	Level 1 - Docker - Linux	Manual	Run the Docker daemon as a non-root user, if possible
+2.2	Level 1 - Docker - Linux	Manual	Ensure network traffic is restricted between containers on the default bridge
+2.3	Level 1 - Docker - Linux	Manual	Ensure the logging level is set to 'info'
+2.4	Level 1 - Docker - Linux	Manual	Ensure Docker is allowed to make changes to iptables
+2.5	Level 1 - Docker - Linux	Manual	Ensure insecure registries are not used
+2.6	Level 1 - Docker - Linux	Manual	Ensure aufs storage driver is not used
+2.7	Level 1 - Docker - Linux	Manual	Ensure devicemapper storage driver is not used
+2.8	Level 1 - Docker - Linux	Manual	Ensure TLS authentication for Docker daemon is configured
+2.9	Level 1 - Docker - Linux	Manual	Ensure the default ulimit is configured appropriately
+2.10	Level 2 - Docker - Linux	Manual	Enable user namespace support
+2.11	Level 2 - Docker - Linux	Manual	Ensure the default cgroup usage has been confirmed
+2.12	Level 2 - Docker - Linux	Manual	Ensure base device size is not changed until needed
+2.13	Level 2 - Docker - Linux	Manual	Ensure that authorization for Docker client commands is enabled
+2.14	Level 2 - Docker - Linux	Manual	Ensure centralized and remote logging is configured
+2.15	Level 1 - Docker - Linux	Manual	Ensure containers are restricted from acquiring new privileges
+2.16	Level 1 - Docker - Linux	Manual	Ensure live restore is enabled
+2.17	Level 1 - Docker - Linux	Manual	Ensure Userland Proxy is Disabled
+2.18	Level 2 - Docker - Linux	Manual	Ensure that a daemon-wide custom seccomp profile is applied if appropriate
+2.19	Level 1 - Docker - Linux	Manual	Ensure that experimental features are not implemented in production
+3.1	Level 1 - Docker - Linux	Automated	Ensure that the docker.service file ownership is set to root:root
+3.2	Level 1 - Docker - Linux	Automated	Ensure that docker.service file permissions are appropriately set
+3.3	Level 1 - Docker - Linux	Automated	Ensure that docker.socket file ownership is set to root:root
+3.4	Level 1 - Docker - Linux	Automated	Ensure that docker.socket file permissions are set to 644 or more restrictive
+3.5	Level 1 - Docker - Linux	Automated	Ensure that the /etc/docker directory ownership is set to root:root
+3.6	Level 1 - Docker - Linux	Automated	Ensure that /etc/docker directory permissions are set to 755 or more restrictively
+3.7	Level 1 - Docker - Linux	Manual	Ensure that registry certificate file ownership is set to root:root
+3.8	Level 1 - Docker - Linux	Manual	Ensure that registry certificate file permissions are set to 444 or more restrictively
+3.9	Level 1 - Docker - Linux	Manual	Ensure that TLS CA certificate file ownership is set to root:root
+3.10	Level 1 - Docker - Linux	Manual	Ensure that TLS CA certificate file permissions are set to 444 or more restrictively
+3.11	Level 1 - Docker - Linux	Manual	Ensure that Docker server certificate file ownership is set to root:root
+3.12	Level 1 - Docker - Linux	Manual	Ensure that the Docker server certificate file permissions are set to 444 or more restrictively
+3.13	Level 1 - Docker - Linux	Manual	Ensure that the Docker server certificate key file ownership is set to root:root
+3.14	Level 1 - Docker - Linux	Manual	Ensure that the Docker server certificate key file permissions are set to 400
+3.15	Level 1 - Docker - Linux	Automated	Ensure that the Docker socket file ownership is set to root:docker
+3.16	Level 1 - Docker - Linux	Automated	Ensure that the Docker socket file permissions are set to 660 or more restrictively
+3.17	Level 2 - Docker - Linux	Manual	Ensure that the daemon.json file ownership is set to root:root
+3.18	Level 2 - Docker - Linux	Manual	Ensure that daemon.json file permissions are set to 644 or more restrictive
+3.19	Level 2 - Docker - Linux	Manual	Ensure that the /etc/default/docker file ownership is set to root:root
+3.20	Level 2 - Docker - Linux	Manual	Ensure that the /etc/default/docker file permissions are set to 644 or more restrictively
+3.21	Level 2 - Docker - Linux	Manual	Ensure that the /etc/sysconfig/docker file permissions are set to 644 or more restrictively
+3.22	Level 2 - Docker - Linux	Manual	Ensure that the /etc/sysconfig/docker file ownership is set to root:root
+3.23	Level 1 - Docker - Linux	Automated	Ensure that the Containerd socket file ownership is set to root:root
+3.24	Level 1 - Docker - Linux	Automated	Ensure that the Containerd socket file permissions are set to 660 or more restrictively
+4.1	Level 1 - Docker - Linux	Manual	Ensure that a user for the container has been created
+4.2	Level 1 - Docker - Linux	Manual	Ensure that containers use only trusted base images
+4.3	Level 1 - Docker - Linux	Manual	Ensure that unnecessary packages are not installed in the container
+4.4	Level 1 - Docker - Linux	Manual	Ensure images are scanned and rebuilt to include security patches
+4.5	Level 1 - Docker - Linux	Manual	Ensure that HEALTHCHECK instructions have been added to container images
+4.6	Level 1 - Docker - Linux	Manual	Ensure update instructions are not used alone in Dockerfiles
+4.7	Level 2 - Docker - Linux	Manual	Ensure setuid and setgid permissions are removed
+4.8	Level 1 - Docker - Linux	Manual	Ensure that COPY is used instead of ADD in Dockerfiles
+4.9	Level 1 - Docker - Linux	Manual	Ensure secrets are not stored in Dockerfiles
+4.10	Level 2 - Docker - Linux	Manual	Ensure only verified packages are installed
+4.11	Level 1 - Docker - Linux	Manual	Ensure all signed artifacts are validated
+5.1	Level 1 - Docker - Linux	Manual	Ensure swarm mode is not Enabled, if not needed
+5.2	Level 1 - Docker - Linux	Manual	Ensure that, if applicable, an AppArmor Profile is enabled
+5.3	Level 2 - Docker - Linux	Manual	Ensure that, if applicable, SELinux security options are set
+5.4	Level 1 - Docker - Linux	Manual	Ensure that Linux kernel capabilities are restricted within containers
+5.5	Level 1 - Docker - Linux	Manual	Ensure that privileged containers are not used
+5.6	Level 1 - Docker - Linux	Manual	Ensure sensitive host system directories are not mounted on containers
+5.7	Level 1 - Docker - Linux	Manual	Ensure sshd is not run within containers
+5.8	Level 1 - Docker - Linux	Manual	Ensure privileged ports are not mapped within containers
+5.9	Level 1 - Docker - Linux	Manual	Ensure that only needed ports are open on the container
+5.10	Level 1 - Docker - Linux	Manual	Ensure that the host's network namespace is not shared
+5.11	Level 1 - Docker - Linux	Manual	Ensure that the memory usage for containers is limited
+5.12	Level 1 - Docker - Linux	Manual	Ensure that CPU priority is set appropriately on containers
+5.13	Level 1 - Docker - Linux	Manual	Ensure that the container's root filesystem is mounted as read only
+5.14	Level 1 - Docker - Linux	Manual	Ensure that incoming container traffic is bound to a specific host interface
+5.15	Level 1 - Docker - Linux	Manual	Ensure that the 'on-failure' container restart policy is set to '5'
+5.16	Level 1 - Docker - Linux	Manual	Ensure that the host's process namespace is not shared
+5.17	Level 1 - Docker - Linux	Manual	Ensure that the host's IPC namespace is not shared
+5.18	Level 1 - Docker - Linux	Manual	Ensure that host devices are not directly exposed to containers
+5.19	Level 1 - Docker - Linux	Manual	Ensure that the default ulimit is overwritten at runtime if needed
+5.20	Level 1 - Docker - Linux	Manual	Ensure mount propagation mode is not set to shared
+5.21	Level 1 - Docker - Linux	Manual	Ensure that the host's UTS namespace is not shared
+5.22	Level 1 - Docker - Linux	Manual	Ensure the default seccomp profile is not Disabled
+5.23	Level 2 - Docker - Linux	Manual	Ensure that docker exec commands are not used with the privileged option
+5.24	Level 2 - Docker - Linux	Manual	Ensure that docker exec commands are not used with the user=root option
+5.25	Level 1 - Docker - Linux	Manual	Ensure that cgroup usage is confirmed
+5.26	Level 1 - Docker - Linux	Manual	Ensure that the container is restricted from acquiring additional privileges
+5.27	Level 1 - Docker - Linux	Manual	Ensure that container health is checked at runtime
+5.28	Level 1 - Docker - Linux	Manual	Ensure that Docker commands always make use of the latest version of their image
+5.29	Level 1 - Docker - Linux	Manual	Ensure that the PIDs cgroup limit is used
+5.30	Level 2 - Docker - Linux	Manual	Ensure that Docker's default bridge "docker0" is not used
+5.31	Level 1 - Docker - Linux	Manual	Ensure that the host's user namespaces are not shared
+5.32	Level 1 - Docker - Linux	Manual	Ensure that the Docker socket is not mounted inside any containers
+6.1	Level 1 - Docker - Linux	Manual	Ensure that image sprawl is avoided
+6.2	Level 1 - Docker - Linux	Manual	Ensure that container sprawl is avoided
+7.1	Level 1 - Docker Swarm	Manual	Ensure that the minimum number of manager nodes have been created in a swarm
+7.2	Level 1 - Docker Swarm	Manual	Ensure that swarm services are bound to a specific host interface
+7.3	Level 1 - Docker Swarm	Manual	Ensure that all Docker swarm overlay networks are encrypted
+7.4	Level 1 - Docker Swarm	Manual	Ensure that Docker's secret management commands are used for managing secrets in a swarm cluster
+7.5	Level 1 - Docker Swarm	Manual	Ensure that swarm manager is run in auto-lock mode
+7.6	Level 1 - Docker Swarm	Manual	Ensure that the swarm manager auto-lock key is rotated periodically
+7.7	Level 1 - Docker Swarm	Manual	Ensure that node certificates are rotated as appropriate
+7.8	Level 1 - Docker Swarm	Manual	Ensure that CA certificates are rotated as appropriate
+7.9	Level 1 - Docker Swarm	Manual	Ensure that management plane traffic is separated from data plane traffic

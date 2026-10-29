@@ -1,0 +1,13 @@
+# CIS Docker Benchmark v1.9.0 control 3.1
+# host: fedora  collected: 2026-10-29T17:39:31+08:00
+
+$ systemctl show -p FragmentPath docker.service
+FragmentPath=/usr/lib/systemd/system/docker.service
+[exit=0]
+
+$ stat -c '%U:%G %n' /usr/lib/systemd/system/docker.service
+root:root /usr/lib/systemd/system/docker.service
+[exit=0]
+
+$ stat -c %U:%G /usr/lib/systemd/system/docker.service | grep -v root:root
+[exit=1]

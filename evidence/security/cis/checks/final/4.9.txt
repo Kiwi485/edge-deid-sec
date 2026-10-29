@@ -1,0 +1,53 @@
+# CIS Docker Benchmark v1.9.0 control 4.9
+# host: fedora  collected: 2026-10-29T17:39:48+08:00
+
+$ grep -niE 'password|passwd|secret|token|api[_-]?key|private' Dockerfile
+[exit=1]
+
+$ for i in edge-deid-sec-acquisition:latest edge-deid-sec-extraction:latest edge-deid-sec-observability:latest; do echo "== $i"; docker history --no-trunc --format '{{.CreatedBy}}' $i | grep -niE 'password|passwd|secret|token|api[_-]?key|private'; done
+== edge-deid-sec-acquisition:latest
+== edge-deid-sec-extraction:latest
+== edge-deid-sec-observability:latest
+[exit=1]
+
+$ for i in edge-deid-sec-acquisition:latest edge-deid-sec-extraction:latest edge-deid-sec-observability:latest; do echo "== $i"; docker image inspect --format '{{range .Config.Env}}{{println .}}{{end}}' $i; done
+== edge-deid-sec-acquisition:latest
+PATH=/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+LANG=C.UTF-8
+GPG_KEY=A035C8C19219BA821ECEA86B64E628F8D684696D
+PYTHON_VERSION=3.11.18
+PYTHON_SHA256=9120e0a653868f6e3698d36cdd99e5a58903ec9469e448f21d98f7b16d8fa290
+PYTHONDONTWRITEBYTECODE=1
+PYTHONUNBUFFERED=1
+HOME=/tmp
+XDG_CACHE_HOME=/tmp/.cache
+YOLO_CONFIG_DIR=/tmp/ultralytics
+MPLCONFIGDIR=/tmp/matplotlib
+
+== edge-deid-sec-extraction:latest
+PATH=/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+LANG=C.UTF-8
+GPG_KEY=A035C8C19219BA821ECEA86B64E628F8D684696D
+PYTHON_VERSION=3.11.18
+PYTHON_SHA256=9120e0a653868f6e3698d36cdd99e5a58903ec9469e448f21d98f7b16d8fa290
+PYTHONDONTWRITEBYTECODE=1
+PYTHONUNBUFFERED=1
+HOME=/tmp
+XDG_CACHE_HOME=/tmp/.cache
+YOLO_CONFIG_DIR=/tmp/ultralytics
+MPLCONFIGDIR=/tmp/matplotlib
+
+== edge-deid-sec-observability:latest
+PATH=/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+LANG=C.UTF-8
+GPG_KEY=A035C8C19219BA821ECEA86B64E628F8D684696D
+PYTHON_VERSION=3.11.18
+PYTHON_SHA256=9120e0a653868f6e3698d36cdd99e5a58903ec9469e448f21d98f7b16d8fa290
+PYTHONDONTWRITEBYTECODE=1
+PYTHONUNBUFFERED=1
+HOME=/tmp
+XDG_CACHE_HOME=/tmp/.cache
+YOLO_CONFIG_DIR=/tmp/ultralytics
+MPLCONFIGDIR=/tmp/matplotlib
+
+[exit=0]

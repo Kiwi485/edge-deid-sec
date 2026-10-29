@@ -1,0 +1,10 @@
+# CIS Docker Benchmark v1.9.0 control 1.1.18
+# host: fedora  collected: 2026-10-29T17:39:26+08:00
+
+$ ls -l /usr/bin/runc
+-rwxr-xr-x. 1 root root 13677016  1月 30  2023 /usr/bin/runc
+[exit=0]
+
+$ auditctl -l | grep /usr/bin/runc
+-w /usr/bin/runc -p rwxa -k docker
+[exit=0]

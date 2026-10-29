@@ -1,0 +1,10 @@
+# CIS Docker Benchmark v1.9.0 control 1.1.5
+# host: fedora  collected: 2026-10-29T17:39:26+08:00
+
+$ docker info -f '{{ .DockerRootDir }}'
+/var/lib/docker
+[exit=0]
+
+$ auditctl -l | grep /var/lib/docker
+-w /var/lib/docker -p wa -k docker
+[exit=0]

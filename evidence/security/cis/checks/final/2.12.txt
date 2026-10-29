@@ -1,0 +1,22 @@
+# CIS Docker Benchmark v1.9.0 control 2.12
+# host: fedora  collected: 2026-10-29T17:39:31+08:00
+
+$ grep -- 'dm.basesize' /etc/docker/daemon.json
+[exit=1]
+
+$ ps -ef | grep '[d]ockerd'
+root        1298       1  2 15:41 ?        00:03:28 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+[exit=0]
+
+$ cat /etc/docker/daemon.json
+{
+  "selinux-enabled": true,
+  "icc": false,
+  "live-restore": true,
+  "userland-proxy": false,
+  "no-new-privileges": true,
+  "default-ulimits": {
+    "nofile": { "Name": "nofile", "Soft": 4096, "Hard": 8192 }
+  }
+}
+[exit=0]

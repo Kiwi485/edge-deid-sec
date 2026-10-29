@@ -1,0 +1,12 @@
+# CIS Docker Benchmark v1.9.0 control 5.22
+# host: fedora  collected: 2026-10-27T14:30:01+08:00
+
+$ docker ps --quiet --all | xargs -r docker inspect --format '{{ .Name }} {{ .Id }}: SecurityOpt={{ .HostConfig.SecurityOpt }}'
+/cis-runtime-observability efe47c5b8070aafb05ca7fae32d8cc68f9a1d6def11ddbba0e6ad5a1bf82afa2: SecurityOpt=[no-new-privileges:true]
+/cis-runtime-acquisition 666da4ebf4acc58949a32de107720e1072f730c237313cf9e4d717031c2e3814: SecurityOpt=[no-new-privileges:true]
+/edge-deid-extraction 33dd026130d25d23c52cd005fe482cfa7e5e995e4d101a42c0ed60b9e07af0ea: SecurityOpt=[no-new-privileges:true label=type:edge_deid_extraction_t]
+[exit=0]
+
+$ docker info --format '{{ .SecurityOptions }}'
+[name=seccomp,profile=builtin name=selinux name=cgroupns]
+[exit=0]

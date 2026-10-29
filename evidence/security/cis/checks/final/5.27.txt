@@ -1,0 +1,8 @@
+# CIS Docker Benchmark v1.9.0 control 5.27
+# host: fedora  collected: 2026-10-29T17:39:55+08:00
+
+$ docker ps --quiet | xargs -r docker inspect | python3 -c 'import json,sys; [print(c["Name"], c["Id"][:12]+":", "Health="+(c["State"].get("Health") or {}).get("Status","<none>")) for c in json.load(sys.stdin)]'
+/cis-runtime-observability d6f6d08fa936: Health=healthy
+/cis-runtime-acquisition 3093240cc8da: Health=healthy
+/edge-deid-extraction 9041558ef9d1: Health=healthy
+[exit=0]

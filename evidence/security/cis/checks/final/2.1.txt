@@ -1,0 +1,6 @@
+# CIS Docker Benchmark v1.9.0 control 2.1
+# host: fedora  collected: 2026-10-29T17:39:30+08:00
+
+$ ps -fe | grep '[d]ockerd'
+root        1298       1  2 15:41 ?        00:03:28 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+[exit=0]

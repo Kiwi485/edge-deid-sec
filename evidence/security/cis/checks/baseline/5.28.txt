@@ -1,0 +1,18 @@
+# CIS Docker Benchmark v1.9.0 control 5.28
+# host: fedora  collected: 2026-10-27T14:30:02+08:00
+
+$ grep -n '^FROM' Dockerfile
+1:FROM python:3.11-slim
+[exit=0]
+
+$ docker image inspect --format 'local {{.RepoDigests}} Created={{.Created}}' python:3.11-slim
+
+Error response from daemon: No such image: python:3.11-slim
+[exit=1]
+
+$ grep -ohE 'python:3.11-slim@sha256:[0-9a-f]{64}' ${BUILD_LOG:-/dev/null} | sort -u
+python:3.11-slim@sha256:b7a9e5f6a93d6d4a31f129bbd4bdee69efccb6ded0fb230d78aafaf37af98377
+[exit=0]
+
+$ docker buildx imagetools inspect python:3.11-slim --format '{{json .Manifest.Digest}}'
+"sha256:0a19f628b6a9a96b0a0df9e0d3a327e8d51cd857804b04efcf1495879c97326b"[exit=0]

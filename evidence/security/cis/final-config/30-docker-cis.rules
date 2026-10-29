@@ -1,0 +1,17 @@
+## CIS Docker Benchmark v1.9.0 section 1.1 audit rules (edge-deid-sec W10-2)
+-w /usr/bin/dockerd -p rwxa -k docker
+-w /run/containerd -p rwxa -k docker
+-w /var/lib/docker -p wa -k docker
+-w /etc/docker -p rwxa -k docker
+-w /usr/lib/systemd/system/docker.service -p rwxa -k docker
+-w /usr/lib/systemd/system/docker.socket -p rwxa -k docker
+-w /run/docker.sock -p rwxa -k docker
+-w /etc/docker/daemon.json -p rwxa -k docker
+-w /etc/containerd/config.toml -p rwxa -k docker
+-w /usr/bin/containerd -p rwxa -k docker
+-w /usr/bin/containerd-shim-runc-v2 -p rwxa -k docker
+-w /usr/bin/runc -p rwxa -k docker
+## Record docker CLI executions (with arguments) so docker exec options can be reviewed (5.23/5.24)
+-w /usr/bin/docker -p x -k docker
+## /run/containerd only exists after containerd starts; reloaded by docker.service ExecStartPost (see docker.service.d/10-cis-audit.conf)
+-w /run/containerd/containerd.sock -p rwxa -k docker

@@ -1,0 +1,93 @@
+# CIS Docker Benchmark v1.9.0 control 1.2.1
+# host: fedora  collected: 2026-10-27T14:24:52+08:00
+
+$ cat /etc/os-release
+NAME="Fedora Linux"
+VERSION="44 (Workstation Edition)"
+RELEASE_TYPE=stable
+ID=fedora
+VERSION_ID=44
+VERSION_CODENAME=""
+PRETTY_NAME="Fedora Linux 44 (Workstation Edition)"
+ANSI_COLOR="0;38;2;60;110;180"
+LOGO=fedora-logo-icon
+CPE_NAME="cpe:/o:fedoraproject:fedora:44"
+DEFAULT_HOSTNAME="fedora"
+HOME_URL="https://fedoraproject.org/"
+DOCUMENTATION_URL="https://docs.fedoraproject.org/en-US/fedora/f44/"
+SUPPORT_URL="https://ask.fedoraproject.org/"
+BUG_REPORT_URL="https://bugzilla.redhat.com/"
+REDHAT_BUGZILLA_PRODUCT="Fedora"
+REDHAT_BUGZILLA_PRODUCT_VERSION=44
+REDHAT_SUPPORT_PRODUCT="Fedora"
+REDHAT_SUPPORT_PRODUCT_VERSION=44
+SUPPORT_END=2027-05-19
+VARIANT="Workstation Edition"
+VARIANT_ID=workstation
+[exit=0]
+
+$ getenforce
+Enforcing
+[exit=0]
+
+$ systemctl is-active auditd firewalld
+active
+active
+[exit=0]
+
+$ firewall-cmd --state
+running
+[exit=0]
+
+$ rpm -q scap-security-guide openscap-scanner
+軟體包 scap-security-guide 尚未安裝
+軟體包 openscap-scanner 尚未安裝
+[exit=2]
+
+$ ss -ltnup
+Netid State  Recv-Q Send-Q                               Local Address:Port  Peer Address:PortProcess                                   
+udp   UNCONN 0      0                                          0.0.0.0:54452      0.0.0.0:*    users:(("wsdd",pid=9462,fd=15))          
+udp   UNCONN 0      0                                          0.0.0.0:5353       0.0.0.0:*    users:(("avahi-daemon",pid=927,fd=12))   
+udp   UNCONN 0      0                                          0.0.0.0:58603      0.0.0.0:*    users:(("wsdd",pid=9462,fd=9))           
+udp   UNCONN 0      0                                          0.0.0.0:5355       0.0.0.0:*    users:(("systemd-resolve",pid=796,fd=12))
+udp   UNCONN 0      0                                          0.0.0.0:39776      0.0.0.0:*    users:(("wsdd",pid=9462,fd=12))          
+udp   UNCONN 0      0                                       172.18.0.1:3702       0.0.0.0:*    users:(("wsdd",pid=9462,fd=16))          
+udp   UNCONN 0      0                                  239.255.255.250:3702       0.0.0.0:*    users:(("wsdd",pid=9462,fd=14))          
+udp   UNCONN 0      0                                       172.17.0.1:3702       0.0.0.0:*    users:(("wsdd",pid=9462,fd=13))          
+udp   UNCONN 0      0                                  239.255.255.250:3702       0.0.0.0:*    users:(("wsdd",pid=9462,fd=11))          
+udp   UNCONN 0      0                                        10.0.2.15:3702       0.0.0.0:*    users:(("wsdd",pid=9462,fd=10))          
+udp   UNCONN 0      0                                  239.255.255.250:3702       0.0.0.0:*    users:(("wsdd",pid=9462,fd=8))           
+udp   UNCONN 0      0                                       127.0.0.54:53         0.0.0.0:*    users:(("systemd-resolve",pid=796,fd=20))
+udp   UNCONN 0      0                                    127.0.0.53%lo:53         0.0.0.0:*    users:(("systemd-resolve",pid=796,fd=18))
+udp   UNCONN 0      0                                          0.0.0.0:53372      0.0.0.0:*    users:(("firefox",pid=4852,fd=113))      
+udp   UNCONN 0      0                                        127.0.0.1:323        0.0.0.0:*    users:(("chronyd",pid=932,fd=4))         
+udp   UNCONN 0      0                                          0.0.0.0:41612      0.0.0.0:*    users:(("firefox",pid=4852,fd=24))       
+udp   UNCONN 0      0                                             [::]:5353          [::]:*    users:(("avahi-daemon",pid=927,fd=13))   
+udp   UNCONN 0      0                                             [::]:5355          [::]:*    users:(("systemd-resolve",pid=796,fd=14))
+udp   UNCONN 0      0                                                *:34089            *:*    users:(("wsdd",pid=9462,fd=26))          
+udp   UNCONN 0      0                                                *:51672            *:*    users:(("wsdd",pid=9462,fd=23))          
+udp   UNCONN 0      0                                                *:59947            *:*    users:(("wsdd",pid=9462,fd=29))          
+udp   UNCONN 0      0                                                *:55884            *:*    users:(("wsdd",pid=9462,fd=18))          
+udp   UNCONN 0      0              [fe80::5042:2dff:fed2:3a11]%docker0:3702          [::]:*    users:(("wsdd",pid=9462,fd=33))          
+udp   UNCONN 0      0                                [ff02::c]%docker0:3702          [::]:*    users:(("wsdd",pid=9462,fd=31))          
+udp   UNCONN 0      0          [fe80::6c2e:c0ff:fe2d:c4aa]%veth7cf495a:3702          [::]:*    users:(("wsdd",pid=9462,fd=30))          
+udp   UNCONN 0      0                            [ff02::c]%veth7cf495a:3702          [::]:*    users:(("wsdd",pid=9462,fd=28))          
+udp   UNCONN 0      0          [fe80::fc32:cbff:fe63:8007]%veth0e63bad:3702          [::]:*    users:(("wsdd",pid=9462,fd=27))          
+udp   UNCONN 0      0                            [ff02::c]%veth0e63bad:3702          [::]:*    users:(("wsdd",pid=9462,fd=25))          
+udp   UNCONN 0      0      [fe80::68d9:72ff:fee5:807a]%br-ec504f1c45c3:3702          [::]:*    users:(("wsdd",pid=9462,fd=24))          
+udp   UNCONN 0      0                        [ff02::c]%br-ec504f1c45c3:3702          [::]:*    users:(("wsdd",pid=9462,fd=22))          
+udp   UNCONN 0      0               [fe80::8946:5184:6743:86c1]%enp0s3:3702          [::]:*    users:(("wsdd",pid=9462,fd=19))          
+udp   UNCONN 0      0                                 [ff02::c]%enp0s3:3702          [::]:*    users:(("wsdd",pid=9462,fd=17))          
+udp   UNCONN 0      0                                                *:36744            *:*    users:(("wsdd",pid=9462,fd=32))          
+udp   UNCONN 0      0                                            [::1]:323           [::]:*    users:(("chronyd",pid=932,fd=5))         
+tcp   LISTEN 0      511                                      127.0.0.1:38867      0.0.0.0:*    users:(("code-insiders",pid=5487,fd=27)) 
+tcp   LISTEN 0      4096                                    127.0.0.54:53         0.0.0.0:*    users:(("systemd-resolve",pid=796,fd=21))
+tcp   LISTEN 0      4096                                     127.0.0.1:631        0.0.0.0:*    users:(("cupsd",pid=1130,fd=8))          
+tcp   LISTEN 0      4096                                       0.0.0.0:5355       0.0.0.0:*    users:(("systemd-resolve",pid=796,fd=13))
+tcp   LISTEN 0      10                                         0.0.0.0:27500      0.0.0.0:*    users:(("passimd",pid=5772,fd=10))       
+tcp   LISTEN 0      511                                      127.0.0.1:35503      0.0.0.0:*    users:(("code-insiders",pid=4100,fd=45)) 
+tcp   LISTEN 0      511                                      127.0.0.1:14827      0.0.0.0:*    users:(("code-insiders",pid=4137,fd=42)) 
+tcp   LISTEN 0      4096                                 127.0.0.53%lo:53         0.0.0.0:*    users:(("systemd-resolve",pid=796,fd=19))
+tcp   LISTEN 0      4096                                         [::1]:631           [::]:*    users:(("cupsd",pid=1130,fd=7))          
+tcp   LISTEN 0      4096                                          [::]:5355          [::]:*    users:(("systemd-resolve",pid=796,fd=15))
+[exit=0]

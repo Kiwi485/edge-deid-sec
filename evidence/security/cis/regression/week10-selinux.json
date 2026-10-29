@@ -1,0 +1,53 @@
+{
+  "created_at": "2026-10-29T09:39:14.465350+00:00",
+  "scope": "configuration-and-runtime",
+  "cis_full_audit": "not_run",
+  "selinux_verified": true,
+  "configuration": {
+    "network_none": true,
+    "non_root": true,
+    "read_only_root": true,
+    "capabilities_dropped": true,
+    "no_new_privileges": true,
+    "pid_limit": true,
+    "raw_not_mounted": true,
+    "no_docker_socket": true,
+    "models_read_only": true,
+    "writable_mounts_limited": true,
+    "tmpfs_configured": true
+  },
+  "host_selinux": "Enforcing",
+  "docker_security_options": [
+    "name=seccomp,profile=builtin",
+    "name=selinux",
+    "name=cgroupns",
+    "name=no-new-privileges"
+  ],
+  "host_network_control": "connected",
+  "runtime": {
+    "checks": {
+      "non_root": true,
+      "capabilities_dropped": true,
+      "no_new_privileges": true,
+      "read_only_root": true,
+      "temporary_input_in_tmpfs": true,
+      "raw_directory_absent": true,
+      "output_writable": true,
+      "logs_writable": true,
+      "unix_socket_available": true,
+      "external_network_blocked": true
+    },
+    "uid": 10001,
+    "security_context": "system_u:system_r:edge_deid_extraction_t:s0:c185,c855"
+  },
+  "raw_label": "unconfined_u:object_r:edge_deid_raw_t:s0 /home/i1an/edge-deid-sec/data/raw",
+  "selinux_denials": {
+    "checks": {
+      "tcp_socket_denied": true,
+      "tcp6_socket_denied": true,
+      "mounted_raw_directory_denied": true
+    }
+  },
+  "checks_passed": true,
+  "week10_complete": false
+}

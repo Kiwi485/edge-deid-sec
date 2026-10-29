@@ -1,0 +1,93 @@
+# CIS Docker Benchmark v1.9.0 control 4.2
+# host: fedora  collected: 2026-10-29T17:39:33+08:00
+
+$ docker images
+IMAGE                                ID             DISK USAGE   CONTENT SIZE   EXTRA
+edge-deid-sec-acquisition:latest     91531e85a654         11GB          3.6GB   U    
+edge-deid-sec-extraction:latest      c45511b8603f         11GB         3.61GB   U    
+edge-deid-sec-observability:latest   e3f19d623efe         11GB          3.6GB   U    
+[exit=0]
+
+$ grep -n '^FROM' Dockerfile
+1:FROM python:3.11-slim
+[exit=0]
+
+$ for i in edge-deid-sec-acquisition:latest edge-deid-sec-extraction:latest edge-deid-sec-observability:latest; do echo "== $i"; docker history $i; done
+== edge-deid-sec-acquisition:latest
+IMAGE          CREATED          CREATED BY                                       SIZE      COMMENT
+91531e85a654   38 seconds ago   CMD ["python" "src/services/extraction_servi…   0B        buildkit.dockerfile.v0
+<missing>      38 seconds ago   HEALTHCHECK {Test:[CMD python -c import temp…   0B        buildkit.dockerfile.v0
+<missing>      38 seconds ago   USER 10001:10001                                 0B        buildkit.dockerfile.v0
+<missing>      38 seconds ago   RUN |1 INSTALL_TFLITE=0 /bin/sh -c groupadd …   860kB     buildkit.dockerfile.v0
+<missing>      40 seconds ago   COPY . . # buildkit                              15.4MB    buildkit.dockerfile.v0
+<missing>      40 seconds ago   RUN |1 INSTALL_TFLITE=0 /bin/sh -c if [ "$IN…   4.1kB     buildkit.dockerfile.v0
+<missing>      5 minutes ago    ARG INSTALL_TFLITE=0                             0B        buildkit.dockerfile.v0
+<missing>      5 minutes ago    RUN /bin/sh -c pip install --default-timeout…   6.89GB    buildkit.dockerfile.v0
+<missing>      8 minutes ago    COPY requirements.txt ./ # buildkit              12.3kB    buildkit.dockerfile.v0
+<missing>      8 minutes ago    RUN /bin/sh -c apt-get update && apt-get ins…   307MB     buildkit.dockerfile.v0
+<missing>      8 minutes ago    ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFER…   0B        buildkit.dockerfile.v0
+<missing>      11 minutes ago   WORKDIR /app                                     8.19kB    buildkit.dockerfile.v0
+<missing>      32 hours ago     CMD ["python3"]                                  0B        buildkit.dockerfile.v0
+<missing>      32 hours ago     RUN /bin/sh -c set -eux;  for src in idle3 p…   16.4kB    buildkit.dockerfile.v0
+<missing>      32 hours ago     RUN /bin/sh -c set -eux;   savedAptMark="$(a…   48.8MB    buildkit.dockerfile.v0
+<missing>      32 hours ago     ENV PYTHON_SHA256=9120e0a653868f6e3698d36cdd…   0B        buildkit.dockerfile.v0
+<missing>      32 hours ago     ENV PYTHON_VERSION=3.11.18                       0B        buildkit.dockerfile.v0
+<missing>      32 hours ago     ENV GPG_KEY=A035C8C19219BA821ECEA86B64E628F8…   0B        buildkit.dockerfile.v0
+<missing>      32 hours ago     RUN /bin/sh -c set -eux;  apt-get update;  a…   4.93MB    buildkit.dockerfile.v0
+<missing>      32 hours ago     ENV LANG=C.UTF-8                                 0B        buildkit.dockerfile.v0
+<missing>      32 hours ago     ENV PATH=/usr/local/bin:/usr/local/sbin:/usr…   0B        buildkit.dockerfile.v0
+<missing>      2 days ago       # debian.sh --arch 'amd64' out/ 'trixie' '@1…   87.7MB    debuerreotype 0.17
+== edge-deid-sec-extraction:latest
+IMAGE          CREATED          CREATED BY                                       SIZE      COMMENT
+c45511b8603f   5 minutes ago    CMD ["python" "src/services/extraction_servi…   0B        buildkit.dockerfile.v0
+<missing>      5 minutes ago    HEALTHCHECK {Test:[CMD python -c import temp…   0B        buildkit.dockerfile.v0
+<missing>      5 minutes ago    USER 10001:10001                                 0B        buildkit.dockerfile.v0
+<missing>      5 minutes ago    RUN |1 INSTALL_TFLITE=1 /bin/sh -c groupadd …   860kB     buildkit.dockerfile.v0
+<missing>      5 minutes ago    COPY . . # buildkit                              15.4MB    buildkit.dockerfile.v0
+<missing>      5 minutes ago    RUN |1 INSTALL_TFLITE=1 /bin/sh -c if [ "$IN…   35.7MB    buildkit.dockerfile.v0
+<missing>      5 minutes ago    ARG INSTALL_TFLITE=1                             0B        buildkit.dockerfile.v0
+<missing>      5 minutes ago    RUN /bin/sh -c pip install --default-timeout…   6.89GB    buildkit.dockerfile.v0
+<missing>      8 minutes ago    COPY requirements.txt ./ # buildkit              12.3kB    buildkit.dockerfile.v0
+<missing>      8 minutes ago    RUN /bin/sh -c apt-get update && apt-get ins…   307MB     buildkit.dockerfile.v0
+<missing>      8 minutes ago    ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFER…   0B        buildkit.dockerfile.v0
+<missing>      11 minutes ago   WORKDIR /app                                     8.19kB    buildkit.dockerfile.v0
+<missing>      32 hours ago     CMD ["python3"]                                  0B        buildkit.dockerfile.v0
+<missing>      32 hours ago     RUN /bin/sh -c set -eux;  for src in idle3 p…   16.4kB    buildkit.dockerfile.v0
+<missing>      32 hours ago     RUN /bin/sh -c set -eux;   savedAptMark="$(a…   48.8MB    buildkit.dockerfile.v0
+<missing>      32 hours ago     ENV PYTHON_SHA256=9120e0a653868f6e3698d36cdd…   0B        buildkit.dockerfile.v0
+<missing>      32 hours ago     ENV PYTHON_VERSION=3.11.18                       0B        buildkit.dockerfile.v0
+<missing>      32 hours ago     ENV GPG_KEY=A035C8C19219BA821ECEA86B64E628F8…   0B        buildkit.dockerfile.v0
+<missing>      32 hours ago     RUN /bin/sh -c set -eux;  apt-get update;  a…   4.93MB    buildkit.dockerfile.v0
+<missing>      32 hours ago     ENV LANG=C.UTF-8                                 0B        buildkit.dockerfile.v0
+<missing>      32 hours ago     ENV PATH=/usr/local/bin:/usr/local/sbin:/usr…   0B        buildkit.dockerfile.v0
+<missing>      2 days ago       # debian.sh --arch 'amd64' out/ 'trixie' '@1…   87.7MB    debuerreotype 0.17
+== edge-deid-sec-observability:latest
+IMAGE          CREATED          CREATED BY                                       SIZE      COMMENT
+e3f19d623efe   38 seconds ago   CMD ["python" "src/services/extraction_servi…   0B        buildkit.dockerfile.v0
+<missing>      38 seconds ago   HEALTHCHECK {Test:[CMD python -c import temp…   0B        buildkit.dockerfile.v0
+<missing>      38 seconds ago   USER 10001:10001                                 0B        buildkit.dockerfile.v0
+<missing>      38 seconds ago   RUN |1 INSTALL_TFLITE=0 /bin/sh -c groupadd …   860kB     buildkit.dockerfile.v0
+<missing>      40 seconds ago   COPY . . # buildkit                              15.4MB    buildkit.dockerfile.v0
+<missing>      40 seconds ago   RUN |1 INSTALL_TFLITE=0 /bin/sh -c if [ "$IN…   4.1kB     buildkit.dockerfile.v0
+<missing>      5 minutes ago    ARG INSTALL_TFLITE=0                             0B        buildkit.dockerfile.v0
+<missing>      5 minutes ago    RUN /bin/sh -c pip install --default-timeout…   6.89GB    buildkit.dockerfile.v0
+<missing>      8 minutes ago    COPY requirements.txt ./ # buildkit              12.3kB    buildkit.dockerfile.v0
+<missing>      8 minutes ago    RUN /bin/sh -c apt-get update && apt-get ins…   307MB     buildkit.dockerfile.v0
+<missing>      8 minutes ago    ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFER…   0B        buildkit.dockerfile.v0
+<missing>      11 minutes ago   WORKDIR /app                                     8.19kB    buildkit.dockerfile.v0
+<missing>      32 hours ago     CMD ["python3"]                                  0B        buildkit.dockerfile.v0
+<missing>      32 hours ago     RUN /bin/sh -c set -eux;  for src in idle3 p…   16.4kB    buildkit.dockerfile.v0
+<missing>      32 hours ago     RUN /bin/sh -c set -eux;   savedAptMark="$(a…   48.8MB    buildkit.dockerfile.v0
+<missing>      32 hours ago     ENV PYTHON_SHA256=9120e0a653868f6e3698d36cdd…   0B        buildkit.dockerfile.v0
+<missing>      32 hours ago     ENV PYTHON_VERSION=3.11.18                       0B        buildkit.dockerfile.v0
+<missing>      32 hours ago     ENV GPG_KEY=A035C8C19219BA821ECEA86B64E628F8…   0B        buildkit.dockerfile.v0
+<missing>      32 hours ago     RUN /bin/sh -c set -eux;  apt-get update;  a…   4.93MB    buildkit.dockerfile.v0
+<missing>      32 hours ago     ENV LANG=C.UTF-8                                 0B        buildkit.dockerfile.v0
+<missing>      32 hours ago     ENV PATH=/usr/local/bin:/usr/local/sbin:/usr…   0B        buildkit.dockerfile.v0
+<missing>      2 days ago       # debian.sh --arch 'amd64' out/ 'trixie' '@1…   87.7MB    debuerreotype 0.17
+[exit=0]
+
+$ docker image inspect --format '{{.RepoTags}} {{.RepoDigests}}' python:3.11-slim
+
+Error response from daemon: No such image: python:3.11-slim
+[exit=1]

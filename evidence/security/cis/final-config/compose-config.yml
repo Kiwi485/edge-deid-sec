@@ -1,0 +1,206 @@
+name: edge-deid-sec
+services:
+  acquisition:
+    restart: 'no'
+    container_name: edge-deid-acquisition
+    cap_drop:
+      - ALL
+    cpus: 0.5
+    cpu_shares: 512
+    command:
+      - python
+      - src/services/acquisition_service.py
+      - --limit
+      - "5"
+      - --socket-mode
+      - --socket-path
+      - /run/edge-deid/edge_deid.sock
+    mem_limit: "536870912"
+    networks:
+      default: null
+    pids_limit: 256
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,size=256m,mode=1777
+    user: 10001:10001
+    volumes:
+      - type: bind
+        source: /home/i1an/edge-deid-sec/data/raw
+        target: /app/data/raw
+        read_only: true
+        bind: {}
+      - type: bind
+        source: /home/i1an/edge-deid-sec/evidence
+        target: /app/evidence
+        bind:
+          selinux: z
+      - type: volume
+        source: ipc
+        target: /run/edge-deid
+        volume: {}
+    build:
+      context: /home/i1an/edge-deid-sec
+      dockerfile: Dockerfile
+    depends_on:
+      extraction:
+        condition: service_healthy
+        required: true
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import socket; connection = socket.socket(socket.AF_UNIX); connection.connect('/run/edge-deid/edge_deid.sock');
+          connection.close()
+      timeout: 5s
+      interval: 10s
+      retries: 3
+  extraction:
+    restart: on-failure:5
+    container_name: edge-deid-extraction
+    cap_drop:
+      - ALL
+    cpus: 2
+    cpu_shares: 768
+    command:
+      - python
+      - src/services/extraction_service.py
+      - --socket-server
+      - --seg-backend
+      - tflite
+      - --socket-path
+      - /run/edge-deid/edge_deid.sock
+      - --max-requests
+      - "5"
+      - --reset-csv
+    environment:
+      EDGE_DEID_TRACING: 'off'
+    mem_limit: "4294967296"
+    network_mode: none
+    pids_limit: 256
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+      - label=type:edge_deid_extraction_t
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,size=256m,mode=1777
+    user: 10001:10001
+    volumes:
+      - type: bind
+        source: /home/i1an/edge-deid-sec/data/out
+        target: /app/data/out
+        bind:
+          selinux: z
+      - type: bind
+        source: /home/i1an/edge-deid-sec/logs
+        target: /app/logs
+        bind:
+          selinux: z
+      - type: bind
+        source: /home/i1an/edge-deid-sec/models
+        target: /app/models
+        read_only: true
+        bind:
+          selinux: z
+      - type: volume
+        source: ipc
+        target: /run/edge-deid
+        volume: {}
+    build:
+      context: /home/i1an/edge-deid-sec
+      dockerfile: Dockerfile
+      args:
+        INSTALL_TFLITE: "1"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import socket; connection = socket.socket(socket.AF_UNIX); connection.connect('/run/edge-deid/edge_deid.sock');
+          connection.close()
+      timeout: 2s
+      interval: 2s
+      retries: 30
+  observability:
+    restart: on-failure:5
+    container_name: edge-deid-observability
+    cap_drop:
+      - ALL
+    cpus: 1.5
+    cpu_shares: 512
+    command:
+      - python
+      - src/services/observability_service.py
+      - --manifest
+      - evidence/batch/acquisition_manifest.json
+    mem_limit: "2147483648"
+    networks:
+      default: null
+    pids_limit: 256
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,size=256m,mode=1777
+    user: 10001:10001
+    volumes:
+      - type: bind
+        source: /home/i1an/edge-deid-sec/data/raw
+        target: /app/data/raw
+        read_only: true
+        bind: {}
+      - type: bind
+        source: /home/i1an/edge-deid-sec/data/out
+        target: /app/data/out
+        bind:
+          selinux: z
+      - type: bind
+        source: /home/i1an/edge-deid-sec/logs
+        target: /app/logs
+        read_only: true
+        bind:
+          selinux: z
+      - type: bind
+        source: /home/i1an/edge-deid-sec/docs
+        target: /app/docs
+        bind:
+          selinux: z
+      - type: bind
+        source: /home/i1an/edge-deid-sec/evidence
+        target: /app/evidence
+        bind:
+          selinux: z
+    build:
+      context: /home/i1an/edge-deid-sec
+      dockerfile: Dockerfile
+    depends_on:
+      extraction:
+        condition: service_completed_successfully
+        required: true
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import os; assert os.access('/app/data/out', os.W_OK)
+      timeout: 5s
+      interval: 10s
+      retries: 3
+networks:
+  default:
+    name: edge-deid-sec_default
+volumes:
+  ipc:
+    name: edge-deid-sec_ipc
+x-security:
+  cap_drop:
+    - ALL
+  pids_limit: 256
+  read_only: true
+  security_opt:
+    - no-new-privileges:true
+  tmpfs:
+    - /tmp:rw,noexec,nosuid,nodev,size=256m,mode=1777
+  user: 10001:10001

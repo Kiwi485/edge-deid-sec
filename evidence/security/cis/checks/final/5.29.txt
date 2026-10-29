@@ -1,0 +1,11 @@
+# CIS Docker Benchmark v1.9.0 control 5.29
+# host: fedora  collected: 2026-10-29T17:40:00+08:00
+
+$ docker ps -q | xargs -r docker inspect --format '{{.Name}} {{.HostConfig.PidsLimit}}'
+/cis-runtime-observability 256
+/cis-runtime-acquisition 256
+/edge-deid-extraction 256
+[exit=0]
+
+$ docker ps -q | xargs -r docker inspect --format '{{.Name}} {{.HostConfig.PidsLimit}}' | awk '$2 == 0 || $2 == -1'
+[exit=0]

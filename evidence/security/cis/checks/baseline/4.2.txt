@@ -1,0 +1,90 @@
+# CIS Docker Benchmark v1.9.0 control 4.2
+# host: fedora  collected: 2026-10-27T14:24:59+08:00
+
+$ docker images
+IMAGE                                ID             DISK USAGE   CONTENT SIZE   EXTRA
+edge-deid-sec-acquisition:latest     68ce36d834ae         11GB         3.61GB   U    
+edge-deid-sec-extraction:latest      ead8158df613       11.1GB         3.62GB   U    
+edge-deid-sec-observability:latest   c23e33b9cf07         11GB         3.61GB   U    
+[exit=0]
+
+$ grep -n '^FROM' Dockerfile
+1:FROM python:3.11-slim
+[exit=0]
+
+$ for i in edge-deid-sec-acquisition:latest edge-deid-sec-extraction:latest edge-deid-sec-observability:latest; do echo "== $i"; docker history $i; done
+== edge-deid-sec-acquisition:latest
+IMAGE          CREATED      CREATED BY                                       SIZE      COMMENT
+68ce36d834ae   2 days ago   CMD ["python" "src/services/extraction_servi…   0B        buildkit.dockerfile.v0
+<missing>      2 days ago   USER 10001:10001                                 0B        buildkit.dockerfile.v0
+<missing>      2 days ago   RUN |1 INSTALL_TFLITE=0 /bin/sh -c groupadd …   41kB      buildkit.dockerfile.v0
+<missing>      2 days ago   COPY . . # buildkit                              15.3MB    buildkit.dockerfile.v0
+<missing>      2 days ago   RUN |1 INSTALL_TFLITE=0 /bin/sh -c if [ "$IN…   0B        buildkit.dockerfile.v0
+<missing>      2 days ago   ARG INSTALL_TFLITE=0                             0B        buildkit.dockerfile.v0
+<missing>      2 days ago   RUN /bin/sh -c pip install --no-cache-dir -r…   6.93GB    buildkit.dockerfile.v0
+<missing>      2 days ago   COPY requirements.txt ./ # buildkit              4.1kB     buildkit.dockerfile.v0
+<missing>      2 days ago   RUN /bin/sh -c apt-get update && apt-get ins…   307MB     buildkit.dockerfile.v0
+<missing>      2 days ago   ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFER…   0B        buildkit.dockerfile.v0
+<missing>      2 days ago   WORKDIR /app                                     0B        buildkit.dockerfile.v0
+<missing>      6 days ago   CMD ["python3"]                                  0B        buildkit.dockerfile.v0
+<missing>      6 days ago   RUN /bin/sh -c set -eux;  for src in idle3 p…   20.5kB    buildkit.dockerfile.v0
+<missing>      6 days ago   RUN /bin/sh -c set -eux;   savedAptMark="$(a…   47.4MB    buildkit.dockerfile.v0
+<missing>      6 days ago   ENV PYTHON_SHA256=bfb74ad39efae27cda510f134a…   0B        buildkit.dockerfile.v0
+<missing>      6 days ago   ENV PYTHON_VERSION=3.11.17                       0B        buildkit.dockerfile.v0
+<missing>      6 days ago   ENV GPG_KEY=A035C8C19219BA821ECEA86B64E628F8…   0B        buildkit.dockerfile.v0
+<missing>      6 days ago   RUN /bin/sh -c set -eux;  apt-get update;  a…   5.54MB    buildkit.dockerfile.v0
+<missing>      6 days ago   ENV LANG=C.UTF-8                                 0B        buildkit.dockerfile.v0
+<missing>      6 days ago   ENV PATH=/usr/local/bin:/usr/local/sbin:/usr…   0B        buildkit.dockerfile.v0
+<missing>      6 days ago   # debian.sh --arch 'amd64' out/ 'trixie' '@1…   86.7MB    debuerreotype 0.17
+== edge-deid-sec-extraction:latest
+IMAGE          CREATED      CREATED BY                                       SIZE      COMMENT
+ead8158df613   2 days ago   CMD ["python" "src/services/extraction_servi…   0B        buildkit.dockerfile.v0
+<missing>      2 days ago   USER 10001:10001                                 0B        buildkit.dockerfile.v0
+<missing>      2 days ago   RUN |1 INSTALL_TFLITE=1 /bin/sh -c groupadd …   41kB      buildkit.dockerfile.v0
+<missing>      2 days ago   COPY . . # buildkit                              15.3MB    buildkit.dockerfile.v0
+<missing>      2 days ago   RUN |1 INSTALL_TFLITE=1 /bin/sh -c if [ "$IN…   35.6MB    buildkit.dockerfile.v0
+<missing>      2 days ago   ARG INSTALL_TFLITE=1                             0B        buildkit.dockerfile.v0
+<missing>      2 days ago   RUN /bin/sh -c pip install --no-cache-dir -r…   6.93GB    buildkit.dockerfile.v0
+<missing>      2 days ago   COPY requirements.txt ./ # buildkit              4.1kB     buildkit.dockerfile.v0
+<missing>      2 days ago   RUN /bin/sh -c apt-get update && apt-get ins…   307MB     buildkit.dockerfile.v0
+<missing>      2 days ago   ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFER…   0B        buildkit.dockerfile.v0
+<missing>      2 days ago   WORKDIR /app                                     0B        buildkit.dockerfile.v0
+<missing>      6 days ago   CMD ["python3"]                                  0B        buildkit.dockerfile.v0
+<missing>      6 days ago   RUN /bin/sh -c set -eux;  for src in idle3 p…   20.5kB    buildkit.dockerfile.v0
+<missing>      6 days ago   RUN /bin/sh -c set -eux;   savedAptMark="$(a…   47.4MB    buildkit.dockerfile.v0
+<missing>      6 days ago   ENV PYTHON_SHA256=bfb74ad39efae27cda510f134a…   0B        buildkit.dockerfile.v0
+<missing>      6 days ago   ENV PYTHON_VERSION=3.11.17                       0B        buildkit.dockerfile.v0
+<missing>      6 days ago   ENV GPG_KEY=A035C8C19219BA821ECEA86B64E628F8…   0B        buildkit.dockerfile.v0
+<missing>      6 days ago   RUN /bin/sh -c set -eux;  apt-get update;  a…   5.54MB    buildkit.dockerfile.v0
+<missing>      6 days ago   ENV LANG=C.UTF-8                                 0B        buildkit.dockerfile.v0
+<missing>      6 days ago   ENV PATH=/usr/local/bin:/usr/local/sbin:/usr…   0B        buildkit.dockerfile.v0
+<missing>      6 days ago   # debian.sh --arch 'amd64' out/ 'trixie' '@1…   86.7MB    debuerreotype 0.17
+== edge-deid-sec-observability:latest
+IMAGE          CREATED      CREATED BY                                       SIZE      COMMENT
+c23e33b9cf07   2 days ago   CMD ["python" "src/services/extraction_servi…   0B        buildkit.dockerfile.v0
+<missing>      2 days ago   USER 10001:10001                                 0B        buildkit.dockerfile.v0
+<missing>      2 days ago   RUN |1 INSTALL_TFLITE=0 /bin/sh -c groupadd …   41kB      buildkit.dockerfile.v0
+<missing>      2 days ago   COPY . . # buildkit                              15.3MB    buildkit.dockerfile.v0
+<missing>      2 days ago   RUN |1 INSTALL_TFLITE=0 /bin/sh -c if [ "$IN…   0B        buildkit.dockerfile.v0
+<missing>      2 days ago   ARG INSTALL_TFLITE=0                             0B        buildkit.dockerfile.v0
+<missing>      2 days ago   RUN /bin/sh -c pip install --no-cache-dir -r…   6.93GB    buildkit.dockerfile.v0
+<missing>      2 days ago   COPY requirements.txt ./ # buildkit              4.1kB     buildkit.dockerfile.v0
+<missing>      2 days ago   RUN /bin/sh -c apt-get update && apt-get ins…   307MB     buildkit.dockerfile.v0
+<missing>      2 days ago   ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFER…   0B        buildkit.dockerfile.v0
+<missing>      2 days ago   WORKDIR /app                                     0B        buildkit.dockerfile.v0
+<missing>      6 days ago   CMD ["python3"]                                  0B        buildkit.dockerfile.v0
+<missing>      6 days ago   RUN /bin/sh -c set -eux;  for src in idle3 p…   20.5kB    buildkit.dockerfile.v0
+<missing>      6 days ago   RUN /bin/sh -c set -eux;   savedAptMark="$(a…   47.4MB    buildkit.dockerfile.v0
+<missing>      6 days ago   ENV PYTHON_SHA256=bfb74ad39efae27cda510f134a…   0B        buildkit.dockerfile.v0
+<missing>      6 days ago   ENV PYTHON_VERSION=3.11.17                       0B        buildkit.dockerfile.v0
+<missing>      6 days ago   ENV GPG_KEY=A035C8C19219BA821ECEA86B64E628F8…   0B        buildkit.dockerfile.v0
+<missing>      6 days ago   RUN /bin/sh -c set -eux;  apt-get update;  a…   5.54MB    buildkit.dockerfile.v0
+<missing>      6 days ago   ENV LANG=C.UTF-8                                 0B        buildkit.dockerfile.v0
+<missing>      6 days ago   ENV PATH=/usr/local/bin:/usr/local/sbin:/usr…   0B        buildkit.dockerfile.v0
+<missing>      6 days ago   # debian.sh --arch 'amd64' out/ 'trixie' '@1…   86.7MB    debuerreotype 0.17
+[exit=0]
+
+$ docker image inspect --format '{{.RepoTags}} {{.RepoDigests}}' python:3.11-slim
+
+Error response from daemon: No such image: python:3.11-slim
+[exit=1]

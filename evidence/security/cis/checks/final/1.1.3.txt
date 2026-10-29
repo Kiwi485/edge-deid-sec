@@ -1,0 +1,6 @@
+# CIS Docker Benchmark v1.9.0 control 1.1.3
+# host: fedora  collected: 2026-10-29T17:39:26+08:00
+
+$ auditctl -l | grep /usr/bin/dockerd
+-w /usr/bin/dockerd -p rwxa -k docker
+[exit=0]

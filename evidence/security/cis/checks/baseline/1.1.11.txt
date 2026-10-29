@@ -1,0 +1,9 @@
+# CIS Docker Benchmark v1.9.0 control 1.1.11
+# host: fedora  collected: 2026-10-27T14:24:52+08:00
+
+$ ls -l /etc/docker/daemon.json
+-rw-r--r--. 1 root root 28 10月 25 00:13 /etc/docker/daemon.json
+[exit=0]
+
+$ auditctl -l | grep /etc/docker/daemon.json
+[exit=1]

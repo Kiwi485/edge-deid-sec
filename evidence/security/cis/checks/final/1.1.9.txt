@@ -1,0 +1,20 @@
+# CIS Docker Benchmark v1.9.0 control 1.1.9
+# host: fedora  collected: 2026-10-29T17:39:26+08:00
+
+$ systemctl show -p FragmentPath docker.socket
+FragmentPath=/usr/lib/systemd/system/docker.socket
+[exit=0]
+
+$ grep ListenStream /usr/lib/systemd/system/docker.socket
+# specify ListenStream=/var/run/docker.sock instead.
+ListenStream=/run/docker.sock
+[exit=0]
+
+$ ls -l /run/docker.sock
+srw-rw----. 1 root docker 0 10月 28 11:56 /run/docker.sock
+[exit=0]
+
+$ auditctl -l | grep docker.sock
+-w /usr/lib/systemd/system/docker.socket -p rwxa -k docker
+-w /run/docker.sock -p rwxa -k docker
+[exit=0]

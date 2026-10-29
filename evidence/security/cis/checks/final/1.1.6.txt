@@ -1,0 +1,7 @@
+# CIS Docker Benchmark v1.9.0 control 1.1.6
+# host: fedora  collected: 2026-10-29T17:39:26+08:00
+
+$ auditctl -l | grep /etc/docker
+-w /etc/docker -p rwxa -k docker
+-w /etc/docker/daemon.json -p rwxa -k docker
+[exit=0]

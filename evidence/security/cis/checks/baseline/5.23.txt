@@ -1,0 +1,9 @@
+# CIS Docker Benchmark v1.9.0 control 5.23
+# host: fedora  collected: 2026-10-27T14:30:01+08:00
+
+$ ausearch -k docker 2>&1 | grep exec | grep privileged; echo grep_rc=$?
+grep_rc=1
+[exit=0]
+
+$ auditctl -l | grep -E 'key=docker'
+[exit=1]

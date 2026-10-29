@@ -1,0 +1,19 @@
+# CIS Docker Benchmark v1.9.0 control 4.1
+# host: fedora  collected: 2026-10-27T14:24:58+08:00
+
+$ docker ps --quiet | xargs --max-args=1 -I{} sh -c 'echo "{} $(docker inspect --format {{.Name}} {}) $(docker exec {} cat /proc/1/status | grep ^Uid:)"'
+xargs: warning: options --max-args and --replace/-I/-i are mutually exclusive, ignoring previous --max-args value
+efe47c5b8070 /cis-runtime-observability Uid:	10001	10001	10001	10001
+666da4ebf4ac /cis-runtime-acquisition Uid:	10001	10001	10001	10001
+33dd026130d2 /edge-deid-extraction Uid:	10001	10001	10001	10001
+[exit=0]
+
+$ for i in edge-deid-sec-acquisition:latest edge-deid-sec-extraction:latest edge-deid-sec-observability:latest; do echo "$i User=$(docker image inspect --format '{{.Config.User}}' $i)"; done
+edge-deid-sec-acquisition:latest User=10001:10001
+edge-deid-sec-extraction:latest User=10001:10001
+edge-deid-sec-observability:latest User=10001:10001
+[exit=0]
+
+$ grep -n '^USER' Dockerfile
+37:USER 10001:10001
+[exit=0]

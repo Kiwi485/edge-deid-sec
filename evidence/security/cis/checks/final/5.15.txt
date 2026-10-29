@@ -1,0 +1,10 @@
+# CIS Docker Benchmark v1.9.0 control 5.15
+# host: fedora  collected: 2026-10-29T17:39:50+08:00
+
+$ docker ps --quiet --all | xargs -r docker inspect --format '{{ .Name }} {{ .Id }}: RestartPolicyName={{ .HostConfig.RestartPolicy.Name }} MaximumRetryCount={{ .HostConfig.RestartPolicy.MaximumRetryCount }}'
+/edge-deid-acquisition 68dab3506df63ed77b5abff371735d40282024ff52d03124353307276a9cceb4: RestartPolicyName=no MaximumRetryCount=0
+/edge-deid-observability 3665c8078eb0b227a7211e4403fb5182b74d7f36a3ccaab101b6dbdd37cd2ad2: RestartPolicyName=on-failure MaximumRetryCount=5
+/cis-runtime-observability d6f6d08fa936720895ab6cac47c78372abf69ca10de97636c72f605b9ceaaa95: RestartPolicyName=no MaximumRetryCount=0
+/cis-runtime-acquisition 3093240cc8da6ccc3bc8c524049ea3eae64dedde60ded3e8e83d42c97d1d5acf: RestartPolicyName=no MaximumRetryCount=0
+/edge-deid-extraction 9041558ef9d165b18cc43893f70772d1efd97098659c7f145c148308911a8d6f: RestartPolicyName=on-failure MaximumRetryCount=5
+[exit=0]

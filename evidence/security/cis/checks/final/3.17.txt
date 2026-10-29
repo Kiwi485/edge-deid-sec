@@ -1,0 +1,9 @@
+# CIS Docker Benchmark v1.9.0 control 3.17
+# host: fedora  collected: 2026-10-29T17:39:32+08:00
+
+$ stat -c '%U:%G %n' /etc/docker/daemon.json
+root:root /etc/docker/daemon.json
+[exit=0]
+
+$ stat -c %U:%G /etc/docker/daemon.json | grep -v root:root
+[exit=1]

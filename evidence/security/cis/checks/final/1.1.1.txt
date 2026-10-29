@@ -1,0 +1,20 @@
+# CIS Docker Benchmark v1.9.0 control 1.1.1
+# host: fedora  collected: 2026-10-29T17:39:26+08:00
+
+$ grep '/var/lib/docker\s' /proc/mounts
+/dev/sdb1 /var/lib/docker ext4 rw,seclabel,relatime 0 0
+[exit=0]
+
+$ mountpoint -- "$(docker info -f '{{ .DockerRootDir }}')"
+/var/lib/docker is a mountpoint
+[exit=0]
+
+$ findmnt -T /var/lib/docker
+TARGET          SOURCE    FSTYPE OPTIONS
+/var/lib/docker /dev/sdb1 ext4   rw,relatime,seclabel
+[exit=0]
+
+$ df -h /var/lib/docker
+檔案系統        容量  已用  可用 已用% 掛載點
+/dev/sdb1       5.9G  2.8M  5.6G    1% /var/lib/docker
+[exit=0]

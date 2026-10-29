@@ -1,0 +1,10 @@
+# CIS Docker Benchmark v1.9.0 control 3.7
+# host: fedora  collected: 2026-10-29T17:39:31+08:00
+
+$ ls -la /etc/docker/certs.d
+ls: 無法存取 '/etc/docker/certs.d': 沒有此一檔案或目錄
+[exit=2]
+
+$ stat -c %U:%G /etc/docker/certs.d/* | grep -v root:root
+stat: 無法 statx '/etc/docker/certs.d/*': 沒有此一檔案或目錄
+[exit=1]

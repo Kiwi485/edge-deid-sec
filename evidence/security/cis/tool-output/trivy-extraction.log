@@ -1,0 +1,11 @@
+2026-10-29T17:40:15+08:00	INFO	[vulndb] Need to update DB
+2026-10-29T17:40:15+08:00	INFO	[vulndb] Downloading vulnerability DB...
+2026-10-29T17:40:15+08:00	INFO	[vulndb] Downloading artifact...	repo="mirror.gcr.io/aquasec/trivy-db:2"
+27% ? p/s ?29.48% 51.66 MiB p/s ETA 1s2% 51.66 MiB p/s ETA 1s26% 51.36 MiB p/s ETA 0s2% 51.56 MiB p/s ETA 0s2.13 MiB p/s ETA 0s2.13 MiB p/s ETA 0s2.13 MiB p/s ETA 0s2.26 MiB p/s ETA 0s2.26 MiB p/s ETA 0s2.26 MiB p/s ETA 0s2026-10-29T17:40:24+08:00	INFO	[vulndb] Artifact successfully downloaded	repo="mirror.gcr.io/aquasec/trivy-db:2"
+2026-10-29T17:40:24+08:00	INFO	[vuln] Vulnerability scanning is enabled
+2026-10-29T17:43:10+08:00	INFO	[python] Licenses acquired from one or more METADATA files may be subject to additional terms. Use `--debug` flag to see all affected packages.
+2026-10-29T17:43:44+08:00	INFO	Detected OS	family="debian" version="13.7"
+2026-10-29T17:43:44+08:00	INFO	[debian] Detecting vulnerabilities...	os_version="13" pkg_num=136
+2026-10-29T17:43:44+08:00	INFO	Number of language-specific files	num=1
+2026-10-29T17:43:44+08:00	INFO	[python-pkg] Detecting vulnerabilities...
+2026-10-29T17:43:44+08:00	WARN	Using severities from other vendors for some vulnerabilities. Read https://trivy.dev/docs/v0.76/guide/scanner/vulnerability#severity-selection for details.

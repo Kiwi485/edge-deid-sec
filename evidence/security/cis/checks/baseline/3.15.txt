@@ -1,0 +1,9 @@
+# CIS Docker Benchmark v1.9.0 control 3.15
+# host: fedora  collected: 2026-10-27T14:24:58+08:00
+
+$ stat -c '%U:%G %n' /var/run/docker.sock
+root:docker /var/run/docker.sock
+[exit=0]
+
+$ stat -c %U:%G /var/run/docker.sock | grep -v root:docker
+[exit=1]

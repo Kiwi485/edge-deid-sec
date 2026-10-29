@@ -1,0 +1,9 @@
+# CIS Docker Benchmark v1.9.0 control 1.1.17
+# host: fedora  collected: 2026-10-27T14:24:52+08:00
+
+$ ls -l /usr/bin/containerd-shim-runc-v2
+-rwxr-xr-x. 1 root root 8491168  1月 30  2023 /usr/bin/containerd-shim-runc-v2
+[exit=0]
+
+$ auditctl -l | grep /usr/bin/containerd-shim-runc-v2
+[exit=1]

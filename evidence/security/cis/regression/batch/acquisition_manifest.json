@@ -1,0 +1,30 @@
+{
+  "created_at": "2026-10-29T09:39:09.488265Z",
+  "raw_dir": "data/raw",
+  "limit": 5,
+  "shuffle": false,
+  "seed": 42,
+  "total": 5,
+  "items": [
+    {
+      "image_id": "01973586-466F-4163-810D-430AF5DFC80B",
+      "input_file": "01973586-466F-4163-810D-430AF5DFC80B.jpeg"
+    },
+    {
+      "image_id": "0BA08EE4-AB9D-47EB-A7FF-AC59CA1666C0",
+      "input_file": "0BA08EE4-AB9D-47EB-A7FF-AC59CA1666C0.jpg"
+    },
+    {
+      "image_id": "0EB948F0-A873-4EBD-B4B1-8357DB187DE4",
+      "input_file": "0EB948F0-A873-4EBD-B4B1-8357DB187DE4.jpeg"
+    },
+    {
+      "image_id": "190CF20D-AA88-4BAB-A6E3-2362EF1554F9",
+      "input_file": "190CF20D-AA88-4BAB-A6E3-2362EF1554F9.jpeg"
+    },
+    {
+      "image_id": "36860C73-4B69-4035-BD0C-44BB8B7F7100",
+      "input_file": "36860C73-4B69-4035-BD0C-44BB8B7F7100.jpeg"
+    }
+  ]
+}
