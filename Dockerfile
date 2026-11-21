@@ -20,8 +20,15 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # 先安裝專案需要的 Python 套件
-COPY requirements.txt ./
-RUN --mount=type=cache,target=/tmp/.cache/pip pip install --default-timeout=300 --retries 10 -r requirements.txt
+COPY requirements.txt requirements-pi-overrides.txt ./
+ARG PI_ARM64=0
+RUN --mount=type=cache,target=/tmp/.cache/pip \
+    if [ "$PI_ARM64" = "1" ]; then \
+        pip install --default-timeout=300 --retries 10 uv && \
+        uv pip install --system --no-cache -r requirements.txt --override requirements-pi-overrides.txt; \
+    else \
+        pip install --default-timeout=300 --retries 10 -r requirements.txt; \
+    fi
 
 ARG INSTALL_TFLITE=0
 RUN --mount=type=cache,target=/tmp/.cache/pip if [ "$INSTALL_TFLITE" = "1" ]; then pip install --default-timeout=300 --retries 10 ai-edge-litert==1.4.0; fi

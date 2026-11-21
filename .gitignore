@@ -28,6 +28,7 @@ logs/*.csv
 # generated image/data
 
 data/out/
+data/camera-runs/
 
 # auto-generated reports (changes every test run)
 docs/roi_eval.md

@@ -1,0 +1,16 @@
+services:
+  acquisition:
+    volumes:
+      - ${CAMERA_RUN_DIR:?Set CAMERA_RUN_DIR}/raw:/app/data/raw:ro,z
+      - ${CAMERA_RUN_DIR:?Set CAMERA_RUN_DIR}/evidence:/app/evidence:rw,z
+  extraction:
+    volumes:
+      - ${CAMERA_RUN_DIR:?Set CAMERA_RUN_DIR}/out:/app/data/out:rw,z
+      - ${CAMERA_RUN_DIR:?Set CAMERA_RUN_DIR}/logs:/app/logs:rw,z
+  observability:
+    volumes:
+      - ${CAMERA_RUN_DIR:?Set CAMERA_RUN_DIR}/raw:/app/data/raw:ro,z
+      - ${CAMERA_RUN_DIR:?Set CAMERA_RUN_DIR}/out:/app/data/out:rw,z
+      - ${CAMERA_RUN_DIR:?Set CAMERA_RUN_DIR}/logs:/app/logs:ro,z
+      - ${CAMERA_RUN_DIR:?Set CAMERA_RUN_DIR}/evidence:/app/evidence:rw,z
+      - ${CAMERA_RUN_DIR:?Set CAMERA_RUN_DIR}/docs:/app/docs:rw,z

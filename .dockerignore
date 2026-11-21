@@ -28,5 +28,6 @@ test/
 *.csv
 *.cache
 !requirements.txt
+!requirements-pi-overrides.txt
 
 models/
