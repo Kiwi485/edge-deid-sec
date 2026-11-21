@@ -21,6 +21,16 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
 
 完整 MediaPipe 設定請看 [docs/SETUP_MEDIAPIPE_WINDOWS.md](docs/SETUP_MEDIAPIPE_WINDOWS.md)。
 
+## Raspberry Pi 一鍵拍照
+
+在已設定相機、模型與 Docker 的 Raspberry Pi 4B ARM64 上，可用一個指令預覽、拍照，並透過 Docker／Unix Socket 執行 TFLite pipeline：
+
+```bash
+bash camera-run.sh
+```
+
+第一次使用前，請依 [Raspberry Pi 拍照與 Docker 設定](docs/RASPBERRY_PI.md)準備模型、建立 Pi 專用映像及目錄權限。每次拍攝的原圖和結果會留在獨立的 `data/camera-runs/`；它們可能包含敏感資訊，請保護並依政策清理。Docker 成功不代表 SELinux 已啟用。
+
 ## 執行主 pipeline
 
 先把要處理的 `.jpg`、`.jpeg` 或 `.png` 放到 `data/raw/`，然後執行：

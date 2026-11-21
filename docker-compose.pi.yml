@@ -1,0 +1,15 @@
+services:
+  acquisition:
+    build:
+      context: .
+      args:
+        PI_ARM64: "1"
+  extraction:
+    build:
+      args:
+        PI_ARM64: "1"
+  observability:
+    build:
+      context: .
+      args:
+        PI_ARM64: "1"
