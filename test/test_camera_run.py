@@ -18,6 +18,7 @@ def _stub(path, contents):
 
 
 @pytest.mark.skipif(BASH is None, reason="Bash is required")
+@pytest.mark.parametrize(("web_mode", "seconds"), [(False, 5), (True, 1), (True, 60)])
 @pytest.mark.parametrize(
     ("scenario", "success", "docker_started"),
     [
@@ -29,7 +30,7 @@ def _stub(path, contents):
         ("container_fail", False, True),
     ],
 )
-def test_camera_run_isolates_input_and_checks_results(tmp_path, scenario, success, docker_started):
+def test_camera_run_isolates_input_and_checks_results(tmp_path, scenario, success, docker_started, web_mode, seconds):
     shutil.copy(ROOT / "camera-run.sh", tmp_path / "camera-run.sh")
     model = tmp_path / "models" / "seg" / "model.tflite"
     model.parent.mkdir(parents=True)
@@ -37,6 +38,7 @@ def test_camera_run_isolates_input_and_checks_results(tmp_path, scenario, succes
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
     _stub(bin_dir / "sudo", """\
+if [ "$1" = -n ]; then shift; fi
 case "$1" in
     -v|chgrp) exit 0 ;;
     install)
@@ -53,6 +55,7 @@ case "$1" in
 esac
 """)
     _stub(bin_dir / "rpicam-still", """\
+echo "$*" > "$CAMERA_LOG"
 if [ "$SCENARIO" = no_photo ]; then exit 0; fi
 for arg in "$@"; do output="$arg"; done
 printf 'photo' > "$output"
@@ -83,9 +86,10 @@ fi
         PATH=str(bin_dir) + os.pathsep + env["PATH"],
         SCENARIO=scenario,
         EVENT_LOG=str(tmp_path / "events"),
+        CAMERA_LOG=str(tmp_path / "camera_args"),
     )
     result = subprocess.run(
-        [BASH, str(tmp_path / "camera-run.sh")],
+        [BASH, str(tmp_path / "camera-run.sh")] + (["--web", "a" * 32, str(seconds)] if web_mode else []),
         cwd=tmp_path,
         env=env,
         capture_output=True,
@@ -95,10 +99,26 @@ fi
     events = (tmp_path / "events").read_text().splitlines() if (tmp_path / "events").exists() else []
     assert (result.returncode == 0) is success, result.stdout + result.stderr
     assert ("compose" in events) is docker_started
-    assert ("opened" in events) is success
+    assert ("opened" in events) is (success and not web_mode)
+    assert f"-t {seconds * 1000}" in (tmp_path / "camera_args").read_text()
     runs = list((tmp_path / "data" / "camera-runs").iterdir())
     assert len(runs) == 1
+    if web_mode:
+        assert runs[0].name == "run-" + "a" * 32
     assert (runs[0] / "raw" / "tongue.jpg").exists() is (scenario != "no_photo")
+
+
+@pytest.mark.skipif(BASH is None, reason="Bash is required")
+@pytest.mark.parametrize("seconds", ["0", "61", "-1", "1.5", "bad"])
+def test_camera_run_rejects_invalid_web_countdown(tmp_path, seconds):
+    shutil.copy(ROOT / "camera-run.sh", tmp_path / "camera-run.sh")
+    result = subprocess.run(
+        [BASH, str(tmp_path / "camera-run.sh"), "--web", "a" * 32, seconds],
+        cwd=tmp_path, capture_output=True, text=True, timeout=30,
+    )
+    assert result.returncode != 0
+    assert "Invalid arguments" in result.stderr
+    assert not (tmp_path / "data").exists()
 
 
 @pytest.mark.skipif(shutil.which("docker") is None, reason="Docker Compose is required")

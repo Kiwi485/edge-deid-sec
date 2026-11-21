@@ -72,6 +72,13 @@ def _load_image(img_path: Path):
     return image
 
 
+def _write_png(path: Path, image: np.ndarray):
+    ok, encoded = cv2.imencode(".png", image)
+    if not ok:
+        raise OSError(f"Failed to encode image {path}")
+    path.write_bytes(encoded.tobytes())
+
+
 def write_csv_header_if_needed(csv_path: Path):
     if not csv_path.exists():
         with open(csv_path, mode="w", newline="") as f:
@@ -263,7 +270,7 @@ def run_batch_pipeline(
                     roi_span.set_attribute("roi.method", roi_method_used)
 
                 start = time.perf_counter()
-                cv2.imwrite(str(output_folder / "roi.png"), roi_img)
+                _write_png(output_folder / "roi.png", roi_img)
                 artifact_write_ms += (time.perf_counter() - start) * 1000.0
 
                 # ======================
@@ -311,7 +318,7 @@ def run_batch_pipeline(
                     seg_postprocess_ms = (time.perf_counter() - postprocess_start) * 1000.0
                     seg_ms = (time.perf_counter() - start) * 1000.0
                 write_start = time.perf_counter()
-                cv2.imwrite(str(output_folder / "mask.png"), mask)
+                _write_png(output_folder / "mask.png", mask)
                 artifact_write_ms += (time.perf_counter() - write_start) * 1000.0
 
                 # ======================
@@ -337,7 +344,7 @@ def run_batch_pipeline(
                     deid_ms = (time.perf_counter() - start) * 1000.0
 
                 write_start = time.perf_counter()
-                cv2.imwrite(str(output_folder / "deid.png"), deid_img)
+                _write_png(output_folder / "deid.png", deid_img)
                 artifact_write_ms += (time.perf_counter() - write_start) * 1000.0
 
                 privacy_start = time.perf_counter()

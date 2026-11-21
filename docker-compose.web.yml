@@ -1,0 +1,7 @@
+services:
+  acquisition:
+    container_name: edge-web-demo-acquisition
+  extraction:
+    container_name: edge-web-demo-extraction
+  observability:
+    container_name: edge-web-demo-observability

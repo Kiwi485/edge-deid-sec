@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>舌部影像採集 | Edge De-ID</title>
+  <link rel="stylesheet" href="/app.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="/" aria-label="Edge De-ID 首頁">
+        <span class="brand-mark" aria-hidden="true">E</span>
+        <span>Edge De-ID <small>影像處理工作站</small></span>
+      </a>
+      <div class="mode-badge"><span class="mode-dot"></span><span id="mode-label">正在載入模式</span></div>
+    </div>
+  </header>
+
+  <main class="shell">
+    <div class="page-heading">
+      <div>
+        <p class="eyebrow">影像採集 / 單張處理</p>
+        <h1>舌部影像採集</h1>
+        <p class="subtitle">拍攝影像，查看去識別化結果與處理紀錄。</p>
+      </div>
+      <div class="local-note">僅限本機使用</div>
+    </div>
+
+    <div class="workspace">
+      <section class="panel capture-panel" aria-labelledby="camera-title">
+        <div class="panel-heading">
+          <div><p class="step">01　拍攝</p><h2 id="camera-title">相機預覽</h2></div>
+          <span class="pill" id="camera-state">相機未開啟</span>
+        </div>
+        <div class="viewfinder">
+          <video id="preview" autoplay playsinline muted></video>
+          <div id="camera-placeholder" class="placeholder">
+            <div class="camera-icon" aria-hidden="true">
+              <svg viewBox="0 0 40 40" fill="none"><path d="M8 14h6l2-3h8l2 3h6a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V16a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="1.5"/><circle cx="20" cy="22" r="5" stroke="currentColor" stroke-width="1.5"/></svg>
+            </div>
+            <strong id="placeholder-title">相機尚未開啟</strong>
+            <span id="placeholder-message">允許瀏覽器使用相機後即可預覽</span>
+          </div>
+          <div id="countdown" class="countdown" aria-live="polite"></div>
+          <div class="viewfinder-bottom"><span id="preview-label">相機預覽</span><span>拍攝輸出 640 × 480</span></div>
+        </div>
+        <canvas id="frame" width="640" height="480" hidden></canvas>
+        <div class="countdown-setting">
+          <label for="countdown-seconds">拍照倒數</label>
+          <div class="countdown-input"><input id="countdown-seconds" type="number" min="1" max="60" step="1" value="5" required aria-describedby="countdown-help"><span>秒</span></div>
+          <span id="countdown-help">可設定 1–60 秒</span>
+        </div>
+        <div class="capture-actions">
+          <button type="button" class="button secondary" id="start-camera" disabled>開啟相機</button>
+          <button type="button" class="button primary" id="capture" disabled>拍照並處理 <span aria-hidden="true">→</span></button>
+        </div>
+        <p class="capture-hint">請保持臉部與舌頭清晰，並確保光線充足。</p>
+      </section>
+
+      <section class="panel result-panel" aria-labelledby="result-title">
+        <div class="panel-heading">
+          <div><p class="step">02　結果</p><h2 id="result-title">去識別化影像</h2></div>
+          <span class="pill muted" id="result-state">等待拍攝</span>
+        </div>
+        <div class="result-preview">
+          <div class="result-empty" id="result-empty">
+            <div class="result-icon" aria-hidden="true">▧</div>
+            <strong>尚無處理結果</strong>
+            <span>拍攝後，結果會顯示於此。</span>
+          </div>
+          <img id="result-image" alt="去識別化影像結果" hidden>
+        </div>
+        <div class="progress-block">
+          <div class="progress-heading"><span>目前狀態</span><strong id="status-label" aria-live="polite">準備中</strong></div>
+          <div class="progress-track"><span id="progress-bar"></span></div>
+          <p id="status-message" role="status">請先開啟相機，準備拍攝。</p>
+        </div>
+        <div class="result-details">
+          <div><span>Pipeline 處理</span><strong id="processing-time">—</strong></div>
+          <div><span>網頁等待</span><strong id="request-time">—</strong></div>
+          <div><span>分割後端</span><strong id="seg-backend">—</strong></div>
+        </div>
+        <p class="notice">請檢查是否完整保留舌頭，且沒有誤留其他部位；自動處理不保證完全匿名。</p>
+      </section>
+    </div>
+
+    <section class="panel report-panel" id="report" aria-labelledby="report-title" hidden>
+      <div class="report-heading">
+        <div><p class="step">03　處理紀錄</p><h2 id="report-title">本次處理明細</h2></div>
+        <span class="report-caption">來源：本次 pipeline metadata</span>
+      </div>
+      <div class="report-grid">
+        <div>
+          <h3>時間明細 <span>毫秒 ms</span></h3>
+          <div class="timing-list" id="timing-list"></div>
+          <p class="report-note">分割內的模型載入與推論等時間已包含在分割時間中，請勿重複相加。網頁等待時間可能包含流程啟動與驗證；Pi 模式也包含相機預覽。</p>
+        </div>
+        <div>
+          <h3>處理與品質</h3>
+          <dl class="facts">
+            <div><dt>ROI 方法</dt><dd id="roi-method">—</dd></div>
+            <div><dt>特徵版本</dt><dd id="feature-version">—</dd></div>
+            <div><dt>影像品質</dt><dd id="quality-result">—</dd></div>
+          </dl>
+        </div>
+      </div>
+      <details class="metadata">
+        <summary>查看 metadata JSON</summary>
+        <p>畫面不顯示隱私數據；完整資料仍保存在本機。分享前請先檢查檔名及模型路徑。</p>
+        <pre id="metadata-json"></pre>
+      </details>
+    </section>
+  </main>
+  <footer class="footer"><div class="footer-inner"><span>Edge De-ID · 本機影像處理</span><span>原始照片與輸出會保存在本機</span></div></footer>
+</body>
+</html>

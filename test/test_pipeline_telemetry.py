@@ -140,6 +140,29 @@ def assert_no_sensitive_trace_data(spans, tmp_path):
         assert not span.events
 
 
+def test_pipeline_writes_images_in_unicode_directory(pipeline_case, tmp_path):
+    pipeline_case.kwargs["out_dir"] = tmp_path / "測試"
+    pipeline_case.pipeline.run_batch_pipeline(**pipeline_case.kwargs, seg_backend="torch")
+    output = pipeline_case.kwargs["out_dir"] / "patient-sensitive"
+    metadata = json.loads((output / "meta.json").read_text())
+    assert metadata["status"] == "ok"
+    for name in ("roi.png", "mask.png", "deid.png"):
+        encoded = np.frombuffer((output / name).read_bytes(), dtype=np.uint8)
+        assert cv2.imdecode(encoded, cv2.IMREAD_UNCHANGED) is not None
+
+
+def test_pipeline_reports_image_write_failure(pipeline_case, monkeypatch):
+    def fail_write(path, image):
+        raise OSError("image write failed")
+
+    monkeypatch.setattr(pipeline_case.pipeline, "_write_png", fail_write)
+    pipeline_case.pipeline.run_batch_pipeline(**pipeline_case.kwargs, seg_backend="torch")
+    output = pipeline_case.kwargs["out_dir"] / "patient-sensitive"
+    metadata = json.loads((output / "meta.json").read_text())
+    assert metadata["status"] == "error"
+    assert "image write failed" in metadata["error"]
+
+
 @pytest.mark.parametrize("backend", ["torch", "tflite"])
 def test_pipeline_spans_and_unchanged_outputs(pipeline_case, exported_spans, monkeypatch, tmp_path, backend):
     pipeline_case.pipeline.run_batch_pipeline(**pipeline_case.kwargs, seg_backend=backend)
