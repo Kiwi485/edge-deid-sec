@@ -53,7 +53,7 @@ chmod 640 "$RUN_DIR/raw/tongue.jpg"
 
 echo "Running Docker pipeline..."
 "${SUDO[@]}" env CAMERA_RUN_DIR="$RUN_DIR" BATCH_LIMIT=1 \
-    INSTALL_TFLITE=1 SEG_BACKEND=tflite \
+    INSTALL_TFLITE=1 SEG_BACKEND=tflite EDGE_DEID_TRACING="${EDGE_DEID_TRACING:-off}" \
     docker compose -f docker-compose.yml -f docker-compose.camera.yml \
     up --no-build --force-recreate
 

@@ -19,6 +19,7 @@ def _stub(path, contents):
 
 @pytest.mark.skipif(BASH is None, reason="Bash is required")
 @pytest.mark.parametrize(("web_mode", "seconds"), [(False, 5), (True, 1), (True, 60)])
+@pytest.mark.parametrize("tracing", [None, "console"])
 @pytest.mark.parametrize(
     ("scenario", "success", "docker_started"),
     [
@@ -30,7 +31,7 @@ def _stub(path, contents):
         ("container_fail", False, True),
     ],
 )
-def test_camera_run_isolates_input_and_checks_results(tmp_path, scenario, success, docker_started, web_mode, seconds):
+def test_camera_run_isolates_input_and_checks_results(tmp_path, scenario, success, docker_started, web_mode, seconds, tracing):
     shutil.copy(ROOT / "camera-run.sh", tmp_path / "camera-run.sh")
     model = tmp_path / "models" / "seg" / "model.tflite"
     model.parent.mkdir(parents=True)
@@ -41,6 +42,10 @@ def test_camera_run_isolates_input_and_checks_results(tmp_path, scenario, succes
 if [ "$1" = -n ]; then shift; fi
 case "$1" in
     -v|chgrp) exit 0 ;;
+    env)
+        unset EDGE_DEID_TRACING
+        exec "$@"
+        ;;
     install)
         shift
         while [ "$#" -gt 0 ]; do
@@ -63,6 +68,7 @@ printf 'photo' > "$output"
     _stub(bin_dir / "docker", """\
 if [ "$1" = compose ]; then
     echo compose >> "$EVENT_LOG"
+    echo "tracing=${EDGE_DEID_TRACING-unset}" >> "$EVENT_LOG"
     mkdir -p "$CAMERA_RUN_DIR/out/tongue" "$CAMERA_RUN_DIR/evidence/batch"
     status=ok
     privacy=true
@@ -82,6 +88,9 @@ fi
     _stub(bin_dir / "xdg-open", 'echo opened >> "$EVENT_LOG"\n')
 
     env = os.environ.copy()
+    env.pop("EDGE_DEID_TRACING", None)
+    if tracing is not None:
+        env["EDGE_DEID_TRACING"] = tracing
     env.update(
         PATH=str(bin_dir) + os.pathsep + env["PATH"],
         SCENARIO=scenario,
@@ -99,6 +108,8 @@ fi
     events = (tmp_path / "events").read_text().splitlines() if (tmp_path / "events").exists() else []
     assert (result.returncode == 0) is success, result.stdout + result.stderr
     assert ("compose" in events) is docker_started
+    if docker_started:
+        assert f"tracing={tracing or 'off'}" in events
     assert ("opened" in events) is (success and not web_mode)
     assert f"-t {seconds * 1000}" in (tmp_path / "camera_args").read_text()
     runs = list((tmp_path / "data" / "camera-runs").iterdir())

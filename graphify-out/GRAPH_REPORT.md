@@ -1,59 +1,68 @@
-# Graph Report - edge-deid-sec  (2026-11-05)
+# Graph Report - edge-deid-sec  (2026-11-21)
 
 ## Corpus Check
-- cluster-only mode — file stats not available
+- 89 files · ~64,787 words
+- Verdict: corpus is large enough that graph structure adds value.
+- Unclassified: 40 file(s) not represented in the graph (top: .csv 17, .log 7, (none) 3)
 
 ## Summary
-- 698 nodes · 1504 edges · 38 communities (34 shown, 4 thin omitted)
-- Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 16 edges (avg confidence: 0.86)
+- 805 nodes · 1683 edges · 49 communities (39 shown, 10 thin omitted)
+- Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 24 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `1602bb91`
+- Built from commit: `d7ff187f`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
-- Community 0
-- Community 1
-- Community 2
-- Community 3
-- Community 4
-- Community 5
-- Community 6
-- Community 7
-- Community 8
-- Community 9
-- Community 10
-- Community 11
-- Community 12
-- Community 13
-- Community 14
-- Community 15
-- Community 16
-- Community 17
-- Community 18
-- Community 19
-- Community 20
-- Community 21
-- Community 22
-- Community 23
-- Community 24
-- Community 25
-- Community 26
-- Community 27
-- Community 28
-- Community 29
-- Community 30
-- Community 31
-- Community 32
-- Community 33
-- Community 34
-- Community 35
-- Community 36
+- test_week10_security.py
+- cv2
+- argparse
+- evaluate_batch.py
+- load_yolo_bbox
+- pipeline_local.py
+- shutil
+- benchmark_edge.py
+- test_web_camera_demo.py
+- json
+- inference.py
+- extraction
+- dataset.py
+- extraction
+- model.py
+- acquisition
+- observability
+- train.py
+- x-security
+- acquisition
+- observability
+- TongueSegDataset
+- x-security
+- volumes
+- services
+- healthcheck
+- build
+- healthcheck
+- run_final_round.sh
+- extraction
+- default
+- runtime_window.sh
+- extraction
+- build
+- plot_latency.py
+- collect_checks.sh
+- app.js
+- csv
+- DemoHandler
+- benchmark_vm.py
+- args
+- services
+- services
+- camera-run.sh
 
 ## God Nodes (most connected - your core abstractions)
-1. `run_batch_pipeline()` - 27 edges
+1. `run_batch_pipeline()` - 28 edges
 2. `load_yolo_bbox()` - 22 edges
 3. `extract_features()` - 19 edges
 4. `extraction` - 18 edges
@@ -62,180 +71,200 @@
 7. `observability` - 18 edges
 8. `acquisition` - 17 edges
 9. `observability` - 17 edges
-10. `run_inference()` - 15 edges
+10. `DemoHandler` - 15 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `main()` --calls--> `build_model_by_arch()`  [EXTRACTED]
-  tools/export_seg_tflite.py → src/seg/model.py
-- `handle()` --calls--> `_handle_job()`  [EXTRACTED]
-  test/test_week10_security.py → src/services/extraction_service.py
-- `test_send_and_serve_job_roundtrip()` --indirect_call--> `serve_jobs()`  [INFERRED]
-  test/test_unix_socket_ipc.py → src/services/ipc.py
-- `test_image_content_roundtrip_over_socket()` --indirect_call--> `serve_jobs()`  [INFERRED]
-  test/test_week10_security.py → src/services/ipc.py
-- `test_interpreter_receives_explicit_thread_count()` --calls--> `_load_interpreter()`  [EXTRACTED]
-  test/test_tflite_inference.py → src/seg/tflite_inference.py
+- `main()` --indirect_call--> `handle()`  [INFERRED]
+  evidence/security/cis/scripts/build_controls_csv.py → test/test_week10_security.py
+- `test_span_hierarchy_and_redacted_exception()` --calls--> `trace_span()`  [EXTRACTED]
+  test/test_pipeline_telemetry.py → src/telemetry.py
+- `test_disabled_tracing_exports_nothing()` --calls--> `trace_span()`  [EXTRACTED]
+  test/test_pipeline_telemetry.py → src/telemetry.py
+- `test_invalid_tracing_mode()` --calls--> `trace_span()`  [EXTRACTED]
+  test/test_pipeline_telemetry.py → src/telemetry.py
+- `test_console_export_is_json()` --calls--> `trace_span()`  [EXTRACTED]
+  test/test_pipeline_telemetry.py → src/telemetry.py
 
 ## Import Cycles
 - None detected.
 
-## Communities (38 total, 4 thin omitted)
+## Communities (49 total, 10 thin omitted)
 
-### Community 0 - "Community 0"
-Cohesion: 0.07
-Nodes (30): build_socket_job(), main(), parse_args(), _percentile(), _handle_job(), main(), handle_socket_job(), parse_args() (+22 more)
-
-### Community 1 - "Community 1"
+### Community 0 - "test_week10_security.py"
 Cohesion: 0.08
-Nodes (32): apply_mask_only(), estimate_tongue_mask(), _find_mask_for_image(), _iter_images(), _largest_component(), main(), run_batch(), _crop_to_bbox() (+24 more)
+Nodes (28): build_socket_job(), main(), parse_args(), _percentile(), _handle_job(), main(), handle_socket_job(), parse_args() (+20 more)
 
-### Community 2 - "Community 2"
+### Community 1 - "cv2"
+Cohesion: 0.06
+Nodes (40): _find_mask(), run_batch_deid(), apply_mask_only(), estimate_tongue_mask(), _find_mask_for_image(), _iter_images(), _largest_component(), main() (+32 more)
+
+### Community 3 - "argparse"
+Cohesion: 0.06
+Nodes (16): main(), read_tsv(), _load_model(), predict_yolo_bbox(), bbox_to_yolo(), main(), annotate_folder(), main() (+8 more)
+
+### Community 4 - "evaluate_batch.py"
+Cohesion: 0.15
+Nodes (17): evaluate_privacy(), PrivacyConfig, _safe_ratio(), _to_mask_bool(), _align_to_deid_size(), evaluate_one_bundle(), _find_raw_path(), _fmt_num() (+9 more)
+
+### Community 5 - "load_yolo_bbox"
+Cohesion: 0.14
+Nodes (3): load_yolo_bbox(), TestErrorCases, TestValidLabel
+
+### Community 6 - "pipeline_local.py"
 Cohesion: 0.05
-Nodes (19): _console_tracer(), _get_tracer(), trace_span(), bbox_to_yolo(), main(), assert_no_sensitive_trace_data(), exported_spans(), pipeline_case() (+11 more)
+Nodes (29): apply_mask_only(), ensure_dirs(), _load_image(), _normalize_mask(), parse_args(), run_batch_pipeline(), write_csv_header_if_needed(), _write_png() (+21 more)
 
-### Community 3 - "Community 3"
-Cohesion: 0.08
-Nodes (21): main(), read_tsv(), _load_model(), predict_yolo_bbox(), handle(), annotation_files(), extract_roi(), find_image() (+13 more)
-
-### Community 4 - "Community 4"
-Cohesion: 0.10
-Nodes (26): bottleneck_text(), compute_percentiles(), format_table(), load_rows(), main(), parse_args(), Row, _to_float() (+18 more)
-
-### Community 5 - "Community 5"
-Cohesion: 0.09
-Nodes (7): load_yolo_bbox(), annotate_folder(), main(), to_yolo_norm(), TestErrorCases, TestValidLabel, main()
-
-### Community 6 - "Community 6"
-Cohesion: 0.11
-Nodes (13): apply_mask_only(), ensure_dirs(), _load_image(), _normalize_mask(), run_batch_pipeline(), write_csv_header_if_needed(), check_quality(), extract_roi_fixed() (+5 more)
-
-### Community 7 - "Community 7"
-Cohesion: 0.14
-Nodes (12): parse_args(), convert(), main(), polygon_bbox(), to_yolo_bbox(), collect_pairs(), copy_split(), main() (+4 more)
-
-### Community 8 - "Community 8"
-Cohesion: 0.14
-Nodes (18): _benchmark_pipeline(), _benchmark_segmentation(), _device_tree_model(), _environment(), _list_images(), _load_notes(), main(), _package_version() (+10 more)
-
-### Community 9 - "Community 9"
-Cohesion: 0.14
-Nodes (11): _find_mask(), run_batch_deid(), build_mask(), _clip_bbox(), _load_json(), main(), process_bundle(), run_batch() (+3 more)
-
-### Community 10 - "Community 10"
+### Community 7 - "shutil"
 Cohesion: 0.16
-Nodes (18): build_report_text(), _counter_block(), _get_raw_stems(), _load_metas(), main(), _pct(), build_validation_rows(), _check_csv() (+10 more)
+Nodes (13): main(), parse_args(), _run(), _stub(), test_camera_run_isolates_input_and_checks_results(), test_camera_run_rejects_invalid_web_countdown(), test_pi_camera_compose_preserves_security_and_isolates_mounts(), collect_pairs() (+5 more)
 
-### Community 11 - "Community 11"
+### Community 8 - "benchmark_edge.py"
+Cohesion: 0.07
+Nodes (25): _benchmark_pipeline(), _benchmark_segmentation(), _device_tree_model(), _environment(), _list_images(), _load_notes(), main(), _package_version() (+17 more)
+
+### Community 9 - "test_web_camera_demo.py"
+Cohesion: 0.16
+Nodes (13): request(), server(), test_capture_rejects_failed_quality_or_privacy(), test_capture_runs_real_pipeline_contract_and_serves_only_deidentified_image(), fake_pipeline(), test_computer_docker_service_failure_is_not_reported_as_success(), test_computer_webcam_uses_docker_and_validates_output(), fake_docker() (+5 more)
+
+### Community 10 - "json"
+Cohesion: 0.11
+Nodes (22): build_report_text(), _counter_block(), _get_raw_stems(), _load_metas(), main(), _pct(), build_validation_rows(), _check_csv() (+14 more)
+
+### Community 11 - "inference.py"
 Cohesion: 0.17
 Nodes (5): _get_model(), main(), _preprocess(), run_inference(), get_device()
 
-### Community 12 - "Community 12"
+### Community 12 - "extraction"
 Cohesion: 0.12
 Nodes (17): EDGE_DEID_TRACING, cap_drop, command, container_name, cpu_shares, cpus, environment, mem_limit (+9 more)
 
-### Community 13 - "Community 13"
+### Community 13 - "dataset.py"
 Cohesion: 0.16
 Nodes (4): build_coco_sample_list(), load_image_rgb(), polygon_to_mask(), yolo_bbox_to_mask()
 
-### Community 14 - "Community 14"
+### Community 14 - "extraction"
 Cohesion: 0.12
 Nodes (16): EDGE_DEID_TRACING, cap_drop, command, container_name, cpu_shares, cpus, environment, mem_limit (+8 more)
 
-### Community 15 - "Community 15"
+### Community 15 - "model.py"
 Cohesion: 0.19
 Nodes (5): build_model(), build_model_by_arch(), build_model_deeplabv3(), build_model_unet_resnet(), main()
 
-### Community 16 - "Community 16"
+### Community 16 - "acquisition"
 Cohesion: 0.13
 Nodes (15): build, cap_drop, command, container_name, cpu_shares, cpus, mem_limit, pids_limit (+7 more)
 
-### Community 17 - "Community 17"
+### Community 17 - "observability"
 Cohesion: 0.13
 Nodes (15): build, cap_drop, command, container_name, cpu_shares, cpus, mem_limit, pids_limit (+7 more)
 
-### Community 18 - "Community 18"
+### Community 18 - "train.py"
 Cohesion: 0.23
 Nodes (8): count_parameters(), build_datasets(), dice_score(), _indices_from_manifest(), iou_score(), main(), train_epoch(), val_epoch()
 
-### Community 19 - "Community 19"
+### Community 19 - "x-security"
 Cohesion: 0.15
 Nodes (12): name, name, services, volumes, ipc, x-security, cap_drop, pids_limit (+4 more)
 
-### Community 20 - "Community 20"
+### Community 20 - "acquisition"
 Cohesion: 0.15
 Nodes (13): cap_drop, command, container_name, cpu_shares, cpus, mem_limit, pids_limit, read_only (+5 more)
 
-### Community 21 - "Community 21"
+### Community 21 - "observability"
 Cohesion: 0.15
 Nodes (13): cap_drop, command, container_name, cpu_shares, cpus, mem_limit, pids_limit, read_only (+5 more)
 
-### Community 23 - "Community 23"
+### Community 23 - "x-security"
 Cohesion: 0.18
 Nodes (10): services, volumes, ipc, x-security, cap_drop, pids_limit, read_only, security_opt (+2 more)
 
-### Community 24 - "Community 24"
+### Community 24 - "volumes"
 Cohesion: 0.40
 Nodes (10): volumes, selinux, volumes, volumes, bind, read_only, source, target (+2 more)
 
-### Community 25 - "Community 25"
+### Community 25 - "services"
 Cohesion: 0.25
 Nodes (7): volumes, security_opt, volumes, services, acquisition, extraction, observability
 
-### Community 26 - "Community 26"
+### Community 26 - "healthcheck"
 Cohesion: 0.57
 Nodes (7): healthcheck, healthcheck, interval, retries, test, timeout, healthcheck
 
-### Community 27 - "Community 27"
+### Community 27 - "build"
 Cohesion: 0.38
 Nodes (7): build, INSTALL_TFLITE, args, context, dockerfile, build, build
 
-### Community 28 - "Community 28"
+### Community 28 - "healthcheck"
 Cohesion: 0.57
 Nodes (7): healthcheck, healthcheck, interval, retries, test, timeout, healthcheck
 
-### Community 29 - "Community 29"
+### Community 29 - "run_final_round.sh"
 Cohesion: 0.33
 Nodes (5): BATCH_LIMIT, INSTALL_TFLITE, SEG_BACKEND, run_final_round.sh script, step()
 
-### Community 30 - "Community 30"
+### Community 30 - "extraction"
 Cohesion: 0.40
 Nodes (5): depends_on, extraction, condition, required, depends_on
 
-### Community 31 - "Community 31"
+### Community 31 - "default"
 Cohesion: 0.40
 Nodes (5): networks, name, networks, default, networks
 
-### Community 32 - "Community 32"
+### Community 32 - "runtime_window.sh"
 Cohesion: 0.40
 Nodes (4): BATCH_LIMIT, INSTALL_TFLITE, SEG_BACKEND, runtime_window.sh script
 
-### Community 33 - "Community 33"
+### Community 33 - "extraction"
 Cohesion: 0.50
 Nodes (4): depends_on, extraction, condition, depends_on
 
-### Community 34 - "Community 34"
+### Community 34 - "build"
 Cohesion: 0.50
 Nodes (4): INSTALL_TFLITE, args, context, build
 
+### Community 38 - "app.js"
+Cohesion: 0.11
+Nodes (19): cameraState, captureButton, countdown, countdownInput, initialize(), milliseconds(), placeholder, preview (+11 more)
+
+### Community 39 - "csv"
+Cohesion: 0.23
+Nodes (12): annotation_files(), extract_roi(), find_image(), infer_split(), load_coco_records(), load_image(), load_split_manifest(), main() (+4 more)
+
+### Community 41 - "benchmark_vm.py"
+Cohesion: 0.29
+Nodes (9): bottleneck_text(), compute_percentiles(), format_table(), load_rows(), main(), parse_args(), Row, _to_float() (+1 more)
+
+### Community 42 - "args"
+Cohesion: 0.24
+Nodes (10): build, PI_ARM64, args, context, build, build, services, acquisition (+2 more)
+
+### Community 43 - "services"
+Cohesion: 0.25
+Nodes (7): volumes, volumes, volumes, services, acquisition, extraction, observability
+
+### Community 44 - "services"
+Cohesion: 0.25
+Nodes (7): container_name, container_name, container_name, services, acquisition, extraction, observability
+
 ## Knowledge Gaps
 - **6 isolated node(s):** `BATCH_LIMIT`, `INSTALL_TFLITE`, `SEG_BACKEND`, `BATCH_LIMIT`, `INSTALL_TFLITE` (+1 more)
-  These have ≤1 connection - possible missing edges. (Counts symbols only; 250 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **4 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+  These have ≤1 connection - possible missing edges. (Counts symbols only; 294 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **10 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `load_yolo_bbox()` connect `Community 5` to `Community 6`?**
-  _High betweenness centrality (0.035) - this node is a cross-community bridge._
+- **Why does `load_yolo_bbox()` connect `load_yolo_bbox` to `argparse`, `pipeline_local.py`?**
+  _High betweenness centrality (0.028) - this node is a cross-community bridge._
 - **What connects `BATCH_LIMIT`, `INSTALL_TFLITE`, `SEG_BACKEND` to the rest of the system?**
   _6 weakly-connected nodes found - possible missing edges._
-- **Should `Community 0` be split into smaller, more focused modules?**
-  _Cohesion score 0.07103825136612021 - nodes in this community are weakly interconnected._
-- **Why does `run_batch_pipeline()` connect `Community 6` to `Community 0`, `Community 1`, `Community 2`, `Community 3`, `Community 4`, `Community 7`, `Community 8`, `Community 9`, `Community 10`, `Community 11`?**
+- **Should `test_week10_security.py` be split into smaller, more focused modules?**
+  _Cohesion score 0.07826694619147449 - nodes in this community are weakly interconnected._
+- **Why does `DemoHandler` connect `DemoHandler` to `argparse`?**
   _High betweenness centrality (0.024) - this node is a cross-community bridge._
-- **Should `Community 1` be split into smaller, more focused modules?**
-  _Cohesion score 0.08469945355191257 - nodes in this community are weakly interconnected._
-- **Why does `TongueSegDataset` connect `Community 22` to `Community 18`, `Community 13`?**
-  _High betweenness centrality (0.013) - this node is a cross-community bridge._
-- **Should `Community 2` be split into smaller, more focused modules?**
-  _Cohesion score 0.05333333333333334 - nodes in this community are weakly interconnected._
+- **Should `cv2` be split into smaller, more focused modules?**
+  _Cohesion score 0.06052393857271906 - nodes in this community are weakly interconnected._
+- **Why does `run_batch_pipeline()` connect `pipeline_local.py` to `test_week10_security.py`, `cv2`, `argparse`, `evaluate_batch.py`, `shutil`, `benchmark_edge.py`, `csv`, `json`, `inference.py`?**
+  _High betweenness centrality (0.021) - this node is a cross-community bridge._
+- **Should `argparse` be split into smaller, more focused modules?**
+  _Cohesion score 0.06184012066365008 - nodes in this community are weakly interconnected._
