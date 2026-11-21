@@ -4,19 +4,40 @@ set -eu
 cd "$(dirname "$0")"
 umask 077
 
+WEB_MODE=0
+WAIT_SECONDS=5
+if [ "$#" -gt 0 ]; then
+    if [ "$#" -ne 3 ] || [ "$1" != "--web" ] || ! [[ "$2" =~ ^[0-9a-f]{32}$ ]] || ! [[ "$3" =~ ^([1-9]|[1-5][0-9]|60)$ ]]; then
+        echo "ERROR: Invalid arguments." >&2
+        exit 1
+    fi
+    WEB_MODE=1
+    RUN_ID="$2"
+    WAIT_SECONDS="$3"
+fi
+
 if [ ! -s models/seg/model.tflite ]; then
     echo "ERROR: models/seg/model.tflite is missing or empty." >&2
     exit 1
 fi
 
-sudo -v
+SUDO=(sudo)
+if [ "$WEB_MODE" -eq 1 ]; then
+    SUDO=(sudo -n)
+fi
+"${SUDO[@]}" -v
 mkdir -p data/camera-runs
-RUN_DIR="$(mktemp -d "$PWD/data/camera-runs/run-XXXXXXXX")"
+if [ "$WEB_MODE" -eq 1 ]; then
+    RUN_DIR="$PWD/data/camera-runs/run-$RUN_ID"
+    mkdir "$RUN_DIR"
+else
+    RUN_DIR="$(mktemp -d "$PWD/data/camera-runs/run-XXXXXXXX")"
+fi
 mkdir -p "$RUN_DIR/raw"
 
 echo "Results will be saved in: $RUN_DIR"
-echo "Preview starts now. The photo will be taken in 5 seconds."
-rpicam-still --qt-preview -t 5000 --width 640 --height 480 \
+echo "Preview starts now. The photo will be taken in $WAIT_SECONDS seconds."
+rpicam-still --qt-preview -t "$((WAIT_SECONDS * 1000))" --width 640 --height 480 \
     -o "$RUN_DIR/raw/tongue.jpg"
 
 if [ ! -s "$RUN_DIR/raw/tongue.jpg" ]; then
@@ -24,20 +45,20 @@ if [ ! -s "$RUN_DIR/raw/tongue.jpg" ]; then
     exit 1
 fi
 
-sudo chgrp 10001 "$RUN_DIR/raw" "$RUN_DIR/raw/tongue.jpg"
+"${SUDO[@]}" chgrp 10001 "$RUN_DIR/raw" "$RUN_DIR/raw/tongue.jpg"
 chmod 750 "$RUN_DIR/raw"
 chmod 640 "$RUN_DIR/raw/tongue.jpg"
-sudo install -d -m 0775 -o 10001 -g 10001 \
+"${SUDO[@]}" install -d -m 0775 -o 10001 -g 10001 \
     "$RUN_DIR/out" "$RUN_DIR/logs" "$RUN_DIR/evidence" "$RUN_DIR/docs"
 
 echo "Running Docker pipeline..."
-sudo env CAMERA_RUN_DIR="$RUN_DIR" BATCH_LIMIT=1 \
+"${SUDO[@]}" env CAMERA_RUN_DIR="$RUN_DIR" BATCH_LIMIT=1 \
     INSTALL_TFLITE=1 SEG_BACKEND=tflite \
     docker compose -f docker-compose.yml -f docker-compose.camera.yml \
     up --no-build --force-recreate
 
 for service in acquisition extraction observability; do
-    state="$(sudo docker inspect --format '{{.State.Status}} {{.State.ExitCode}}' "edge-deid-$service")"
+    state="$("${SUDO[@]}" docker inspect --format '{{.State.Status}} {{.State.ExitCode}}' "edge-deid-$service")"
     if [ "$state" != "exited 0" ]; then
         echo "ERROR: $service: $state" >&2
         exit 1
@@ -71,4 +92,6 @@ PY
 
 echo "Result folder: $RUN_DIR/out/tongue"
 echo "Privacy report: $RUN_DIR/evidence/batch/privacy_report.csv"
-xdg-open "$RUN_DIR/out/tongue/deid.png"
+if [ "$WEB_MODE" -eq 0 ]; then
+    xdg-open "$RUN_DIR/out/tongue/deid.png"
+fi

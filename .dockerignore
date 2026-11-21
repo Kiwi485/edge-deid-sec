@@ -1,8 +1,14 @@
 .git/
 .venv/
 .venv311/
+.venv-wsl/
 venv311/
 .vscode/
+.pytest_cache/
+.env
+.env.*
+tmp/
+graphify-out/
 __pycache__/
 *.pyc
 

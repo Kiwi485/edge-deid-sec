@@ -21,6 +21,42 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
 
 完整 MediaPipe 設定請看 [docs/SETUP_MEDIAPIPE_WINDOWS.md](docs/SETUP_MEDIAPIPE_WINDOWS.md)。
 
+## 電腦相機 + Docker 網頁 demo
+
+先啟動 Docker Desktop，並確定專案根目錄有 `face_landmarker.task` 和 `models/seg/model.tflite`。在 Windows PowerShell 的專案根目錄建立獨立的 demo 映像：
+
+```powershell
+$env:CAMERA_RUN_DIR = Join-Path (Get-Location) 'data\web-demo\build-placeholder'
+$env:BATCH_LIMIT = '1'
+$env:INSTALL_TFLITE = '1'
+$env:SEG_BACKEND = 'tflite'
+docker compose -p edge-web-demo -f docker-compose.yml -f docker-compose.camera.yml -f docker-compose.web.yml build
+```
+
+建置成功後執行：
+
+```powershell
+.\.venv311\Scripts\python.exe tools\web_camera_demo.py --docker
+```
+
+在同一台電腦的 Chrome 或 Edge 開啟 `http://127.0.0.1:8765/`，允許攝影機，設定拍照倒數（1–60 秒，預設 5 秒），按「拍照並處理」。此模式使用電腦攝影機、Docker acquisition、Unix Socket extraction（TFLite）及 observability；三個容器和驗證通過後才顯示結果。下方顯示各階段耗時和品質，也可展開 metadata（網頁隱藏隱私數據，完整資料仍保存在本機）。網頁等待時間與 pipeline 處理時間不同，前者包含容器啟動與驗證。它仍不是 Pi 相機或 Pi 硬體測試。結束時在終端機按 Ctrl+C，執行中請勿關閉伺服器。程式或容器內模型更新後需要重新建置映像。
+
+此模式使用獨立的 `edge-web-demo` 容器與 `data/web-demo/` 執行目錄；不要同時啟動另一份相同的 demo。若流程逾時，容器可能仍在執行，請先檢查 Docker Desktop。原始照片與輸出可能包含敏感資訊，已在 `.gitignore` 忽略但不會自動刪除。伺服器僅供本機使用；隱私數字不保證完全匿名。
+
+## 電腦相機 + 本機 PyTorch 網頁 demo
+
+使用已安裝專案依賴的 Python 3.11 環境及 `models/seg/best.pth`，在專案根目錄執行：
+
+```powershell
+.\.venv311\Scripts\python.exe tools\web_camera_demo.py
+```
+
+在同一台電腦的 Chrome 或 Edge 開啟 `http://127.0.0.1:8765/`，允許攝影機，設定拍照倒數（1–60 秒，預設 5 秒），按「拍照並處理」。倒數後會呼叫真正的本機 PyTorch pipeline，並在處理與隱私檢查通過後顯示去識別化結果；按 Ctrl+C 停止伺服器。若連接埠被佔用，可加上 `--port 8766` 並使用對應網址。
+
+此模式**不使用 Docker／Unix Socket，也不是 Raspberry Pi 相機整合**；伺服器僅綁定電腦本機，不能從其他裝置連線。原始照片和輸出保存在已忽略的 `data/web-demo/`，仍可能包含敏感資訊，應保護並依政策清理。隱私檢查相對於預測遮罩，不保證完全匿名。
+
+Pi 相機和 Docker 網頁模式使用 `--pi`，設定與啟動方式見 [Raspberry Pi 指南](docs/RASPBERRY_PI.md#pi-網頁一鍵拍照)；兩種模式的相機與處理流程不同。
+
 ## Raspberry Pi 一鍵拍照
 
 在已設定相機、模型與 Docker 的 Raspberry Pi 4B ARM64 上，可用一個指令預覽、拍照，並透過 Docker／Unix Socket 執行 TFLite pipeline：

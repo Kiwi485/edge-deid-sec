@@ -29,6 +29,7 @@ logs/*.csv
 
 data/out/
 data/camera-runs/
+data/web-demo/
 
 # auto-generated reports (changes every test run)
 docs/roi_eval.md
