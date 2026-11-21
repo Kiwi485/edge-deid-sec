@@ -55,6 +55,14 @@ python3 tools/web_camera_demo.py --pi
 
 `sudo -v` 需要輸入 Pi 密碼；只有成功後才執行下一行。請在**同一個終端機**保持伺服器執行，在 Pi 桌面瀏覽器開啟 `http://127.0.0.1:8765/`。設定拍照倒數（1–60 秒，預設 5 秒），按「拍照並處理」，Pi 的 Qt 相機預覽會在桌面**另一個視窗**顯示設定的時間，不會嵌入網頁；接著執行原本的 Docker acquisition、Unix Socket extraction（TFLite）及 observability 流程。三個服務、品質、隱私和輸出驗證通過後，網頁才顯示結果。停止伺服器請回到該終端機按 Ctrl+C。
 
+如需記錄 OpenTelemetry spans，在執行 `sudo -v` 後改用以下指令啟動網頁（不設定時預設關閉）：
+
+```bash
+EDGE_DEID_TRACING=console python3 tools/web_camera_demo.py --pi
+```
+
+拍照完成後，在另一個 Pi 終端機執行 `sudo docker logs edge-deid-extraction` 查看最新一次 extraction 的 spans；它們不會顯示在網頁上。下一次拍照會重新建立容器，舊容器日誌不會保留，請先保存需要的紀錄。`total` span 不包含相機、Docker 啟動或驗證等待；詳細說明請看 [OpenTelemetry](OPENTELEMETRY.md)。容器映像本身必須已包含 OpenTelemetry 的程式碼與依賴。
+
 此模式使用 `sudo -n`，不會在網頁等待密碼。若授權過期或流程失敗，請檢查終端機訊息；可停止伺服器，重新在同一終端機執行 `sudo -v` 和啟動命令。如果流程逾時，Docker 容器可能仍在執行，請先檢查容器狀態再重試。勿同時執行另一個使用相同 Compose 服務名稱的批次。
 
 網頁只綁定 Pi 的 `127.0.0.1`，不可直接從 Windows 瀏覽器連接，也沒有設計供公開網路使用。每次的原始照片和輸出仍保存在 `data/camera-runs/`，須按敏感資料保護。此功能尚需在目標 Pi 的相機、桌面和 Docker 環境中實際驗證；不會啟用 SELinux。
