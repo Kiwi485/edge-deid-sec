@@ -15,8 +15,10 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
-import cv2
 import numpy as np
+
+if __package__ in (None, ""):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 try:
     import resource
@@ -115,10 +117,11 @@ def peak_process_rss_mib():
     return round(peak_kib / 1024.0, 2)
 
 
-def _list_images(directory, limit):
+def _list_images(directory, limit, *, include_heic=False):
+    extensions = IMAGE_EXTENSIONS | {".heic"} if include_heic else IMAGE_EXTENSIONS
     paths = sorted(
         path for path in directory.iterdir()
-        if path.is_file() and path.suffix.lower() in IMAGE_EXTENSIONS
+        if path.is_file() and path.suffix.lower() in extensions
     )
     if limit:
         paths = paths[:limit]
@@ -283,13 +286,12 @@ def _benchmark_segmentation(paths, model_path, warmups, runs, threads):
 
 
 def _benchmark_pipeline(paths, raw_dir, model_path, warmups, runs, threads):
-    from src.pipeline_local import run_batch_pipeline
+    from src.pipeline_local import _load_image, run_batch_pipeline
 
-    cold_input = cv2.imread(str(paths[0]))
-    if cold_input is None:
-        raise ValueError(f"Unable to decode warm-up image: {paths[0]}")
+    cold_input = _load_image(paths[0])
     from src.seg.tflite_inference import run_inference
 
+    image_names = {path.name for path in paths}
     cold_load_ms = 0.0
     for _ in range(warmups):
         _, _, warmup_timings = run_inference(
@@ -312,6 +314,7 @@ def _benchmark_pipeline(paths, raw_dir, model_path, warmups, runs, threads):
             seg_backend="tflite",
             seg_model_path=model_path,
             inference_threads=threads,
+            image_names=image_names,
         )
         warm_rows = _pipeline_rows(warm_dir / "warmup.csv", 0)
         errors = [row["image_id"] for row in warm_rows if row["status"] == "error"]
@@ -331,6 +334,7 @@ def _benchmark_pipeline(paths, raw_dir, model_path, warmups, runs, threads):
                 seg_backend="tflite",
                 seg_model_path=model_path,
                 inference_threads=threads,
+                image_names=image_names,
             )
             run_rows = _pipeline_rows(csv_path, run_number)
         errors = [row["image_id"] for row in run_rows if row["status"] == "error"]
@@ -387,7 +391,9 @@ def main():
     if not args.model.is_file():
         parser.error(f"Model file does not exist: {args.model}")
 
-    paths = _list_images(args.input_dir, args.limit)
+    paths = _list_images(args.input_dir, args.limit, include_heic=args.mode == "pipeline")
+    if len(paths) < args.limit:
+        parser.error(f"Requested {args.limit} input images; found only {len(paths)}.")
     if len(paths) < args.warmups:
         parser.error(f"Need at least {args.warmups} input images; found {len(paths)}.")
     args.output_dir.mkdir(parents=True, exist_ok=True)
